@@ -16,6 +16,8 @@ export default [
       },
     },
     rules: {
+      "no-unused-vars": 0,
+      "@typescript-eslint/no-unused-vars": 0,
       // 控制大括号内容前后有空格
       'object-curly-spacing': ['error', 'always'],
       

@@ -39,5 +39,8 @@
     "ts-jest": "^29.2.6",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.25.0"
+  },
+  "dependencies": {
+    "openai": "^4.86.1"
   }
 }

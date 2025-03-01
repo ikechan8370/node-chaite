@@ -40,7 +40,7 @@ export type History = {
     parentId: string | null
 }
 
-export interface Message {
+export interface IMessage {
     role: Role
     content: MessageContent[]
     toolCalls?: ToolCall[]
@@ -67,7 +67,7 @@ export type FunctionCall = {
 /**
  * 用户发送的消息，可能有文本和多模态消息
  */
-export interface UserMessage extends Message {
+export interface UserMessage extends IMessage {
     role: 'user'
     content: Array<TextContent | ImageContent | AudioContent>
 }
@@ -75,7 +75,7 @@ export interface UserMessage extends Message {
 /**
  * 模型返回的消息，包括文本以及可能的工具调用
  */
-export interface AssistantMessage extends Message {
+export interface AssistantMessage extends IMessage {
     role: 'assistant'
     content: Array<TextContent>
     toolCalls?: ToolCall[]
@@ -84,13 +84,13 @@ export interface AssistantMessage extends Message {
 /**
  * 客户端执行工具调用的函数结果
  */
-export interface ToolCallResultMessage extends Message {
+export interface ToolCallResultMessage extends IMessage {
     role: 'tool'
     tool_call_id: string
     content: TextContent[]
 }
 
-export type HistoryMessage = History & Message
+export type HistoryMessage = History & IMessage
 
 export interface ModelResponse {
     id?: string
