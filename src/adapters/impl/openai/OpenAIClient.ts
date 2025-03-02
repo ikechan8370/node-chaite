@@ -2,7 +2,15 @@ import {
   UserMessage,
   ToolCallResultMessage,
   ModelResponse,
-  ModelUsage, HistoryMessage, ModelResponseChunk, TextContent, ToolCall, FunctionCall, History, MessageContent,
+  ModelUsage,
+  HistoryMessage,
+  ModelResponseChunk,
+  TextContent,
+  ToolCall,
+  FunctionCall,
+  History,
+  MessageContent,
+  ToolCallResult,
 } from '../../../types'
 import { AbstractClass, SendMessageOption } from '../../clients'
 import { BaseClientOptions, ChaiteContext } from '../../../types/common'
@@ -48,11 +56,15 @@ export class OpenAIClient extends AbstractClass {
       }
       const converter = getFromChaiteConverter('openai')
       for (const history of histories) {
-        const openaiMsg = converter(history)
-        messages.push(openaiMsg)
+        let openaiMsg = converter(history)
+        if (!Array.isArray(openaiMsg)) {
+          openaiMsg = [openaiMsg]
+        }
+        messages.push(...openaiMsg)
       }
       if (message) {
-        messages.push(converter(message))
+        // 用户消息不会分裂
+        messages.push(converter(message) as ChatCompletionMessageParam)
       }
       let chatCompletion
       const toolConvert = getFromChaiteToolConverter('openai')
@@ -158,6 +170,7 @@ export class OpenAIClient extends AbstractClass {
       await this.historyManager.saveHistory(rspToSave, options.conversationId)
       options.parentMessageId = id
       if (rspToSave.toolCalls && rspToSave.toolCalls?.length > 0) {
+        const toolCallResults: ToolCallResult[] = []
         for (const r of rspToSave.toolCalls) {
           const fcName = r.function.name
           const fcArgs = r.function.arguments
@@ -169,18 +182,32 @@ export class OpenAIClient extends AbstractClass {
             } catch (err: unknown) {
               toolResult = (err as Error).message
             }
-            const tcMsgId = crypto.randomUUID()
-            const tcMsg = {
-              role: 'tool',
+            toolCallResults.push({
               tool_call_id: r.id,
-              content: [{ type: 'text', text: toolResult } as TextContent],
-              id: tcMsgId,
-              parentId: options.parentMessageId,
-            } as ToolCallResultMessage & History
-            options.parentMessageId = tcMsgId
-            await this.historyManager.saveHistory(tcMsg, options.conversationId)
+              content: toolResult,
+              type: 'tool',
+            })
+            // const tcMsgId = crypto.randomUUID()
+            // const tcMsg = {
+            //   role: 'tool',
+            //   tool_call_id: r.id,
+            //   content: [{ type: 'text', text: toolResult } as TextContent],
+            //   id: tcMsgId,
+            //   parentId: options.parentMessageId,
+            // } as ToolCallResultMessage & History
+            // options.parentMessageId = tcMsgId
+            // await this.historyManager.saveHistory(tcMsg, options.conversationId)
           }
         }
+        const tcMsgId = crypto.randomUUID()
+        const toolCallResultMessage: ToolCallResultMessage & History = {
+          role: 'tool',
+          content: toolCallResults,
+          id: tcMsgId,
+          parentId: options.parentMessageId,
+        }
+        options.parentMessageId = tcMsgId
+        await this.historyManager.saveHistory(toolCallResultMessage, options.conversationId)
         return await this.sendMessage(undefined, options)
       }
       return {

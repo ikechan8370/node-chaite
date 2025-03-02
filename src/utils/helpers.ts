@@ -4,7 +4,7 @@ import { AsyncLocalStorage } from 'async_hooks'
 export async function getKey(apiKeys: string[] | string, strategy: MultipleKeyStrategy): Promise<string> {
   const logger = asyncLocalStorage.getStore()?.logger as ILogger
   const candidateApiKeys = Array.isArray(apiKeys) ? apiKeys : [ apiKeys ]
-  const keyNum = apiKeys.length
+  const keyNum = candidateApiKeys.length
   if (keyNum === 0) {
     logger.error(`No key ${keyNum} found.`)
     throw new Error('No key provided')
@@ -12,7 +12,7 @@ export async function getKey(apiKeys: string[] | string, strategy: MultipleKeySt
   let apiKey: string
   switch (strategy) {
   case MultipleKeyStrategyChoice.RANDOM: {
-    const randomKeyIdx = Math.floor(Math.random() * keyNum + 1)
+    const randomKeyIdx = Math.floor(Math.random() * keyNum)
     apiKey = candidateApiKeys[randomKeyIdx]
     break
   }

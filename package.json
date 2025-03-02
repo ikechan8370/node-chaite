@@ -41,6 +41,7 @@
     "typescript-eslint": "^8.25.0"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.22.0",
     "openai": "^4.86.1"
   }
 }

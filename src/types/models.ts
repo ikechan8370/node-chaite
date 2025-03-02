@@ -6,7 +6,7 @@ export type Feature = 'chat' | 'visual' | 'tool'
 export type Role = 'system' | 'user' | 'assistant' | 'tool'
 
 export interface MessageContent {
-    type: 'text' | 'image' | 'audio' | 'video'
+    type: 'text' | 'image' | 'audio' | 'video' | 'tool'
 }
 
 export interface TextContent extends MessageContent {
@@ -23,6 +23,8 @@ export interface ImageContent extends MessageContent {
      * Either a URL of the image or the base64 encoded image data
      */
     image: string
+
+    mimeType?: string
 }
 
 export interface AudioContent extends MessageContent {
@@ -86,8 +88,14 @@ export interface AssistantMessage extends IMessage {
  */
 export interface ToolCallResultMessage extends IMessage {
     role: 'tool'
-    tool_call_id: string
-    content: TextContent[]
+    content: ToolCallResult[]
+}
+
+export interface ToolCallResult extends MessageContent {
+    type: 'tool'
+    tool_call_id?: string
+    content: string
+    name?: string
 }
 
 export type HistoryMessage = History & IMessage

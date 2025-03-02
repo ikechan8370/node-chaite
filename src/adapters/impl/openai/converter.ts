@@ -20,7 +20,7 @@ import FunctionDefinition = OpenAI.FunctionDefinition;
 import { FunctionParameters } from 'openai/src/resources/shared'
 
 // 将消息IMessage转换为OpenAI格式
-registerFromChaiteConverter<ChatCompletionMessageParam>('openai', (source: IMessage) => {
+registerFromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]>('openai', (source: IMessage) => {
   switch (source.role) {
   case 'assistant': {
     const msg = source as AssistantMessage
@@ -63,13 +63,15 @@ registerFromChaiteConverter<ChatCompletionMessageParam>('openai', (source: IMess
   }
   case 'tool': {
     const msg = source as ToolCallResultMessage
-    return {
-      role: 'tool',
-      tool_call_id: msg.tool_call_id,
-      content: msg.content.map(t => {
-        return { type: 'text', text: t.text } as ChatCompletionContentPartText
-      }),
-    } as ChatCompletionToolMessageParam
+    return msg.content.map(tcr => {
+      return {
+        role: 'tool',
+        tool_call_id: tcr.tool_call_id,
+        content: msg.content.map(t => {
+          return { type: 'text', text: t.content } as ChatCompletionContentPartText
+        }),
+      } as ChatCompletionToolMessageParam
+    })
   }
   default: {
     throw new Error('Unknown type')
@@ -101,23 +103,6 @@ registerIntoChaiteConverter<ChatCompletionMessageParam>('openai', msg => {
         } as ToolCall
       }),
     } as AssistantMessage
-  }
-  case 'user': {
-    // this should not be called at all
-    throw new Error('not implemented yet')
-  }
-  case 'tool': {
-    const content = msg.content ? Array.isArray(msg.content) ? msg.content : [{
-      type: 'text',
-      text: msg.content,
-    } as ChatCompletionContentPartText] : null
-    return {
-      role: 'tool',
-      tool_call_id: msg.tool_call_id,
-      content: content?.map(t => {
-        return { type: 'text', text: t.text } as TextContent
-      }),
-    } as ToolCallResultMessage
   }
   default: {
     // other roles don't need to call this converter
