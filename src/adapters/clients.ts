@@ -1,4 +1,5 @@
 import {
+  EmbeddingResult,
   Feature,
   HistoryMessage,
   ModelResponse,
@@ -8,7 +9,7 @@ import {
   UserMessage,
 } from '../types'
 import {
-  BaseClientOptions,
+  BaseClientOptions, ChaiteContext,
   DefaultLogger,
   ILogger,
   MultipleKeyStrategy,
@@ -52,6 +53,11 @@ export interface SendMessageOption {
   onChunk?(chunk: ModelResponseChunk): Promise<void>
 }
 
+export interface EmbeddingOption {
+  model: string
+  dimensions?: number
+}
+
 export type ClientType = 'openai' | 'gemini' | 'claude'
 
 export interface IClient {
@@ -65,7 +71,7 @@ export interface IClient {
   historyManager: HistoryManager
 
   sendMessage(message: UserMessage | undefined, options: SendMessageOption): Promise<ModelResponse>
-
+  getEmbedding(text: string | string[], options: EmbeddingOption): Promise<EmbeddingResult>
   logger: ILogger
 }
 
@@ -101,4 +107,9 @@ export class AbstractClass implements IClient {
   tools: Tool[]
   logger: ILogger
   historyManager: HistoryManager
+  context: ChaiteContext
+
+  getEmbedding(text: string | string[], options: EmbeddingOption): Promise<EmbeddingResult> {
+    throw new Error('Method not implemented.')
+  }
 }

@@ -6,3 +6,5 @@ export * from './utils'
 
 // 导出所有类
 export * from './adapters'
+
+export * from './rag'

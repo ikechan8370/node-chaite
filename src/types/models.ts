@@ -1,4 +1,4 @@
-export type Feature = 'chat' | 'visual' | 'tool'
+export type Feature = 'chat' | 'visual' | 'tool' | 'embedding'
 
 /**
  * other roles like developer or function should be handled by different implementations
@@ -120,4 +120,9 @@ export interface ModelResponseChunk {
     model?: string
     delta: MessageContent[]
     toolCall?: ToolCall[]
+}
+
+
+export interface EmbeddingResult {
+    embeddings: Array<number>[]
 }

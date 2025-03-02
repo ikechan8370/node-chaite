@@ -63,3 +63,24 @@ export interface Into<U> {
 export interface From<T> {
   from(value: T): this;
 }
+
+export interface RAGResult {
+  content: string;
+  score: number;
+}
+
+export interface Vectorizer {
+  /**
+   * 将文本转换为向量
+   * @param text 输入文本
+   * @returns 文本的向量表示
+   */
+  textToVector(text: string): Promise<number[]>;
+
+  /**
+   * 批量将文本转换为向量
+   * @param texts 输入文本数组
+   * @returns 文本向量数组
+   */
+  batchTextToVector(texts: string[]): Promise<number[][]>;
+}

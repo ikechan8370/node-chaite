@@ -10,9 +10,9 @@ import {
   FunctionCall,
   History,
   MessageContent,
-  ToolCallResult,
+  ToolCallResult, EmbeddingResult,
 } from '../../../types'
-import { AbstractClass, SendMessageOption } from '../../clients'
+import { AbstractClass, EmbeddingOption, SendMessageOption } from '../../clients'
 import { BaseClientOptions, ChaiteContext } from '../../../types/common'
 import OpenAI from 'openai'
 import { asyncLocalStorage, getKey } from '../../../utils'
@@ -31,11 +31,11 @@ export class OpenAIClient extends AbstractClass {
   constructor(options: OpenAIClientOptions) {
     super(options)
     this.name = 'openai'
+    this.context = new ChaiteContext(this.logger)
   }
 
   async sendMessage(message: UserMessage | undefined, options: SendMessageOption): Promise<ModelResponse> {
-    const store = new ChaiteContext(this.logger)
-    return asyncLocalStorage.run(store, async () => {
+    return asyncLocalStorage.run(this.context, async () => {
       const apiKey = await getKey(this.apiKey, this.multipleKeyStrategy)
       const client = new OpenAI({
         apiKey,
@@ -187,16 +187,6 @@ export class OpenAIClient extends AbstractClass {
               content: toolResult,
               type: 'tool',
             })
-            // const tcMsgId = crypto.randomUUID()
-            // const tcMsg = {
-            //   role: 'tool',
-            //   tool_call_id: r.id,
-            //   content: [{ type: 'text', text: toolResult } as TextContent],
-            //   id: tcMsgId,
-            //   parentId: options.parentMessageId,
-            // } as ToolCallResultMessage & History
-            // options.parentMessageId = tcMsgId
-            // await this.historyManager.saveHistory(tcMsg, options.conversationId)
           }
         }
         const tcMsgId = crypto.randomUUID()
@@ -223,6 +213,24 @@ export class OpenAIClient extends AbstractClass {
         } as ModelUsage,
       } as ModelResponse
 
+    })
+  }
+
+  async getEmbedding(text: string | string[], options: EmbeddingOption): Promise<EmbeddingResult> {
+    return asyncLocalStorage.run(this.context, async () => {
+      const apiKey = await getKey(this.apiKey, this.multipleKeyStrategy)
+      const client = new OpenAI({
+        apiKey,
+        baseURL: this.baseUrl,
+      })
+      const embeddings = await client.embeddings.create({
+        input: text,
+        dimensions: options.dimensions,
+        model: options.model,
+      })
+      return {
+        embeddings: embeddings.data.map(e => e.embedding),
+      } as EmbeddingResult
     })
   }
 }
