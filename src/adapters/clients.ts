@@ -41,11 +41,6 @@ export interface SendMessageOption {
   parentMessageId?: string
 
   /**
-   * 渠道ID，用于构建历史
-   */
-  channelId: string
-
-  /**
    * 流模式
    */
   stream?: boolean
@@ -54,7 +49,7 @@ export interface SendMessageOption {
    * 流模式的回调
    * @param chunk
    */
-  onChunk(chunk: ModelResponseChunk): Promise<void>
+  onChunk?(chunk: ModelResponseChunk): Promise<void>
 }
 
 export type ClientType = 'openai' | 'gemini' | 'claude'
@@ -67,28 +62,34 @@ export interface IClient {
   apiKey: string | string[]
   multipleKeyStrategy: MultipleKeyStrategy
 
-  getHistory(messageId: string, conversationId?: string, channelId?: string | number): Promise<HistoryMessage[]>
+  historyManager: HistoryManager
 
-  sendMessage(message: UserMessage | ToolCallResultMessage, options: SendMessageOption): Promise<ModelResponse>
+  sendMessage(message: UserMessage | undefined, options: SendMessageOption): Promise<ModelResponse>
 
   logger: ILogger
 }
 
+export interface HistoryManager {
+  name: string,
+  saveHistory(message: HistoryMessage, conversationId: string): Promise<void>
+  getHistory(messageId?: string, conversationId?: string): Promise<HistoryMessage[]>
+  deleteConversation(conversationId: string): Promise<void>
+  getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined>
+}
+
 export class AbstractClass implements IClient {
   constructor(options: BaseClientOptions) {
-    this.name = options.name
     this.features = options.features
     this.tools = options.tools
     this.baseUrl = options.baseUrl
     this.apiKey = options.apiKey
     this.multipleKeyStrategy = options.multipleKeyStrategy || MultipleKeyStrategyChoice.RANDOM
-    this.getHistory = options.getHistory
     this.logger = options.logger || DefaultLogger
+    this.historyManager = options.historyManager
   }
 
-  getHistory: (messageId?: string, conversationId?: string, channelId?: string | number) => Promise<HistoryMessage[]>
-  
-  sendMessage(_message: UserMessage | ToolCallResultMessage, _options: SendMessageOption): Promise<ModelResponse> {
+
+  sendMessage(_message: UserMessage | undefined, _options: SendMessageOption): Promise<ModelResponse> {
     throw new Error('Method not implemented.')
   }
 
@@ -99,4 +100,5 @@ export class AbstractClass implements IClient {
   name: ClientType
   tools: Tool[]
   logger: ILogger
+  historyManager: HistoryManager
 }

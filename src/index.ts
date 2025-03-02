@@ -5,4 +5,4 @@ export * from './types'
 export * from './utils'
 
 // 导出所有类
-export * from './clients'
+export * from './adapters'

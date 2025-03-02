@@ -1,3 +1,5 @@
+import { ArgumentValue } from './models'
+
 export interface Function {
     name: string
     description: string
@@ -18,5 +20,6 @@ export interface Property {
 export interface Tool {
     type: 'function'
     function: Function
+    run(args: Record<string, ArgumentValue | Record<string, ArgumentValue>>): Promise<string>
 }
 

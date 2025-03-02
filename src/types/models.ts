@@ -6,11 +6,11 @@ export type Feature = 'chat' | 'visual' | 'tool'
 export type Role = 'system' | 'user' | 'assistant' | 'tool'
 
 export interface MessageContent {
-    type: 'string' | 'image' | 'audio' | 'video'
+    type: 'text' | 'image' | 'audio' | 'video'
 }
 
 export interface TextContent extends MessageContent {
-    type: 'string'
+    type: 'text'
     /**
      * Content of text
      */
@@ -55,7 +55,7 @@ export interface ToolCall {
     function: FunctionCall
 }
 
-export type ArgumentValue = string | number | boolean
+export type ArgumentValue = string | number | boolean | ArgumentValue[]
 export type FunctionCall = {
     name: string
     /**
@@ -111,4 +111,5 @@ export interface ModelResponseChunk {
     id?: string
     model?: string
     delta: MessageContent[]
+    toolCall?: ToolCall[]
 }

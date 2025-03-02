@@ -1,6 +1,6 @@
-import {Feature, HistoryMessage, IMessage} from './models'
+import { Feature, HistoryMessage } from './models'
 import { Tool } from './tools'
-import {ClientType} from "../clients";
+import { ClientType, HistoryManager } from '../adapters'
 
 export const MultipleKeyStrategyChoice = {
   RANDOM: 'random' as MultipleKeyStrategy,
@@ -11,7 +11,6 @@ export const MultipleKeyStrategyChoice = {
 export type MultipleKeyStrategy = 'random' | 'round-robin' | 'conversation-hash'
 
 export interface BaseClientOptions {
-  name: ClientType
   features: Feature[]
   tools: Tool[]
 
@@ -21,8 +20,7 @@ export interface BaseClientOptions {
 
   proxy?: string
 
-  getHistory(messageId?: string, conversationId?: string, channelId?: string | number): Promise<HistoryMessage[]>
-
+  historyManager: HistoryManager
   logger?: ILogger
 }
 

@@ -1,5 +1,5 @@
-import { IMessage } from '../types'
-import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions/completions'
+import { IMessage, Tool } from '../types'
+import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/src/resources/chat/completions/completions'
 
 type IntoChaiteConverter<T> = (source: T) => IMessage;
 
@@ -39,5 +39,25 @@ export function registerFromChaiteConverter<T>(
 // 获取转换器
 export function getFromChaiteConverter(_clientType: 'openai'): FromChaiteConverter<ChatCompletionMessageParam> {
   return fromConverters.openai
+}
+
+
+type FromChaiteToolConverter<T> = (source: Tool) => T;
+
+class FromChaiteToolConverterEntry {
+  openai: FromChaiteToolConverter<ChatCompletionTool>
+}
+const fromToolConverters = new FromChaiteToolConverterEntry()
+
+export function registerFromChaiteToolConverter<T>(
+  _clientType: 'openai',
+  converter: FromChaiteToolConverter<T>,
+) {
+  fromToolConverters.openai = converter as unknown as FromChaiteToolConverter<ChatCompletionTool>
+}
+
+// 获取转换器
+export function getFromChaiteToolConverter(_clientType: 'openai'): FromChaiteToolConverter<ChatCompletionTool> {
+  return fromToolConverters.openai
 }
 

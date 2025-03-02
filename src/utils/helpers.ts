@@ -1,8 +1,8 @@
-import { ChaiteContext, DefaultLogger, MultipleKeyStrategy, MultipleKeyStrategyChoice } from '../types/common'
+import { ChaiteContext, ILogger, MultipleKeyStrategy, MultipleKeyStrategyChoice } from '../types/common'
 import { AsyncLocalStorage } from 'async_hooks'
 
 export async function getKey(apiKeys: string[] | string, strategy: MultipleKeyStrategy): Promise<string> {
-  const logger = asyncLocalStorage.getStore()?.logger || DefaultLogger
+  const logger = asyncLocalStorage.getStore()?.logger as ILogger
   const candidateApiKeys = Array.isArray(apiKeys) ? apiKeys : [ apiKeys ]
   const keyNum = apiKeys.length
   if (keyNum === 0) {

@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**']  // 忽略dist和node_modules目录下的所有文件
+    ignores: ['dist/**', 'node_modules/**', '**/*.test.ts']  // 忽略dist和node_modules目录下的所有文件
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
