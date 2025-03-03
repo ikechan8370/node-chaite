@@ -1,5 +1,5 @@
 import { Vectorizer } from '../../types/common'
-import { OpenAIClient } from '../../adapters/impl/openai/OpenAIClient'
+import { OpenAIClient } from '../../adapters'
 
 export class OpenAIVectorizer implements Vectorizer {
   constructor(private client: OpenAIClient, private model: string, private dimensions: number) {
@@ -18,5 +18,4 @@ export class OpenAIVectorizer implements Vectorizer {
     })
     return embeddingResult.embeddings
   }
-
 }
