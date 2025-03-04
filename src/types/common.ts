@@ -1,4 +1,4 @@
-import { Feature, HistoryMessage } from './models'
+import { Feature, HistoryMessage, PostProcessor, PreProcessor } from './models'
 import { Tool } from './tools'
 import { ClientType, HistoryManager } from '../adapters'
 
@@ -22,6 +22,9 @@ export interface BaseClientOptions {
 
   historyManager: HistoryManager
   logger?: ILogger
+
+  postProcessors?: PostProcessor[]
+  preProcessors?: PreProcessor[]
 }
 
 export interface ILogger {

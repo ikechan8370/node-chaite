@@ -29,6 +29,7 @@
   "devDependencies": {
     "@eslint/js": "^9.21.0",
     "@types/jest": "^29.5.14",
+    "@types/pdf-parse": "^1.1.4",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "eslint": "^9.21.0",
@@ -38,13 +39,16 @@
     "prettier": "^3.5.2",
     "ts-jest": "^29.2.6",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.25.0",
-    "@types/pdf-parse": "^1.1.4"
+    "typescript-eslint": "^8.25.0"
+  },
+  "peerDependencies": {
+    "axios": "^1.8.1"
   },
   "optionalDependencies": {
     "pdf-parse": "^1.1.1"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "@google/generative-ai": "^0.22.0",
     "mammoth": "^1.9.0",
     "openai": "^4.86.1"

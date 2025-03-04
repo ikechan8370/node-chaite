@@ -1,3 +1,8 @@
+// models.ts
+// 模型相关
+
+import * as test from 'node:test'
+
 export type Feature = 'chat' | 'visual' | 'tool' | 'embedding'
 
 /**
@@ -6,13 +11,21 @@ export type Feature = 'chat' | 'visual' | 'tool' | 'embedding'
 export type Role = 'system' | 'user' | 'assistant' | 'tool'
 
 export interface MessageContent {
-    type: 'text' | 'image' | 'audio' | 'video' | 'tool'
+    type: 'text' | 'image' | 'audio' | 'video' | 'tool' | 'reasoning'
 }
 
 export interface TextContent extends MessageContent {
     type: 'text'
     /**
      * Content of text
+     */
+    text: string
+}
+
+export interface ReasoningContent extends MessageContent {
+    type: 'reasoning'
+    /**
+     * thinking text
      */
     text: string
 }
@@ -83,6 +96,14 @@ export interface AssistantMessage extends IMessage {
     toolCalls?: ToolCall[]
 }
 
+export interface ReasoningPart {
+    reasoning_content?: string
+    reasoning?: string
+    thinking_content?: string
+    thinking?: string
+    think?: string
+}
+
 /**
  * 客户端执行工具调用的函数结果
  */
@@ -122,7 +143,16 @@ export interface ModelResponseChunk {
     toolCall?: ToolCall[]
 }
 
-
 export interface EmbeddingResult {
     embeddings: Array<number>[]
+}
+
+// ************** 处理器 **************
+
+export interface PreProcessor {
+    process(message: UserMessage): Promise<UserMessage>
+}
+
+export interface PostProcessor {
+    process(message: AssistantMessage): Promise<AssistantMessage>
 }

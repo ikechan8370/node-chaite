@@ -1,5 +1,6 @@
 // 将IMessage转换为OpenAI格式
 import {
+  OpenAICompatibleMessageParam,
   registerFromChaiteConverter,
   registerFromChaiteToolConverter,
   registerIntoChaiteConverter,
@@ -14,7 +15,15 @@ import {
   ChatCompletionToolMessageParam,
   ChatCompletionUserMessageParam,
 } from 'openai/src/resources/chat/completions/completions'
-import { AssistantMessage, IMessage, TextContent, ToolCall, ToolCallResultMessage, UserMessage } from '../../../types'
+import {
+  AssistantMessage,
+  IMessage, MessageContent, ReasoningContent,
+  ReasoningPart,
+  TextContent,
+  ToolCall,
+  ToolCallResultMessage,
+  UserMessage,
+} from '../../../types'
 import OpenAI from 'openai'
 import FunctionDefinition = OpenAI.FunctionDefinition;
 import { FunctionParameters } from 'openai/src/resources/shared'
@@ -79,19 +88,32 @@ registerFromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessagePa
   }
 })
 
+function getReasoningContent(reasoningPart: ReasoningPart) {
+  return reasoningPart.reasoning_content || reasoningPart.reasoning || reasoningPart.thinking_content || reasoningPart.thinking || reasoningPart.think
+}
+
 // 将OpenAI格式转为IMessage
-registerIntoChaiteConverter<ChatCompletionMessageParam>('openai', msg => {
+registerIntoChaiteConverter<OpenAICompatibleMessageParam>('openai', msg => {
   switch (msg.role) {
   case 'assistant': {
     const content = msg.content ? Array.isArray(msg.content) ? msg.content : [{
       type: 'text',
       text: msg.content,
     } as ChatCompletionContentPartText] : null
+    
+    const contents: MessageContent[] | undefined = content?.map(t => {
+      return { type: 'text', text: t.type === 'text' ? t.text : t.refusal } as TextContent
+    })
+    const reasoningContent = getReasoningContent(msg)
+    if (reasoningContent) {
+      contents?.push({
+        type: 'reasoning',
+        text: reasoningContent,
+      } as ReasoningContent)
+    }
     return {
       role: 'assistant',
-      content: content?.map(t => {
-        return { type: 'text', text: t.type === 'text' ? t.text : t.refusal } as TextContent
-      }),
+      content: contents,
       toolCalls: msg.tool_calls?.map(t => {
         return {
           id: t.id,

@@ -1,82 +1,102 @@
-import { AssistantMessage, IMessage, Tool } from '../types'
+import { AssistantMessage, IMessage, ReasoningPart, Tool } from '../types'
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/src/resources/chat/completions/completions'
 import { Content, GenerateContentResult } from '@google/generative-ai'
 import { Tool as GeminiTool } from '@google/generative-ai'
+import { ClientType } from '../adapters'
+import { MessageParam, ToolUnion } from '@anthropic-ai/sdk/src/resources/messages/messages'
 type IntoChaiteConverter<T> = (source: T) => AssistantMessage;
 
 class IntoChaiteConverterEntry {
-  openai: IntoChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]>
+  openai: IntoChaiteConverter<ChatCompletionMessageParam & ReasoningPart>
   gemini: IntoChaiteConverter<GenerateContentResult>
+  claude: IntoChaiteConverter<MessageParam>
 }
 const converters = new IntoChaiteConverterEntry()
 
 export function registerIntoChaiteConverter<T>(
-  _clientType: 'openai' | 'gemini',
+  _clientType: ClientType,
   converter: IntoChaiteConverter<T>,
 ) {
   switch (_clientType) {
   case 'openai': {
-    converters.openai = converter as unknown as IntoChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]>
+    converters.openai = converter as unknown as IntoChaiteConverter<OpenAICompatibleMessageParam>
     break
   }
   case 'gemini': {
     converters.gemini = converter as unknown as IntoChaiteConverter<GenerateContentResult>
     break
   }
-  default: {
-    throw new Error('unsupported adapter type')
+  case 'claude': {
+    converters.claude = converter as unknown as IntoChaiteConverter<MessageParam>
   }
   }
   
 }
 
-export function getIntoChaiteConverter(_clientType: 'openai'): IntoChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]>;
+export function getIntoChaiteConverter(_clientType: 'openai'): IntoChaiteConverter<OpenAICompatibleMessageParam>;
 export function getIntoChaiteConverter(_clientType: 'gemini'): IntoChaiteConverter<GenerateContentResult>;
-export function getIntoChaiteConverter(_clientType: 'openai' | 'gemini'): IntoChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]> | IntoChaiteConverter<GenerateContentResult> {
-  if (_clientType === 'openai') {
+
+export function getIntoChaiteConverter(_clientType: 'claude'): IntoChaiteConverter<MessageParam>;
+export function getIntoChaiteConverter(_clientType: ClientType): IntoChaiteConverter<OpenAICompatibleMessageParam> | IntoChaiteConverter<GenerateContentResult> | IntoChaiteConverter<MessageParam> {
+  switch (_clientType) {
+  case 'openai': {
     return converters.openai
-  } else {
+  }
+  case 'gemini': {
     return converters.gemini
+  }
+  case 'claude': {
+    return converters.claude
+  }
   }
 }
 
 
 
 type FromChaiteConverter<T> = (source: IMessage) => T;
-
+export type OpenAICompatibleMessageParam = ChatCompletionMessageParam & ReasoningPart
 class FromChaiteConverterEntry {
-  openai: FromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]>
+  openai: FromChaiteConverter<OpenAICompatibleMessageParam | OpenAICompatibleMessageParam[]>
   gemini: FromChaiteConverter<Content>
+  claude: FromChaiteConverter<MessageParam>
 }
 const fromConverters = new FromChaiteConverterEntry()
 
 export function registerFromChaiteConverter<T>(
-  _clientType: 'openai' | 'gemini',
+  _clientType: ClientType,
   converter: FromChaiteConverter<T>,
 ) {
   switch (_clientType) {
   case 'openai': {
-    fromConverters.openai = converter as unknown as FromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]>
+    fromConverters.openai = converter as unknown as FromChaiteConverter<OpenAICompatibleMessageParam | OpenAICompatibleMessageParam[]>
     break
   }
   case 'gemini': {
     fromConverters.gemini = converter as unknown as FromChaiteConverter<Content>
     break
   }
-  default: {
-    throw new Error('unsupported adapter type')
+  case 'claude': {
+    fromConverters.claude = converter as unknown as FromChaiteConverter<MessageParam>
   }
   }
 }
 
 
-export function getFromChaiteConverter(_clientType: 'openai'): FromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]>;
+export function getFromChaiteConverter(_clientType: 'openai'): FromChaiteConverter<OpenAICompatibleMessageParam | OpenAICompatibleMessageParam[]>;
 export function getFromChaiteConverter(_clientType: 'gemini'): FromChaiteConverter<Content>;
-export function getFromChaiteConverter(_clientType: 'openai' | 'gemini'): FromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]> | FromChaiteConverter<Content> {
-  if (_clientType === 'openai') {
+
+export function getFromChaiteConverter(_clientType: 'claude'): FromChaiteConverter<MessageParam>;
+export function getFromChaiteConverter(_clientType: ClientType): FromChaiteConverter<OpenAICompatibleMessageParam | OpenAICompatibleMessageParam[]> | FromChaiteConverter<Content> | FromChaiteConverter<MessageParam> {
+  switch (_clientType) {
+  case 'openai': {
     return fromConverters.openai
-  } else {
+  }
+  case 'gemini': {
     return fromConverters.gemini
+  }
+  case 'claude': {
+    return fromConverters.claude
+  }
   }
 }
 
@@ -86,11 +106,12 @@ type FromChaiteToolConverter<T> = (source: Tool) => T;
 class FromChaiteToolConverterEntry {
   openai: FromChaiteToolConverter<ChatCompletionTool>
   gemini: FromChaiteToolConverter<GeminiTool>
+  claude: FromChaiteToolConverter<ToolUnion>
 }
 const fromToolConverters = new FromChaiteToolConverterEntry()
 
 export function registerFromChaiteToolConverter<T>(
-  _clientType: 'openai' | 'gemini',
+  _clientType: ClientType,
   converter: FromChaiteToolConverter<T>,
 ) {
   switch (_clientType) {
@@ -102,8 +123,8 @@ export function registerFromChaiteToolConverter<T>(
     fromToolConverters.gemini = converter as unknown as FromChaiteToolConverter<GeminiTool>
     break
   }
-  default: {
-    throw new Error('unsupported adapter type')
+  case 'claude': {
+    fromToolConverters.claude = converter as unknown as FromChaiteToolConverter<ToolUnion>
   }
   }
   
@@ -112,11 +133,18 @@ export function registerFromChaiteToolConverter<T>(
 
 export function getFromChaiteToolConverter(_clientType: 'openai'): FromChaiteToolConverter<ChatCompletionTool>;
 export function getFromChaiteToolConverter(_clientType: 'gemini'): FromChaiteToolConverter<GeminiTool>;
-export function getFromChaiteToolConverter(_clientType: 'openai' | 'gemini'): FromChaiteToolConverter<ChatCompletionTool> | FromChaiteToolConverter<GeminiTool> {
-  if (_clientType === 'openai') {
+export function getFromChaiteToolConverter(_clientType: 'claude'): FromChaiteToolConverter<ToolUnion>;
+export function getFromChaiteToolConverter(_clientType: ClientType): FromChaiteToolConverter<ChatCompletionTool> | FromChaiteToolConverter<GeminiTool> | FromChaiteToolConverter<ToolUnion> {
+  switch (_clientType) {
+  case 'openai': {
     return fromToolConverters.openai
-  } else {
+  }
+  case 'gemini': {
     return fromToolConverters.gemini
+  }
+  case 'claude': {
+    return fromToolConverters.claude
+  }
   }
 }
 

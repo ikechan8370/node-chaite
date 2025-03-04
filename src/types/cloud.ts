@@ -1,11 +1,17 @@
 import { Serializable } from './tools'
 
+export interface CloudAPIResponse<T> {
+  code: number
+  data?: T
+  msg: string
+}
+
 export interface CloudSharingService<T> {
-  authenticate(apiKey: string): Promise<User>,
-  upload(model: Serializable): Promise<T & { id: string }>; // 返回共享ID
-  download(shareId: string): Promise<T>;
-  initializeTransfer(model: Serializable): Promise<string>;
-  list(filter: Filter, query: string, searchOption: SearchOption): Promise<Array<T & { id: string }>>;
+  authenticate(apiKey: string): Promise<User | null>,
+  upload(model: Serializable): Promise<T & { id: string } | null>; // 返回共享ID
+  download(shareId: string): Promise<T | null>;
+  initializeTransfer(model: Serializable): Promise<string | null>;
+  list(filter: Filter, query: string, searchOption: SearchOption): Promise<Array<T & { id: string }> | null>;
 }
 
 type FilterValue = string | number | boolean | FilterValue[];

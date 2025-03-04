@@ -1,32 +1,61 @@
-import { Serializable } from '../types'
-import { CloudSharingService, Filter, SearchOption, User } from '../types/cloud'
+import { CloudAPIResponse, CloudSharingService, Filter, SearchOption, User } from '../types/cloud'
 import { SerializedTool } from './tool'
+import { createHttpClient, HttpClient } from '../utils'
+import { CloudAPI } from '../const/cloud_api'
 
-// todo
 export class DefaultToolCloudService implements CloudSharingService<SerializedTool> {
 
-  constructor(private cloudApiBaseUrl: string, private identifier: string, private user: User) {
+  client: HttpClient
 
+  constructor(private cloudApiBaseUrl: string, public identifier: string, public user: User) {
+    this.client = createHttpClient({
+      baseURL: this.cloudApiBaseUrl,
+    })
   }
 
-  authenticate(apiKey: string): Promise<User> {
-    throw new Error('Method not implemented.')
+  async authenticate(apiKey: string): Promise<User | null> {
+    const response = await this.client.post<CloudAPIResponse<User>, unknown>(CloudAPI.USER, {
+      apiKey,
+    })
+    const user = response.data?.data
+    if (user) {
+      this.user = user
+      this.identifier = user.user_id + ''
+    }
+    return user || null
   }
 
-  list(filter: Filter, query: string, searchOption: SearchOption): Promise<(SerializedTool & { id: string })[]> {
-    throw new Error('Method not implemented.')
+  async list(filter: Filter, query: string, searchOption: SearchOption): Promise<(SerializedTool)[] | null> {
+    const response = await this.client.post<CloudAPIResponse<SerializedTool[]>, unknown>(CloudAPI.LIST_TOOLS, {
+      filter,
+      query,
+      searchOption,
+    })
+    return response.data?.data || null
   }
 
-  upload(model: Serializable): Promise<SerializedTool> {
-    throw new Error('Method not implemented.')
+  async upload(model: SerializedTool): Promise<SerializedTool | null> {
+    const response = await this.client.post<CloudAPIResponse<SerializedTool>, SerializedTool>(CloudAPI.ADD_TOOL, model)
+    return response.data?.data || null
   }
 
-  download(shareId: string): Promise<SerializedTool> {
-    throw new Error('Method not implemented.')
+  async download(shareId: string): Promise<SerializedTool | null> {
+    const response = await this.client.get<CloudAPIResponse<SerializedTool>>(CloudAPI.GET_TOOL, {
+      params: {
+        shareId,
+      },
+    })
+    return response.data?.data || null
   }
 
-  initializeTransfer(model: Serializable): Promise<string> {
-    throw new Error('Method not implemented.')
+  async initializeTransfer(model: SerializedTool): Promise<string | null> {
+    const response = await this.client.post<CloudAPIResponse<string>, unknown>(CloudAPI.TEMP_SHARE_TOOL, {
+      time: 5 * 60,
+      limit: 1,
+      permission: 'any',
+      content: model,
+    })
+    return response.data?.data || null
   }
   
 }

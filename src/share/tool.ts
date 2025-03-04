@@ -182,19 +182,19 @@ export class ToolManager {
 
   // Cloud sharing methods
 
-  public async shareToolToCloud(name: string): Promise<string> {
+  public async shareToolToCloud(name: string): Promise<string | undefined> {
     const serialized = await this.serializeTool(name)
     if (!serialized) throw new Error('Tool not found')
     const tool = await this.cloudService.upload(serialized)
-    return tool.id
+    return tool?.id
   }
 
-  public async getToolFromCloud(shareId: string): Promise<Tool> {
+  public async getToolFromCloud(shareId: string): Promise<Tool | null> {
     const serialized = await this.cloudService.download(shareId)
-    return this.deserializeTool(serialized)
+    return serialized ? this.deserializeTool(serialized) : null
   }
 
-  public async shareToolP2P(name: string): Promise<string> {
+  public async shareToolP2P(name: string): Promise<string | null> {
     const serialized = await this.serializeTool(name)
     if (!serialized) throw new Error('Tool not found')
     return this.cloudService.initializeTransfer(serialized)
