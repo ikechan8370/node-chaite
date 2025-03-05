@@ -108,19 +108,33 @@ export class ChatPreset implements Serializable, DeSerializable<ChatPreset> {
   sendMessageOption: SendMessageOption
 
   toString(): string {
-    const json: Record<string, unknown> = {}
-    for (const key in Object.getOwnPropertyNames(this)) {
-      if (key === 'sendMessageOption' && this.sendMessageOption) {
-        json[key] = this.sendMessageOption.toString()
-      } else {
-        json[key] = (this as Record<string, unknown>)[key]
-      }
-    }
-    return JSON.stringify(this)
+    return JSON.stringify({
+      prefix: this.prefix,
+      channelId: this.channelId,
+      name: this.name,
+      local: this.local,
+      namespace: this.namespace,
+      description: this.description,
+      sendMessageOption: this.sendMessageOption?.toString(), // 嵌套序列化
+    })
   }
 
   fromString(str: string): ChatPreset {
-    return JSON.parse(str) as ChatPreset
+    const raw = JSON.parse(str)
+    const preset = new ChatPreset()
+
+    preset.prefix = raw.prefix
+    preset.channelId = raw.channelId
+    preset.name = raw.name
+    preset.local = raw.local
+    preset.namespace = raw.namespace
+    preset.description = raw.description
+
+    if (raw.sendMessageOption) {
+      preset.sendMessageOption = new SendMessageOption().fromString(raw.sendMessageOption)
+    }
+
+    return preset
   }
 }
 

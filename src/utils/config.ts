@@ -1,5 +1,6 @@
 import { ILogger } from '../types/common'
 import { ChannelsLoadBalancer, ChannelsStorage, ChatPresetsStorage, ToolSettingsStorage } from '../types'
+// import { ChatPresetManager } from '../channels/preset'
 // import { ChannelsManager } from "../channels";
 // import { ToolManager } from '../share'
 
@@ -44,6 +45,6 @@ export class GlobalConfig {
    *********************************************/
   // 对话配置存储器
   chatPresetStorage?: ChatPresetsStorage
-
-
+  // 对话配置管理器。单例，不放入Config
+  // chatPresetManager?: ChatPresetManager
 }
