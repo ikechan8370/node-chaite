@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/ikechan8370/node-chaite/compare/v1.0.0...v1.0.1) (2025-03-05)
+
+
+### Bug Fixes
+
+* import type of libs from their root ([de78a12](https://github.com/ikechan8370/node-chaite/commit/de78a12c0cf82e37ede5d5495790c1b5fb0e205b))
+
 ## 1.0.0 (2025-03-05)
 
 
