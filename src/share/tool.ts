@@ -2,17 +2,21 @@ import fs from 'fs'
 import { promises as fsPromises } from 'fs'
 import path from 'path'
 import { DeSerializable, ToolSettings, ToolSettingsStorage, Serializable, Tool } from '../types'
-import { CloudSharingService, User } from '../types/cloud'
+import { CloudSharingService, User } from '../types'
 
 export class ToolManager {
   private static instance: ToolManager
   private watcher: fs.FSWatcher | null = null
   private toolMap: Map<string, string> = new Map()
 
-  private constructor(private toolsDirectory: string, public storage: ToolSettingsStorage, private cloudService: CloudSharingService<SerializedTool>) {
+  private constructor(private toolsDirectory: string, public storage: ToolSettingsStorage, private cloudService?: CloudSharingService<SerializedTool>) {
   }
 
-  public static async getInstance(toolsDirectory: string, storage: ToolSettingsStorage, cloudService: CloudSharingService<SerializedTool>): Promise<ToolManager> {
+  public setCloudService (cloudService: CloudSharingService<SerializedTool>) {
+    this.cloudService = cloudService
+  }
+
+  public static async getInstance(toolsDirectory: string, storage: ToolSettingsStorage, cloudService?: CloudSharingService<SerializedTool>): Promise<ToolManager> {
     if (!ToolManager.instance) {
       ToolManager.instance = new ToolManager(toolsDirectory, storage, cloudService)
       await ToolManager.instance.initialize()
@@ -180,22 +184,31 @@ export class ToolManager {
 
   // Cloud sharing methods
 
+  private checkCloudService(): CloudSharingService<SerializedTool> {
+    if (!this.cloudService) {
+      throw new Error('Cloud service is not initialized')
+    }
+    return this.cloudService as CloudSharingService<SerializedTool>
+  }
   public async shareToolToCloud(name: string): Promise<string | undefined> {
+    const service = this.checkCloudService()
     const serialized = await this.serializeTool(name)
     if (!serialized) throw new Error('Tool not found')
-    const tool = await this.cloudService.upload(serialized)
+    const tool = await service.upload(serialized)
     return tool?.id
   }
 
   public async getToolFromCloud(shareId: string): Promise<Tool | null> {
-    const serialized = await this.cloudService.download(shareId)
+    const service = this.checkCloudService()
+    const serialized = await service.download(shareId)
     return serialized ? this.deserializeTool(serialized) : null
   }
 
   public async shareToolP2P(name: string): Promise<string | null> {
+    const service = this.checkCloudService()
     const serialized = await this.serializeTool(name)
     if (!serialized) throw new Error('Tool not found')
-    return this.cloudService.initializeTransfer(serialized)
+    return service.initializeTransfer(serialized)
   }
 
   public async dispose(): Promise<void> {
