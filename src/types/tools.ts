@@ -37,12 +37,7 @@ export abstract class CustomTool {
 
 // **************** 管理部分 *******************8
 
-export interface ToolMetadata {
-  name: string;
-  filename: string;
-}
-
-export interface Preset {
+export interface ToolSettings {
   name: string;
   tools: string[]; // 工具名称列表
 }
@@ -50,11 +45,11 @@ export interface Preset {
 /**
  * 抽象的预设管理接口，不同框架去实际实现
  */
-export interface PresetStorage {
-  savePreset(preset: Preset): Promise<void>;
-  getPreset(name: string): Promise<Preset | null>;
-  deletePreset(name: string): Promise<void>;
-  getAllPresets(): Promise<Preset[]>;
+export interface ToolSettingsStorage {
+  saveToolSettings(preset: ToolSettings): Promise<void>;
+  getToolSettings(name: string): Promise<ToolSettings | null>;
+  deleteToolSettings(name: string): Promise<void>;
+  getAllToolSettings(): Promise<ToolSettings[]>;
 }
 
 export interface Serializable {
@@ -63,6 +58,10 @@ export interface Serializable {
 
 export interface DeSerializable<T> {
   fromString(str: string): T;
+}
+
+export interface Wait {
+  ready(): Promise<void>
 }
 
 

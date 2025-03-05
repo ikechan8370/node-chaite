@@ -1,5 +1,5 @@
 import { BaseClientOptions } from '../../../types/common'
-import { AbstractClass, SendMessageOption } from '../../clients'
+import { AbstractClass } from '../../clients'
 import {
   EmbeddingResult,
   HistoryMessage,
@@ -10,11 +10,12 @@ import {
   FunctionCallingConfig, FunctionCallingMode,
   GenerateContentRequest,
   GoogleGenerativeAI,
-  ToolConfig
+  ToolConfig,
 } from '@google/generative-ai'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
 import './converter'
 import { asyncLocalStorage, getKey } from '../../../utils'
+import { SendMessageOption } from '../../../types'
 
 export type GeminiClientOptions = BaseClientOptions
 export class GeminiClient extends AbstractClass {

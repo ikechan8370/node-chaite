@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { promises as fsPromises } from 'fs'
 import path from 'path'
-import { DeSerializable, Preset, PresetStorage, Serializable, Tool } from '../types'
+import { DeSerializable, ToolSettings, ToolSettingsStorage, Serializable, Tool } from '../types'
 import { CloudSharingService, User } from '../types/cloud'
 
 export class ToolManager {
@@ -9,10 +9,10 @@ export class ToolManager {
   private watcher: fs.FSWatcher | null = null
   private toolMap: Map<string, string> = new Map()
 
-  private constructor(private toolsDirectory: string, private storage: PresetStorage, private cloudService: CloudSharingService<SerializedTool>) {
+  private constructor(private toolsDirectory: string, public storage: ToolSettingsStorage, private cloudService: CloudSharingService<SerializedTool>) {
   }
 
-  public static async getInstance(toolsDirectory: string, storage: PresetStorage, cloudService: CloudSharingService<SerializedTool>): Promise<ToolManager> {
+  public static async getInstance(toolsDirectory: string, storage: ToolSettingsStorage, cloudService: CloudSharingService<SerializedTool>): Promise<ToolManager> {
     if (!ToolManager.instance) {
       ToolManager.instance = new ToolManager(toolsDirectory, storage, cloudService)
       await ToolManager.instance.initialize()
@@ -26,8 +26,6 @@ export class ToolManager {
 
     // 设置文件监听
     this.setupFileWatcher()
-
-    console.log(`Tool Manager initialized with ${this.toolMap.size} tools`)
   }
 
   private setupFileWatcher(): void {
@@ -132,25 +130,25 @@ export class ToolManager {
   }
 
   public async createPreset(name: string, toolNames: string[]): Promise<void> {
-    const preset: Preset = { name, tools: toolNames }
-    await this.storage.savePreset(preset)
+    const preset: ToolSettings = { name, tools: toolNames }
+    await this.storage.saveToolSettings(preset)
   }
 
   public async updatePreset(name: string, toolNames: string[]): Promise<void> {
-    const preset: Preset = { name, tools: toolNames }
-    await this.storage.savePreset(preset)
+    const preset: ToolSettings = { name, tools: toolNames }
+    await this.storage.saveToolSettings(preset)
   }
 
   public async deletePreset(name: string): Promise<void> {
-    await this.storage.deletePreset(name)
+    await this.storage.deleteToolSettings(name)
   }
 
-  public async getPresets(): Promise<Preset[]> {
-    return this.storage.getAllPresets()
+  public async getPresets(): Promise<ToolSettings[]> {
+    return this.storage.getAllToolSettings()
   }
 
   public async getPresetTools(presetName: string): Promise<string[]> {
-    const preset = await this.storage.getPreset(presetName)
+    const preset = await this.storage.getToolSettings(presetName)
     if (preset) {
       const allTools = await this.listTools()
       return preset.tools.filter(toolName => allTools.includes(toolName))

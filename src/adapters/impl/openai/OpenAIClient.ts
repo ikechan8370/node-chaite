@@ -7,7 +7,7 @@ import {
   TextContent,
   ToolCall,
 } from '../../../types'
-import { AbstractClass, EmbeddingOption, SendMessageOption } from '../../clients'
+import { AbstractClass } from '../../clients'
 import { BaseClientOptions, ChaiteContext } from '../../../types/common'
 import OpenAI from 'openai'
 import { asyncLocalStorage, getKey } from '../../../utils'
@@ -17,6 +17,7 @@ import {
 } from 'openai/src/resources/chat/completions/completions'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
 import './converter'
+import { EmbeddingOption, SendMessageOption } from '../../../types'
 
 export type OpenAIClientOptions = BaseClientOptions
 

@@ -1,8 +1,7 @@
-import { AssistantMessage, IMessage, ReasoningPart, Tool } from '../types'
+import { AssistantMessage, ClientType, IMessage, ReasoningPart, Tool } from '../types'
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/src/resources/chat/completions/completions'
 import { Content, GenerateContentResult } from '@google/generative-ai'
 import { Tool as GeminiTool } from '@google/generative-ai'
-import { ClientType } from '../adapters'
 import { MessageParam, ToolUnion } from '@anthropic-ai/sdk/src/resources/messages/messages'
 type IntoChaiteConverter<T> = (source: T) => AssistantMessage;
 

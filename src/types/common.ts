@@ -1,6 +1,10 @@
-import { Feature, HistoryMessage, PostProcessor, PreProcessor } from './models'
-import { Tool } from './tools'
-import { ClientType, HistoryManager } from '../adapters'
+import { Feature } from './models'
+import { DeSerializable, Serializable, Tool, Wait } from './tools'
+import { HistoryManager } from './adapter'
+import { PostProcessor, PreProcessor } from './processors'
+import { getProcessorDTOFromId, saveAndLoadModule } from '../utils'
+import { GlobalConfig } from '../utils'
+import path from 'path'
 
 export const MultipleKeyStrategyChoice = {
   RANDOM: 'random' as MultipleKeyStrategy,
@@ -10,7 +14,7 @@ export const MultipleKeyStrategyChoice = {
 
 export type MultipleKeyStrategy = 'random' | 'round-robin' | 'conversation-hash'
 
-export interface BaseClientOptions {
+export class BaseClientOptions implements Serializable, DeSerializable<BaseClientOptions>, Wait {
   features: Feature[]
   tools: Tool[]
 
@@ -23,8 +27,85 @@ export interface BaseClientOptions {
   historyManager: HistoryManager
   logger?: ILogger
 
-  postProcessors?: PostProcessor[]
-  preProcessors?: PreProcessor[]
+  postProcessorIds?: string[]
+  private postProcessors?: PostProcessor[]
+
+  preProcessorIds?: string[]
+  private preProcessors?: PreProcessor[]
+
+  constructor(options?: BaseClientOptions) {
+    if (options) {
+      this.features = options.features
+      this.tools = options.tools
+      this.baseUrl = options.baseUrl
+      this.apiKey = options.apiKey
+      this.multipleKeyStrategy = options.multipleKeyStrategy
+      this.proxy = options.proxy
+      this.preProcessorIds = options.preProcessorIds
+      this.postProcessorIds = options.postProcessorIds
+      if (!options.historyManager) {
+        throw new Error('historyManager is required')
+      }
+      this.historyManager = options.historyManager
+      this.logger = options.logger
+      this.init()
+    }
+  }
+
+  private initPromise: Promise<void>
+
+  async ready() {
+    return this.initPromise
+  }
+
+  public setHistoryManager(historyManager: HistoryManager) {
+    this.historyManager = historyManager
+  }
+
+  public setLogger(logger: ILogger) {
+    this.logger = logger
+  }
+
+  async init() {
+    this.initPromise = (async (): Promise<void> => {
+      this.postProcessors = (await Promise.all(this.postProcessorIds?.map(async id => {
+        const dto = await getProcessorDTOFromId(id)
+        if (!dto) { return null }
+        const code = dto.code
+        const config = GlobalConfig.getInstance()
+        return await saveAndLoadModule(code, path.resolve(config.processorsDirPath, 'post'), dto.name, PostProcessor)
+      }) || [])).filter(s => !!s)
+
+      this.preProcessors = (await Promise.all(this.preProcessorIds?.map(async id => {
+        const dto = await getProcessorDTOFromId(id)
+        if (!dto) { return null }
+        const code = dto.code
+        const config = GlobalConfig.getInstance()
+        return await saveAndLoadModule(code, path.resolve(config.processorsDirPath, 'pre'), dto.name, PreProcessor)
+      }) || [])).filter(s => !!s)
+    })()
+  }
+  
+  toString(): string {
+    const json = {
+      features: this.features,
+      tools: this.tools,
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      multipleKeyStrategy: this.multipleKeyStrategy,
+      proxy: this.proxy,
+      // historyManager: this.historyManager,
+      // logger: this.logger,
+      postProcessors: this.postProcessors?.map(p => p.id),
+      preProcessors: this.preProcessors?.map(p => p.id),
+    }
+    return JSON.stringify(json)
+  }
+  
+  fromString(str: string): BaseClientOptions {
+    const json = JSON.parse(str)
+    return new BaseClientOptions(json)
+  }
 }
 
 export interface ILogger {
