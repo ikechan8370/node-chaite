@@ -10,6 +10,29 @@ import { ILogger, MultipleKeyStrategy } from './common'
 import { PostProcessor, PreProcessor } from './processors'
 
 export class SendMessageOption implements Serializable, DeSerializable<SendMessageOption> {
+  constructor(option: Partial<SendMessageOption>) {
+    this.model = option.model
+    this.temperature = option.temperature
+    this.maxToken = option.maxToken
+    this.systemOverride = option.systemOverride
+    this.disableHistoryRead = option.disableHistoryRead
+    this.disableHistorySave = option.disableHistorySave
+    this.conversationId = option.conversationId
+    this.parentMessageId = option.parentMessageId
+    this.stream = option.stream
+    this.enableReasoning = option.enableReasoning
+    this.reasoningEffort = option.reasoningEffort
+    this.reasoningBudgetTokens = option.reasoningBudgetTokens
+    this.toolChoice = option.toolChoice
+    this.onChunk = option.onChunk
+  }
+
+  static create(options?: SendMessageOption | Partial<SendMessageOption>): SendMessageOption {
+    return options instanceof SendMessageOption
+      ? options
+      : new SendMessageOption(options || {})
+  }
+  
   model?: string
   temperature?: number
   maxToken?: number
@@ -98,7 +121,7 @@ export interface IClient {
   historyManager: HistoryManager
   postProcessors?: PostProcessor[]
   preProcessors?: PreProcessor[]
-  sendMessage(message: UserMessage | undefined, options?: SendMessageOption): Promise<ModelResponse>
+  sendMessage(message: UserMessage | undefined, options?: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse>
   getEmbedding(text: string | string[], options: EmbeddingOption): Promise<EmbeddingResult>
   logger: ILogger
 }

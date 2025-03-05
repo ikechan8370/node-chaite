@@ -1,6 +1,7 @@
 import { BaseClientOptions } from '../../../types/common'
 import { AbstractClass } from '../../clients'
 import {
+  EmbeddingOption,
   EmbeddingResult,
   HistoryMessage,
   ModelUsage,
@@ -19,12 +20,12 @@ import { SendMessageOption } from '../../../types'
 
 export type GeminiClientOptions = BaseClientOptions
 export class GeminiClient extends AbstractClass {
-  constructor(options: GeminiClientOptions) {
+  constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>) {
     super(options)
     this.name = 'gemini'
   }
 
-  async _sendMessage(histories: HistoryMessage[], apiKey: string, options: SendMessageOption = {}): Promise<HistoryMessage & { usage: ModelUsage }> {
+  async _sendMessage(histories: HistoryMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
     const messages: Content[] = []
     const model = options.model || 'gemini-2.0-flash-001'
     const converter = getFromChaiteConverter('gemini')
@@ -84,7 +85,7 @@ export class GeminiClient extends AbstractClass {
     }
   }
 
-  async getEmbedding(text: string | string[], options: SendMessageOption): Promise<EmbeddingResult> {
+  async getEmbedding(text: string | string[], options: EmbeddingOption): Promise<EmbeddingResult> {
     return asyncLocalStorage.run(this.context, async () => {
       const apiKey = await getKey(this.apiKey, this.multipleKeyStrategy)
       const model = options.model || 'text-embedding-004'

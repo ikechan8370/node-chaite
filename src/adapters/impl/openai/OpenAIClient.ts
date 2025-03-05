@@ -11,10 +11,6 @@ import { AbstractClass } from '../../clients'
 import { BaseClientOptions, ChaiteContext } from '../../../types/common'
 import OpenAI from 'openai'
 import { asyncLocalStorage, getKey } from '../../../utils'
-import {
-  ChatCompletionMessageParam,
-  ChatCompletionToolChoiceOption,
-} from 'openai/src/resources/chat/completions/completions'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
 import './converter'
 import { EmbeddingOption, SendMessageOption } from '../../../types'
@@ -23,18 +19,18 @@ export type OpenAIClientOptions = BaseClientOptions
 
 export class OpenAIClient extends AbstractClass {
 
-  constructor(options: OpenAIClientOptions) {
+  constructor(options: OpenAIClientOptions  | Partial<OpenAIClientOptions>) {
     super(options)
     this.name = 'openai'
     this.context = new ChaiteContext(this.logger)
   }
 
-  async _sendMessage(histories: HistoryMessage[], apiKey: string, options: SendMessageOption = {}): Promise<HistoryMessage & { usage: ModelUsage }> {
+  async _sendMessage(histories: HistoryMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
     const client = new OpenAI({
       apiKey,
       baseURL: this.baseUrl,
     })
-    const messages: ChatCompletionMessageParam[] = []
+    const messages: OpenAI.ChatCompletionMessageParam[] = []
     const model = options.model || 'gpt-4o-mini'
     const isThinkingModel = model.includes('o1') || model.includes('o3')
     if (options.systemOverride) {
@@ -54,7 +50,7 @@ export class OpenAIClient extends AbstractClass {
     }
     let chatCompletion
     const toolConvert = getFromChaiteToolConverter('openai')
-    let toolChoice: ChatCompletionToolChoiceOption = 'auto'
+    let toolChoice: OpenAI.ChatCompletionToolChoiceOption = 'auto'
     if (options.toolChoice?.type) {
       switch (options.toolChoice.type) {
       case 'auto': {

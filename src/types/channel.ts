@@ -131,7 +131,7 @@ export class ChatPreset implements Serializable, DeSerializable<ChatPreset> {
     preset.description = raw.description
 
     if (raw.sendMessageOption) {
-      preset.sendMessageOption = new SendMessageOption().fromString(raw.sendMessageOption)
+      preset.sendMessageOption = SendMessageOption.create().fromString(raw.sendMessageOption)
     }
 
     return preset

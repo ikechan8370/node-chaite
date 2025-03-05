@@ -1,10 +1,5 @@
 // models.ts
 // 模型相关
-
-import * as test from 'node:test'
-import { User } from './cloud'
-import { DeSerializable, Serializable } from './tools'
-
 export type Feature = 'chat' | 'visual' | 'tool' | 'embedding'
 
 /**

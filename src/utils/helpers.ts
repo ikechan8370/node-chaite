@@ -6,7 +6,7 @@ import {
   MultipleKeyStrategyChoice,
 } from '../types/common'
 import { AsyncLocalStorage } from 'async_hooks'
-import { Processor, ProcessorDTO, ProcessorStorage } from '../types/processors'
+import { ProcessorDTO, ProcessorStorage } from '../types'
 import fs from 'fs/promises'
 import path from 'path'
 

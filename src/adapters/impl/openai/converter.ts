@@ -6,16 +6,6 @@ import {
   registerIntoChaiteConverter,
 } from '../../../utils/converter'
 import {
-  ChatCompletionAssistantMessageParam,
-  ChatCompletionContentPartImage,
-  ChatCompletionContentPartInputAudio,
-  ChatCompletionContentPartText,
-  ChatCompletionMessageParam,
-  ChatCompletionMessageToolCall, ChatCompletionTool,
-  ChatCompletionToolMessageParam,
-  ChatCompletionUserMessageParam,
-} from 'openai/src/resources/chat/completions/completions'
-import {
   AssistantMessage,
   IMessage, MessageContent, ReasoningContent,
   ReasoningPart,
@@ -29,13 +19,13 @@ import FunctionDefinition = OpenAI.FunctionDefinition;
 import { FunctionParameters } from 'openai/src/resources/shared'
 
 // 将消息IMessage转换为OpenAI格式
-registerFromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessageParam[]>('openai', (source: IMessage) => {
+registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompletionMessageParam[]>('openai', (source: IMessage) => {
   switch (source.role) {
   case 'assistant': {
     const msg = source as AssistantMessage
     return {
       role: 'assistant',
-      content: msg.content.map(t => t as unknown as ChatCompletionContentPartText),
+      content: msg.content.map(t => t as unknown as OpenAI.ChatCompletionContentPartText),
       tool_calls: msg.toolCalls?.map(t => {
         return {
           id: t.id,
@@ -43,10 +33,10 @@ registerFromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessagePa
           function: {
             arguments: JSON.stringify(t.function.arguments),
             name: t.function.name,
-          } as ChatCompletionMessageToolCall.Function,
+          } as OpenAI.ChatCompletionMessageToolCall.Function,
         }
       }),
-    } as ChatCompletionAssistantMessageParam
+    } as OpenAI.ChatCompletionAssistantMessageParam
   }
   case 'user': {
     const msg = source as UserMessage
@@ -55,20 +45,20 @@ registerFromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessagePa
       content: msg.content.map(t => {
         switch (t.type) {
         case 'text': {
-          return { type: 'text', text: t.text } as ChatCompletionContentPartText
+          return { type: 'text', text: t.text } as OpenAI.ChatCompletionContentPartText
         }
         case 'audio': {
           return {
             type: 'input_audio',
             input_audio: { data: t.data, format: t.format },
-          } as ChatCompletionContentPartInputAudio
+          } as OpenAI.ChatCompletionContentPartInputAudio
         }
         case 'image': {
-          return { type: 'image_url', image_url: { url: t.image } } as ChatCompletionContentPartImage
+          return { type: 'image_url', image_url: { url: t.image } } as OpenAI.ChatCompletionContentPartImage
         }
         }
       }),
-    } as ChatCompletionUserMessageParam
+    } as OpenAI.ChatCompletionUserMessageParam
   }
   case 'tool': {
     const msg = source as ToolCallResultMessage
@@ -77,9 +67,9 @@ registerFromChaiteConverter<ChatCompletionMessageParam | ChatCompletionMessagePa
         role: 'tool',
         tool_call_id: tcr.tool_call_id,
         content: msg.content.map(t => {
-          return { type: 'text', text: t.content } as ChatCompletionContentPartText
+          return { type: 'text', text: t.content } as OpenAI.ChatCompletionContentPartText
         }),
-      } as ChatCompletionToolMessageParam
+      } as OpenAI.ChatCompletionToolMessageParam
     })
   }
   default: {
@@ -99,7 +89,7 @@ registerIntoChaiteConverter<OpenAICompatibleMessageParam>('openai', msg => {
     const content = msg.content ? Array.isArray(msg.content) ? msg.content : [{
       type: 'text',
       text: msg.content,
-    } as ChatCompletionContentPartText] : null
+    } as OpenAI.ChatCompletionContentPartText] : null
     
     const contents: MessageContent[] | undefined = content?.map(t => {
       return { type: 'text', text: t.type === 'text' ? t.text : t.refusal } as TextContent
@@ -134,7 +124,7 @@ registerIntoChaiteConverter<OpenAICompatibleMessageParam>('openai', msg => {
 })
 
 // 将Tool转换为OpenAI格式
-registerFromChaiteToolConverter<ChatCompletionTool>('openai', tool => {
+registerFromChaiteToolConverter<OpenAI.ChatCompletionTool>('openai', tool => {
   return {
     type: 'function',
     function: {
@@ -142,7 +132,7 @@ registerFromChaiteToolConverter<ChatCompletionTool>('openai', tool => {
       description: tool.function.description,
       parameters: tool.function.parameters as unknown as FunctionParameters,
     } as FunctionDefinition,
-  } as ChatCompletionTool
+  } as OpenAI.ChatCompletionTool
 })
 
 export {}

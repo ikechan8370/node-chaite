@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { MessageParam, ToolChoice, ToolChoiceTool } from '@anthropic-ai/sdk/src/resources/messages/messages'
+// import type { MessageParam, ToolChoice, ToolChoiceTool } from '@anthropic-ai/sdk/src/resources/messages/messages'
 import { AbstractClass } from '../../clients'
 import { GeminiClientOptions } from '../gemini/GeminiClient'
 import { HistoryMessage, ModelUsage } from '../../../types'
@@ -8,13 +8,13 @@ import './converter'
 import { SendMessageOption } from '../../../types'
 
 export class ClaudeClient extends AbstractClass {
-  constructor(options: GeminiClientOptions) {
+  constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>) {
     super(options)
     this.name = 'claude'
   }
   
   async _sendMessage(histories: HistoryMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
-    const messages: MessageParam[] = []
+    const messages: Anthropic.MessageParam[] = []
     const model = options.model || 'claude-3-7-sonnet-20250219'
     const converter = getFromChaiteConverter('claude')
     const toolConverter = getFromChaiteToolConverter('claude')
@@ -31,7 +31,7 @@ export class ClaudeClient extends AbstractClass {
     if (options.toolChoice?.type === 'specified' && (options.toolChoice.tools?.length === 0 || !options.toolChoice.tools)) {
       throw new Error('`toolChoice.tools` must be set if `toolChoice.type` is set to `specified`')
     }
-    const toolModeMap: Record<string, ToolChoice> = {
+    const toolModeMap: Record<string, Anthropic.ToolChoice> = {
       'auto': {
         type: 'auto',
       },
@@ -47,7 +47,7 @@ export class ClaudeClient extends AbstractClass {
       },
     }
     if (options.toolChoice?.tools && options.toolChoice.tools.length > 0) {
-      (toolModeMap.specified as ToolChoiceTool).name = options.toolChoice.tools[0]
+      (toolModeMap.specified as Anthropic.ToolChoiceTool).name = options.toolChoice.tools[0]
     }
     const result = await anthropic.messages.create({
       model,

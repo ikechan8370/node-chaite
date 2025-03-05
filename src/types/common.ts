@@ -33,12 +33,12 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
   preProcessorIds?: string[]
   private preProcessors?: PreProcessor[]
 
-  constructor(options?: BaseClientOptions) {
+  constructor(options?: Partial<BaseClientOptions>) {
     if (options) {
-      this.features = options.features
-      this.tools = options.tools
-      this.baseUrl = options.baseUrl
-      this.apiKey = options.apiKey
+      this.features = options.features || []
+      this.tools = options.tools || []
+      this.baseUrl = options.baseUrl || ''
+      this.apiKey = options.apiKey || ''
       this.multipleKeyStrategy = options.multipleKeyStrategy
       this.proxy = options.proxy
       this.preProcessorIds = options.preProcessorIds
@@ -50,6 +50,10 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
       this.logger = options.logger
       this.init()
     }
+  }
+
+  static create(options: BaseClientOptions | Partial<BaseClientOptions>): BaseClientOptions {
+    return options instanceof BaseClientOptions ? options : new BaseClientOptions(options)
   }
 
   private initPromise: Promise<void>
@@ -64,6 +68,14 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
 
   public setLogger(logger: ILogger) {
     this.logger = logger
+  }
+
+  public getPostProcessors(): PostProcessor[] {
+    return this.postProcessors || []
+  }
+
+  public getPreProcessors(): PreProcessor[] {
+    return this.preProcessors || []
   }
 
   async init() {

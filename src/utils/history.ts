@@ -1,5 +1,4 @@
-import { HistoryManager } from '../adapters'
-import { HistoryMessage } from '../types'
+import { HistoryMessage, HistoryManager } from '../types'
 
 type HistoryCache = Map<string, Map<string, HistoryMessage>>
 

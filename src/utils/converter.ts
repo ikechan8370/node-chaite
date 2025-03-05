@@ -1,14 +1,14 @@
 import { AssistantMessage, ClientType, IMessage, ReasoningPart, Tool } from '../types'
-import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/src/resources/chat/completions/completions'
 import { Content, GenerateContentResult } from '@google/generative-ai'
 import { Tool as GeminiTool } from '@google/generative-ai'
-import { MessageParam, ToolUnion } from '@anthropic-ai/sdk/src/resources/messages/messages'
+// import type { Anthropic.MessageParam, ToolUnion } from '@anthropic-ai/sdk/src/resources'
 type IntoChaiteConverter<T> = (source: T) => AssistantMessage;
-
+import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 class IntoChaiteConverterEntry {
-  openai: IntoChaiteConverter<ChatCompletionMessageParam & ReasoningPart>
+  openai: IntoChaiteConverter<OpenAI.ChatCompletionMessageParam & ReasoningPart>
   gemini: IntoChaiteConverter<GenerateContentResult>
-  claude: IntoChaiteConverter<MessageParam>
+  claude: IntoChaiteConverter<Anthropic.MessageParam>
 }
 const converters = new IntoChaiteConverterEntry()
 
@@ -26,7 +26,7 @@ export function registerIntoChaiteConverter<T>(
     break
   }
   case 'claude': {
-    converters.claude = converter as unknown as IntoChaiteConverter<MessageParam>
+    converters.claude = converter as unknown as IntoChaiteConverter<Anthropic.MessageParam>
   }
   }
   
@@ -35,8 +35,8 @@ export function registerIntoChaiteConverter<T>(
 export function getIntoChaiteConverter(_clientType: 'openai'): IntoChaiteConverter<OpenAICompatibleMessageParam>;
 export function getIntoChaiteConverter(_clientType: 'gemini'): IntoChaiteConverter<GenerateContentResult>;
 
-export function getIntoChaiteConverter(_clientType: 'claude'): IntoChaiteConverter<MessageParam>;
-export function getIntoChaiteConverter(_clientType: ClientType): IntoChaiteConverter<OpenAICompatibleMessageParam> | IntoChaiteConverter<GenerateContentResult> | IntoChaiteConverter<MessageParam> {
+export function getIntoChaiteConverter(_clientType: 'claude'): IntoChaiteConverter<Anthropic.MessageParam>;
+export function getIntoChaiteConverter(_clientType: ClientType): IntoChaiteConverter<OpenAICompatibleMessageParam> | IntoChaiteConverter<GenerateContentResult> | IntoChaiteConverter<Anthropic.MessageParam> {
   switch (_clientType) {
   case 'openai': {
     return converters.openai
@@ -53,11 +53,11 @@ export function getIntoChaiteConverter(_clientType: ClientType): IntoChaiteConve
 
 
 type FromChaiteConverter<T> = (source: IMessage) => T;
-export type OpenAICompatibleMessageParam = ChatCompletionMessageParam & ReasoningPart
+export type OpenAICompatibleMessageParam = OpenAI.ChatCompletionMessageParam & ReasoningPart
 class FromChaiteConverterEntry {
   openai: FromChaiteConverter<OpenAICompatibleMessageParam | OpenAICompatibleMessageParam[]>
   gemini: FromChaiteConverter<Content>
-  claude: FromChaiteConverter<MessageParam>
+  claude: FromChaiteConverter<Anthropic.MessageParam>
 }
 const fromConverters = new FromChaiteConverterEntry()
 
@@ -75,7 +75,7 @@ export function registerFromChaiteConverter<T>(
     break
   }
   case 'claude': {
-    fromConverters.claude = converter as unknown as FromChaiteConverter<MessageParam>
+    fromConverters.claude = converter as unknown as FromChaiteConverter<Anthropic.MessageParam>
   }
   }
 }
@@ -84,8 +84,8 @@ export function registerFromChaiteConverter<T>(
 export function getFromChaiteConverter(_clientType: 'openai'): FromChaiteConverter<OpenAICompatibleMessageParam | OpenAICompatibleMessageParam[]>;
 export function getFromChaiteConverter(_clientType: 'gemini'): FromChaiteConverter<Content>;
 
-export function getFromChaiteConverter(_clientType: 'claude'): FromChaiteConverter<MessageParam>;
-export function getFromChaiteConverter(_clientType: ClientType): FromChaiteConverter<OpenAICompatibleMessageParam | OpenAICompatibleMessageParam[]> | FromChaiteConverter<Content> | FromChaiteConverter<MessageParam> {
+export function getFromChaiteConverter(_clientType: 'claude'): FromChaiteConverter<Anthropic.MessageParam>;
+export function getFromChaiteConverter(_clientType: ClientType): FromChaiteConverter<OpenAICompatibleMessageParam | OpenAICompatibleMessageParam[]> | FromChaiteConverter<Content> | FromChaiteConverter<Anthropic.MessageParam> {
   switch (_clientType) {
   case 'openai': {
     return fromConverters.openai
@@ -103,9 +103,9 @@ export function getFromChaiteConverter(_clientType: ClientType): FromChaiteConve
 type FromChaiteToolConverter<T> = (source: Tool) => T;
 
 class FromChaiteToolConverterEntry {
-  openai: FromChaiteToolConverter<ChatCompletionTool>
+  openai: FromChaiteToolConverter<OpenAI.ChatCompletionTool>
   gemini: FromChaiteToolConverter<GeminiTool>
-  claude: FromChaiteToolConverter<ToolUnion>
+  claude: FromChaiteToolConverter<Anthropic.ToolUnion>
 }
 const fromToolConverters = new FromChaiteToolConverterEntry()
 
@@ -115,7 +115,7 @@ export function registerFromChaiteToolConverter<T>(
 ) {
   switch (_clientType) {
   case 'openai': {
-    fromToolConverters.openai = converter as unknown as FromChaiteToolConverter<ChatCompletionTool>
+    fromToolConverters.openai = converter as unknown as FromChaiteToolConverter<OpenAI.ChatCompletionTool>
     break
   }
   case 'gemini': {
@@ -123,17 +123,17 @@ export function registerFromChaiteToolConverter<T>(
     break
   }
   case 'claude': {
-    fromToolConverters.claude = converter as unknown as FromChaiteToolConverter<ToolUnion>
+    fromToolConverters.claude = converter as unknown as FromChaiteToolConverter<Anthropic.ToolUnion>
   }
   }
   
 }
 
 
-export function getFromChaiteToolConverter(_clientType: 'openai'): FromChaiteToolConverter<ChatCompletionTool>;
+export function getFromChaiteToolConverter(_clientType: 'openai'): FromChaiteToolConverter<OpenAI.ChatCompletionTool>;
 export function getFromChaiteToolConverter(_clientType: 'gemini'): FromChaiteToolConverter<GeminiTool>;
-export function getFromChaiteToolConverter(_clientType: 'claude'): FromChaiteToolConverter<ToolUnion>;
-export function getFromChaiteToolConverter(_clientType: ClientType): FromChaiteToolConverter<ChatCompletionTool> | FromChaiteToolConverter<GeminiTool> | FromChaiteToolConverter<ToolUnion> {
+export function getFromChaiteToolConverter(_clientType: 'claude'): FromChaiteToolConverter<Anthropic.ToolUnion>;
+export function getFromChaiteToolConverter(_clientType: ClientType): FromChaiteToolConverter<OpenAI.ChatCompletionTool> | FromChaiteToolConverter<GeminiTool> | FromChaiteToolConverter<Anthropic.ToolUnion> {
   switch (_clientType) {
   case 'openai': {
     return fromToolConverters.openai

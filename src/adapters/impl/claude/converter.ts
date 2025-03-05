@@ -11,20 +11,20 @@ import {
   UserMessage,
   FunctionCall, ReasoningContent, TextContent,
 } from '../../../types'
-import {
-  Base64ImageSource,
-  ContentBlockParam,
-  ImageBlockParam,
-  MessageParam,
-  TextBlockParam, Tool, ToolResultBlockParam, ToolUnion, URLImageSource,
-} from '@anthropic-ai/sdk/src/resources/messages/messages'
-
+// import type {
+//   Base64ImageSource,
+//   ContentBlockParam,
+//   ImageBlockParam,
+//   MessageParam,
+//   TextBlockParam, Tool, ToolResultBlockParam, ToolUnion, URLImageSource,
+// } from '@anthropic-ai/sdk'
+import Anthropic from '@anthropic-ai/sdk'
 // 将消息IMessage转换为Claude格式
-registerFromChaiteConverter<MessageParam>('claude', (source: IMessage) => {
+registerFromChaiteConverter<Anthropic.MessageParam>('claude', (source: IMessage) => {
   switch (source.role) {
   case 'assistant': {
     const msg = source as AssistantMessage
-    const blocks: ContentBlockParam[] = []
+    const blocks: Anthropic.ContentBlockParam[] = []
     msg.content.forEach(c => {
       blocks.push({
         text: c.text,
@@ -42,7 +42,7 @@ registerFromChaiteConverter<MessageParam>('claude', (source: IMessage) => {
     return {
       role: 'assistant',
       content: blocks,
-    } as MessageParam
+    } as Anthropic.MessageParam
   }
   case 'user': {
     const msg = source as UserMessage
@@ -51,7 +51,7 @@ registerFromChaiteConverter<MessageParam>('claude', (source: IMessage) => {
       content: msg.content.map(t => {
         switch (t.type) {
         case 'text': {
-          return { text: t.text, type: 'text' } as TextBlockParam
+          return { text: t.text, type: 'text' } as Anthropic.TextBlockParam
         }
         case 'audio': {
           return null
@@ -60,12 +60,12 @@ registerFromChaiteConverter<MessageParam>('claude', (source: IMessage) => {
           return {
             type: 'image', source: t.image.startsWith('http') ? {
               type: 'url', url: t.image,
-            } as URLImageSource : { type: 'base64', media_type: t.mimeType, data: t.image } as Base64ImageSource,
-          } as ImageBlockParam
+            } as Anthropic.URLImageSource : { type: 'base64', media_type: t.mimeType, data: t.image } as Anthropic.Base64ImageSource,
+          } as Anthropic.ImageBlockParam
         }
         }
       }),
-    } as MessageParam
+    } as Anthropic.MessageParam
   }
   case 'tool': {
     const msg = source as ToolCallResultMessage
@@ -76,9 +76,9 @@ registerFromChaiteConverter<MessageParam>('claude', (source: IMessage) => {
           type: 'tool_result',
           tool_use_id: tcr.tool_call_id,
           content: tcr.content,
-        } as ToolResultBlockParam
+        } as Anthropic.ToolResultBlockParam
       }),
-    } as MessageParam
+    } as Anthropic.MessageParam
   }
   default: {
     throw new Error('Unknown type')
@@ -87,7 +87,7 @@ registerFromChaiteConverter<MessageParam>('claude', (source: IMessage) => {
 })
 
 // 将Claude格式转为IMessage
-registerIntoChaiteConverter<MessageParam>('claude', msg => {
+registerIntoChaiteConverter<Anthropic.MessageParam>('claude', msg => {
   const content = msg.content
   let text: string | null = null
   let thinking: string | null = null
@@ -121,14 +121,14 @@ registerIntoChaiteConverter<MessageParam>('claude', msg => {
 })
 
 // 将Tool转换为Claude格式
-registerFromChaiteToolConverter<ToolUnion>('claude', tool => {
+registerFromChaiteToolConverter<Anthropic.ToolUnion>('claude', tool => {
   return {
     name: tool.function.name,
     description: tool.function.description,
     input_schema: {
       ...tool.function.parameters,
-    } as Tool.InputSchema,
-  } as Tool
+    } as Anthropic.Tool.InputSchema,
+  } as Anthropic.Tool
 })
 
 export {}

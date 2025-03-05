@@ -1,7 +1,7 @@
 import { CloudAPIResponse, CloudSharingService, Filter, SearchOption, User } from '../types/cloud'
 import { SerializedTool } from './tool'
 import { createHttpClient, HttpClient } from '../utils'
-import { CloudAPI } from '../const/cloud_api'
+import { CloudAPI } from '../const'
 
 export class DefaultToolCloudService implements CloudSharingService<SerializedTool> {
 

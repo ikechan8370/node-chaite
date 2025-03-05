@@ -1,7 +1,7 @@
 import {OpenAIClient} from "./OpenAIClient";
 import DefaultHistoryManager from '../../../utils/history'
 import {ArgumentValue, Function, ModelResponseChunk, Parameter, Tool, UserMessage} from "../../../types";
-import {DefaultLogger} from "../../../types/common";
+import {BaseClientOptions, DefaultLogger} from "../../../types/common";
 
 const searchTool = new class SearchTool implements Tool {
   constructor() {
@@ -36,13 +36,13 @@ const searchTool = new class SearchTool implements Tool {
 
 describe('OpenAIClient', () => {
   test('OpenAIClient works correctly', async () => {
-    const openaiClient = new OpenAIClient({
+    const openaiClient = new OpenAIClient(new BaseClientOptions({
       apiKey: process.env.OPENAI_API_KEY as string,
       baseUrl: process.env.OPENAI_BASE_URL as string,
       features: ['chat', 'tool'],
       historyManager: DefaultHistoryManager,
       tools: [searchTool]
-    })
+    }))
     const userMessage = {
       role: 'user',
       content: [{

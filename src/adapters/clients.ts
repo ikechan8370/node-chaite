@@ -1,4 +1,5 @@
 import {
+  AssistantMessage,
   EmbeddingResult,
   Feature, History,
   HistoryMessage, ModelResponse,
@@ -14,27 +15,34 @@ import {
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
 } from '../types/common'
+import DefaultHistoryManager from '../utils/history'
 import { asyncLocalStorage, getKey } from '../utils'
-import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types/adapter'
-import { PostProcessor, PreProcessor } from '../types/processors'
+import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types'
+import { PostProcessor, PreProcessor } from '../types'
 
 
 export class AbstractClass implements IClient {
-  constructor(options: BaseClientOptions) {
-    this.features = options.features
-    this.tools = options.tools
-    this.baseUrl = options.baseUrl
-    this.apiKey = options.apiKey
+
+  options: BaseClientOptions
+  constructor(options: BaseClientOptions | Partial<BaseClientOptions>) {
+    options = BaseClientOptions.create(options)
+    this.features = options.features || []
+    this.tools = options.tools || []
+    this.baseUrl = options.baseUrl || ''
+    this.apiKey = options.apiKey || ''
     this.multipleKeyStrategy = options.multipleKeyStrategy || MultipleKeyStrategyChoice.RANDOM
     this.logger = options.logger || DefaultLogger
-    this.historyManager = options.historyManager
-    this.preProcessors = options.preProcessors
-    this.postProcessors = options.postProcessors
+    this.historyManager = options.historyManager || DefaultHistoryManager
     this.context = new ChaiteContext(this.logger)
+    this.options = options as BaseClientOptions
   }
 
-  sendMessage(message: UserMessage | undefined, options: SendMessageOption = {}): Promise<ModelResponse> {
+  sendMessage(message: UserMessage | undefined, options: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse> {
+    options = SendMessageOption.create(options)
     return asyncLocalStorage.run(this.context, async () => {
+      await this.options.ready()
+      this.preProcessors = this.options.getPreProcessors()
+      this.postProcessors = this.options.getPostProcessors()
       const apiKey = await getKey(this.apiKey, this.multipleKeyStrategy)
       const histories = await this.historyManager.getHistory(options.parentMessageId, options.conversationId)
       if (!options.conversationId) {
@@ -55,7 +63,19 @@ export class AbstractClass implements IClient {
         } as HistoryMessage
         histories.push(thisRequestMsg)
       }
-      const modelResponse = await this._sendMessage(histories, apiKey, options)
+      const modelResponse = await this._sendMessage(histories, apiKey, options as SendMessageOption)
+
+      // 后处理器
+      if (modelResponse.role === 'assistant') {
+        let tempResponse = {
+          content: modelResponse.content,
+          role: 'assistant',
+        } as AssistantMessage
+        for (const postProcessor of this.postProcessors || []) {
+          tempResponse = await postProcessor.process(tempResponse)
+        }
+        modelResponse.content = tempResponse.content
+      }
       // save user request
       if (thisRequestMsg) {
         await this.historyManager.saveHistory(thisRequestMsg, options.conversationId)
@@ -101,7 +121,8 @@ export class AbstractClass implements IClient {
         }
         return await this.sendMessage(undefined, options)
       }
-      
+
+
       return {
         id: modelResponse.id,
         model: options.model,

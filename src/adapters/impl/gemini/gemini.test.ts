@@ -1,7 +1,7 @@
 import {GeminiClient} from "./GeminiClient";
 import DefaultHistoryManager from '../../../utils/history'
 import {ArgumentValue, Function, Parameter, Tool, UserMessage} from "../../../types";
-import {DefaultLogger} from "../../../types/common";
+import {BaseClientOptions, DefaultLogger} from "../../../types/common";
 
 const searchTool = new class SearchTool implements Tool {
   constructor() {
