@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/ikechan8370/node-chaite/compare/v1.0.3...v1.0.4) (2025-03-06)
+
+
+### Bug Fixes
+
+* merge ([9411ad8](https://github.com/ikechan8370/node-chaite/commit/9411ad8c95d0e8c583c27bbbce03e04e61a0b388))
+
 ## [1.0.3](https://github.com/ikechan8370/node-chaite/compare/v1.0.2...v1.0.3) (2025-03-05)
 
 
