@@ -5,9 +5,10 @@ import {
   ModelResponseChunk,
   UserMessage,
 } from './models'
-import { DeSerializable, Serializable, Tool } from './tools'
+import { Tool } from './tools'
 import { ILogger, MultipleKeyStrategy } from './common'
 import { PostProcessor, PreProcessor } from './processors'
+import { DeSerializable, Serializable } from './cloud'
 
 export class SendMessageOption implements Serializable, DeSerializable<SendMessageOption> {
   constructor(option: Partial<SendMessageOption>) {

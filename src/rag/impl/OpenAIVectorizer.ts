@@ -1,4 +1,4 @@
-import { Vectorizer } from '../../types/common'
+import { Vectorizer } from '../../types'
 import { OpenAIClient } from '../../adapters'
 
 export class OpenAIVectorizer implements Vectorizer {

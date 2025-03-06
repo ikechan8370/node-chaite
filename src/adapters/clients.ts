@@ -14,11 +14,12 @@ import {
   ILogger,
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
-} from '../types/common'
+} from '../types'
 import DefaultHistoryManager from '../utils/history'
 import { asyncLocalStorage, getKey } from '../utils'
 import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types'
 import { PostProcessor, PreProcessor } from '../types'
+import { ProcessorsManager } from '../share/processors'
 
 
 export class AbstractClass implements IClient {
@@ -36,6 +37,52 @@ export class AbstractClass implements IClient {
     this.context = new ChaiteContext(this.logger)
     this.options = options as BaseClientOptions
   }
+  
+  async fullfillProcessors () {
+    const processorsManager = await ProcessorsManager.getInstance()
+    if (!this.preProcessors) {
+      this.preProcessors = []
+    }
+    if (!this.postProcessors) {
+      this.postProcessors = []
+    }
+    if (processorsManager) {
+      if (this.options.preProcessorIds) {
+        const preProcessors = []
+        for (const preProcessorId of this.options.preProcessorIds) {
+          const existProcessor = this.preProcessors.find(p => p.id === preProcessorId)
+          if (!existProcessor) {
+            const preProcessor = await processorsManager.getInstance(preProcessorId)
+            if (preProcessor && preProcessor.type === 'pre') {
+              preProcessors.push(preProcessor as PreProcessor)
+            } else {
+              this.logger.warn(`preProcessor ${preProcessorId} not found`)
+            }
+          } else {
+            preProcessors.push(existProcessor)
+          }
+        }
+        this.preProcessors = preProcessors
+      }
+      if (this.options.postProcessorIds) {
+        const postProcessors = []
+        for (const postProcessorId of this.options.postProcessorIds) {
+          const existProcessor = this.postProcessors.find(p => p.id === postProcessorId)
+          if (!existProcessor) {
+            const postProcessor = await processorsManager.getInstance(postProcessorId)
+            if (postProcessor && postProcessor.type === 'post') {
+              postProcessors.push(postProcessor as PostProcessor)
+            } else {
+              this.logger.warn(`postProcessor ${postProcessorId} not found`)
+            }
+          } else {
+            postProcessors.push(existProcessor)
+          }
+        }
+        this.postProcessors = postProcessors
+      }
+    }
+  }
 
   sendMessage(message: UserMessage | undefined, options: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse> {
     options = SendMessageOption.create(options)
@@ -49,6 +96,7 @@ export class AbstractClass implements IClient {
         options.conversationId = crypto.randomUUID()
       }
       let thisRequestMsg
+      await this.fullfillProcessors()
       if (message) {
         // 前处理器
         for (const preProcessors of this.preProcessors || []) {

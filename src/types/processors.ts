@@ -1,27 +1,15 @@
 // ************** 处理器 **************
 
-import { DeSerializable, Serializable } from './tools'
-import { User } from './cloud'
+import { AbstractShareable } from './cloud'
 import { AssistantMessage, UserMessage } from './models'
 
-export class ProcessorDTO implements Serializable, DeSerializable<ProcessorDTO> {
-  code: string
-  name: string
+export class ProcessorDTO extends AbstractShareable<ProcessorDTO> {
+  constructor(public name: string, public code: string) {
+    super()
+    this.modelType = 'executable'
+  }
+
   type: 'pre' | 'post'
-  id: string
-  embedded: boolean
-  description: string
-  uploader: User
-  utime: number
-  ctime: number
-
-  fromString(str: string): ProcessorDTO {
-    return JSON.parse(str) as ProcessorDTO
-  }
-
-  toString(): string {
-    return JSON.stringify(this)
-  }
 }
 
 export interface Processor {
@@ -29,6 +17,9 @@ export interface Processor {
   name: string
 }
 
+/**
+ * 继承这个来实现一个前处理器
+ */
 export abstract class PreProcessor implements Processor {
   type: 'pre'
 
@@ -39,7 +30,9 @@ export abstract class PreProcessor implements Processor {
   id: string
 }
 
-
+/**
+ * 继承这个来实现一个后处理器
+ */
 export abstract class PostProcessor implements Processor {
   type: 'post'
 
@@ -48,16 +41,5 @@ export abstract class PostProcessor implements Processor {
   name: string
 
   id: string
-}
-
-export interface ProcessorStorage {
-  // savePreset(preset: ToolPreset): Promise<void>;
-  // getPreset(name: string): Promise<ToolPreset | null>;
-  // deletePreset(name: string): Promise<void>;
-  // getAllPresets(): Promise<ToolPreset[]>;
-  saveProcessor(processor: ProcessorDTO): Promise<void>
-  getProcessor(id: string): Promise<ProcessorDTO | null>
-  deleteProcessor(id: string): Promise<void>
-  getAllProcessors(): Promise<ProcessorDTO[]>
 }
 

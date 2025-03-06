@@ -1,13 +1,15 @@
 import { ClientType, SendMessageOption } from './adapter'
 import { BaseClientOptions } from './common'
-import { DeSerializable, Serializable, Wait } from './tools'
+import { AbstractShareable, DeSerializable, Serializable, Wait } from './cloud'
 
 /**
  * 渠道
  * 每个渠道对应一个adapter，并记录客户端的options
  */
-export class Channel implements Serializable, DeSerializable<Channel>, Wait {
+export class Channel extends AbstractShareable<Channel> implements Wait {
   constructor(id: string, adapterType: ClientType, options: BaseClientOptions, name: string, type: ClientType, status: 'enabled' | 'disabled', statistics: ChannelStatistics, weight?: number, priority?: number, disabledReason?: string) {
+    super()
+    this.modelType = 'settings'
     this.id = id
     this.adapterType = adapterType
     this.options = options

@@ -1,10 +1,8 @@
 import { Feature } from './models'
-import { DeSerializable, Serializable, Tool, Wait } from './tools'
+import { Tool } from './tools'
 import { HistoryManager } from './adapter'
 import { PostProcessor, PreProcessor } from './processors'
-import { getProcessorDTOFromId, saveAndLoadModule } from '../utils'
-import { GlobalConfig } from '../utils'
-import path from 'path'
+import { DeSerializable, Serializable, Wait } from './cloud'
 
 export const MultipleKeyStrategyChoice = {
   RANDOM: 'random' as MultipleKeyStrategy,
@@ -80,21 +78,6 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
 
   async init() {
     this.initPromise = (async (): Promise<void> => {
-      this.postProcessors = (await Promise.all(this.postProcessorIds?.map(async id => {
-        const dto = await getProcessorDTOFromId(id)
-        if (!dto) { return null }
-        const code = dto.code
-        const config = GlobalConfig.getInstance()
-        return await saveAndLoadModule(code, path.resolve(config.processorsDirPath, 'post'), dto.name, PostProcessor)
-      }) || [])).filter(s => !!s)
-
-      this.preProcessors = (await Promise.all(this.preProcessorIds?.map(async id => {
-        const dto = await getProcessorDTOFromId(id)
-        if (!dto) { return null }
-        const code = dto.code
-        const config = GlobalConfig.getInstance()
-        return await saveAndLoadModule(code, path.resolve(config.processorsDirPath, 'pre'), dto.name, PreProcessor)
-      }) || [])).filter(s => !!s)
     })()
   }
   
@@ -180,3 +163,6 @@ export interface Vectorizer {
    */
   batchTextToVector(texts: string[]): Promise<number[][]>;
 }
+
+
+export type CloudAPIType = 'tool' | 'processor' | 'chat-preset' | 'tool-setting' | 'channel'

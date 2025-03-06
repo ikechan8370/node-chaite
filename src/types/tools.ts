@@ -1,4 +1,5 @@
 import { ArgumentValue } from './models'
+import { AbstractShareable } from './cloud'
 
 export interface Function {
     name: string
@@ -23,6 +24,17 @@ export interface Tool {
     run(args: Record<string, ArgumentValue | Record<string, ArgumentValue>>): Promise<string>
 }
 
+
+
+export class ToolDTO extends AbstractShareable<ToolDTO> {
+  constructor(public name: string, public code: string) {
+    super()
+    this.modelType = 'executable'
+  }
+
+  public permission: 'public' | 'private' | 'onetime'
+}
+
 /**
  * js写的工具可以继承这个抽象类
  */
@@ -34,6 +46,8 @@ export abstract class CustomTool {
     throw new Error('Not implemented')
   }
 }
+
+
 
 // **************** 管理部分 *******************8
 
@@ -50,18 +64,6 @@ export interface ToolSettingsStorage {
   getToolSettings(name: string): Promise<ToolSettings | null>;
   deleteToolSettings(name: string): Promise<void>;
   getAllToolSettings(): Promise<ToolSettings[]>;
-}
-
-export interface Serializable {
-  toString(): string;
-}
-
-export interface DeSerializable<T> {
-  fromString(str: string): T;
-}
-
-export interface Wait {
-  ready(): Promise<void>
 }
 
 

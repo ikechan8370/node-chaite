@@ -1,5 +1,3 @@
-import { Serializable } from './tools'
-
 export interface CloudAPIResponse<T> {
   code: number
   data?: T
@@ -12,6 +10,7 @@ export interface CloudSharingService<T> {
   download(shareId: string): Promise<T | null>;
   initializeTransfer(model: Serializable): Promise<string | null>;
   list(filter: Filter, query: string, searchOption: SearchOption): Promise<Array<T & { id: string }> | null>;
+  delete(shareId: string): Promise<boolean>;
 }
 
 type FilterValue = string | number | boolean | FilterValue[];
@@ -33,4 +32,51 @@ export interface User {
   linux_do?: string,
   apple?: string,
   microsoft?: string,
+}
+
+
+export interface Serializable {
+  toString(): string;
+}
+
+export interface DeSerializable<T> {
+  fromString(str: string): T;
+}
+
+export interface CloudModel {
+  modelType: 'settings' | 'executable'
+  code?: string
+  name: string
+  id: string
+  embedded: boolean
+  description: string
+  uploader: User
+  utime: number
+  ctime: number
+}
+
+export type Shareable<T> = Serializable & DeSerializable<T> & CloudModel
+
+export abstract class AbstractShareable<T> implements Shareable<T> {
+  modelType: 'settings' | 'executable'
+  code?: string
+  ctime: number
+  description: string
+  embedded: boolean
+  id: string
+  name: string
+  uploader: User
+  utime: number
+
+  fromString(str: string): T {
+    return JSON.parse(str) as T
+  }
+
+  toString(): string {
+    return JSON.stringify(this)
+  }
+}
+
+export interface Wait {
+  ready(): Promise<void>
 }

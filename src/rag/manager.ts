@@ -1,5 +1,5 @@
 import { VectorDatabase } from './vector'
-import { RAGResult, Vectorizer } from '../types/common'
+import { RAGResult, Vectorizer } from '../types'
 import { TextProcessor } from './text'
 import { RAGAggregator } from './result'
 

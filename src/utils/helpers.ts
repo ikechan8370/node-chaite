@@ -1,12 +1,10 @@
 import {
-  BaseClientOptions,
   ChaiteContext,
   ILogger,
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
-} from '../types/common'
+} from '../types'
 import { AsyncLocalStorage } from 'async_hooks'
-import { ProcessorDTO, ProcessorStorage } from '../types'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -41,31 +39,6 @@ export async function getKey(apiKeys: string[] | string, strategy: MultipleKeySt
 }
 
 export const asyncLocalStorage = new AsyncLocalStorage<ChaiteContext>()
-
-class DefaultProcessorStorage implements ProcessorStorage {
-  saveProcessor(processor: ProcessorDTO): Promise<void> {
-    throw new Error('Method not implemented.')
-  }
-  getProcessor(id: string): Promise<ProcessorDTO | null> {
-    throw new Error('Method not implemented.')
-  }
-  deleteProcessor(id: string): Promise<void> {
-    throw new Error('Method not implemented.')
-  }
-  getAllProcessors(): Promise<ProcessorDTO[]> {
-    throw new Error('Method not implemented.')
-  }
-}
-
-export const processStorage = new DefaultProcessorStorage()
-
-export async function getProcessorDTOFromId(id: string): Promise<ProcessorDTO | null> {
-  return processStorage.getProcessor(id)
-}
-
-export function serializeBaseClientOptions (options: BaseClientOptions) {
-
-}
 
 /**
  * 表示构造函数的类型
