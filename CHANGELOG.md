@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6](https://github.com/ikechan8370/node-chaite/compare/v1.0.5...v1.0.6) (2025-03-07)
+
+
+### Bug Fixes
+
+* export abstract storage ([b51c3d6](https://github.com/ikechan8370/node-chaite/commit/b51c3d657201a6cbd551dcef123436bd93eab862))
+
 ## [1.0.5](https://github.com/ikechan8370/node-chaite/compare/v1.0.4...v1.0.5) (2025-03-07)
 
 
