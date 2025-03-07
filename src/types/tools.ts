@@ -49,22 +49,3 @@ export abstract class CustomTool {
 
 
 
-// **************** 管理部分 *******************8
-
-export interface ToolSettings {
-  name: string;
-  tools: string[]; // 工具名称列表
-}
-
-/**
- * 抽象的预设管理接口，不同框架去实际实现
- */
-export interface ToolSettingsStorage {
-  saveToolSettings(preset: ToolSettings): Promise<void>;
-  getToolSettings(name: string): Promise<ToolSettings | null>;
-  deleteToolSettings(name: string): Promise<void>;
-  getAllToolSettings(): Promise<ToolSettings[]>;
-}
-
-
-

@@ -1,67 +1,54 @@
-import { ChatPreset, ChatPresetsStorage } from '../types'
+import { AbstractShareable, SendMessageOption } from '../types'
 
-export class ChatPresetManager {
-  private static instance: ChatPresetManager
-  private storage?: ChatPresetsStorage
+/**
+ * 对话模式预设，最终使用的
+ */
+export class ChatPreset extends AbstractShareable<ChatPreset> {
+  prefix: string
+  channelId: string
+  local: boolean
+  namespace?: string
+  sendMessageOption: SendMessageOption
 
-  public static getInstance(): ChatPresetManager {
-    if (!ChatPresetManager.instance) {
-      ChatPresetManager.instance = new ChatPresetManager()
-    }
-    return ChatPresetManager.instance
-  }
-
-  public setStorage(storage: ChatPresetsStorage): void {
-    this.storage = storage
-  }
-
-  async savePreset(preset: ChatPreset): Promise<void> {
-    if (!this.storage) throw new Error('Preset storage not initialized')
-    await this.storage.savePreset(preset)
-  }
-
-  async getPreset(name: string): Promise<ChatPreset | null> {
-    if (!this.storage) throw new Error('Preset storage not initialized')
-    return this.storage.getPreset(name)
-  }
-
-  async deletePreset(name: string): Promise<void> {
-    if (!this.storage) throw new Error('Preset storage not initialized')
-    await this.storage.deletePreset(name)
-  }
-
-  async getAllPresets(options: {
-    includeLocal?: boolean,
-    namespace?: string
-  } = {
-    includeLocal: true,
-  }): Promise<ChatPreset[]> {
-    if (!this.storage) throw new Error('Preset storage not initialized')
-    const presets = await this.storage.getAllPresets()
-
-    return presets.filter(preset => {
-      const matchNamespace = options.namespace
-        ? preset.namespace === options.namespace
-        : true
-      const matchLocal = options.includeLocal
-        ? true
-        : !preset.local
-      return matchNamespace && matchLocal
+  toString(): string {
+    return JSON.stringify({
+      id: this.id,
+      ctime: this.ctime,
+      utime: this.utime,
+      embedded: this.embedded,
+      uploader: this.uploader,
+      modelType: this.modelType,
+      prefix: this.prefix,
+      channelId: this.channelId,
+      name: this.name,
+      local: this.local,
+      namespace: this.namespace,
+      description: this.description,
+      sendMessageOption: this.sendMessageOption?.toString(), // 嵌套序列化
     })
   }
 
-  async getPresetByPrefix(prefix: string): Promise<ChatPreset | null> {
-    const presets = await this.getAllPresets()
-    return presets.find(p => p.prefix === prefix) || null
-  }
+  fromString(str: string): ChatPreset {
+    const raw = JSON.parse(str)
+    const preset = new ChatPreset()
 
-  async resolvePreset(prefixOrName: string): Promise<ChatPreset> {
-    const byPrefix = await this.getPresetByPrefix(prefixOrName)
-    if (byPrefix) return byPrefix
+    preset.prefix = raw.prefix
+    preset.channelId = raw.channelId
+    preset.name = raw.name
+    preset.local = raw.local
+    preset.namespace = raw.namespace
+    preset.description = raw.description
+    preset.id = raw.id
+    preset.ctime = raw.ctime
+    preset.utime = raw.utime
+    preset.embedded = raw.embedded
+    preset.uploader = raw.uploader
+    preset.modelType = raw.modelType
 
-    const byName = await this.getPreset(prefixOrName)
-    if (!byName) throw new Error(`Preset ${prefixOrName} not found`)
+    if (raw.sendMessageOption) {
+      preset.sendMessageOption = SendMessageOption.create().fromString(raw.sendMessageOption)
+    }
 
-    return byName
+    return preset
   }
 }

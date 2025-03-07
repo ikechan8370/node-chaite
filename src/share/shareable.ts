@@ -207,9 +207,10 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
 export type NonExecutableSShareableType = 'chat-preset' | 'tool-settings' | 'channel'
 
 export abstract class NonExecutableShareableManager<T extends Shareable<T>> {
-  storage: BasicStorage<T>
   cloudService?: CloudSharingService<T>
-  private type: NonExecutableSShareableType
+
+  protected constructor(protected type: NonExecutableSShareableType, protected storage: BasicStorage<T>) {
+  }
 
   async addInstance(instance: T) {
     await this.storage.setItem(instance.id, instance)

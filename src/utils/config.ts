@@ -1,8 +1,4 @@
-import { ILogger } from '../types/common'
-import { ChannelsLoadBalancer, ChannelsStorage, ChatPresetsStorage, ToolSettingsStorage } from '../types'
-// import { ChatPresetManager } from '../channels/preset'
-// import { ChannelsManager } from "../channels";
-// import { ToolManager } from '../share'
+import { ILogger } from '../types'
 
 export class GlobalConfig {
   private static instance: GlobalConfig | null = null
@@ -23,28 +19,4 @@ export class GlobalConfig {
   cloudBaseUrl?: string
   cloudApiKey?: string
   logger?: ILogger
-  /**********************************************
-   *                     渠道                   *
-   *********************************************/
-  // 渠道存储器
-  channelStorage?: ChannelsStorage
-  // 渠道均衡器
-  channelsLoadBalancer?: ChannelsLoadBalancer
-  // 渠道管理器。单例，不放入Config
-  // channelsManager?: ChannelsManager
-  /**********************************************
-   *                     工具                   *
-   *********************************************/
-  // 工具管理器。单例，不放入Config
-  // toolManager?: ToolManager
-  // 工具设置存储器
-  presetStorage?: ToolSettingsStorage
-
-  /**********************************************
-   *                     对话                   *
-   *********************************************/
-  // 对话配置存储器
-  chatPresetStorage?: ChatPresetsStorage
-  // 对话配置管理器。单例，不放入Config
-  // chatPresetManager?: ChatPresetManager
 }

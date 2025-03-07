@@ -1,4 +1,11 @@
-import { Channel, ChannelsLoadBalancer, ChannelsStorage } from '../types'
+import {
+  AbstractShareable,
+  BaseClientOptions,
+  ChannelsLoadBalancer,
+  ChannelStatistics,
+  ClientType,
+  Wait,
+} from '../types'
 
 export class DefaultChannelLoadBalancer implements ChannelsLoadBalancer {
   public constructor() {}
@@ -49,62 +56,67 @@ export class DefaultChannelLoadBalancer implements ChannelsLoadBalancer {
   }
 }
 
-export class ChannelsManager {
+/**
+ * 渠道
+ * 每个渠道对应一个adapter，并记录客户端的options
+ */
+export class Channel extends AbstractShareable<Channel> implements Wait {
+  constructor(id: string, models: string[], adapterType: ClientType, options: BaseClientOptions, name: string, type: ClientType, status: 'enabled' | 'disabled', statistics: ChannelStatistics, weight?: number, priority?: number, disabledReason?: string) {
+    super()
+    this.modelType = 'settings'
+    this.id = id
+    this.models = models
+    this.adapterType = adapterType
+    this.options = options
+    this.name = name
+    this.type = type
+    this.weight = weight || 1
+    this.priority = priority || 1
+    this.status = status
+    this.disabledReason = disabledReason
+    this.statistics = statistics
+    this.init()
+  }
 
-  private static instance: ChannelsManager
+  async init() {
+    return this.options.ready()
+  }
 
-  private storage: ChannelsStorage
+  async ready(): Promise<void> {
+    await this.init()
+  }
 
-  public static getInstance(loadBalancer: ChannelsLoadBalancer = new DefaultChannelLoadBalancer()): ChannelsManager {
-    if (!ChannelsManager.instance) {
-      ChannelsManager.instance = new ChannelsManager(loadBalancer)
+  adapterType: ClientType
+  options: BaseClientOptions
+  models: string[]
+  id: string
+  name: string
+  type: ClientType
+  weight: number
+  priority: number
+  status: 'enabled' | 'disabled'
+  disabledReason?: string
+  statistics: ChannelStatistics
+
+  fromString(str: string): Channel {
+    const channel = JSON.parse(str)
+    return new Channel(channel.id, channel.adapterType, channel.models, new BaseClientOptions().fromString(channel.options), channel.name, channel.type, channel.status, new ChannelStatistics().fromString(channel.statistics), channel.weight, channel.priority, channel.disabledReason)
+  }
+
+  toString(): string {
+    const toJsonStr = {
+      id: this.id,
+      models: this.models,
+      adapterType: this.adapterType,
+      options: this.options.toString(),
+      name: this.name,
+      type: this.type,
+      weight: this.weight,
+      statistics: this.statistics.toString(),
+      status: this.status,
+      priority: this.priority,
+      disabledReason: this.disabledReason,
     }
-    return ChannelsManager.instance
-  }
-
-  public static setStorage(storage: ChannelsStorage): ChannelsManager {
-    ChannelsManager.getInstance().setStorage(storage)
-    return ChannelsManager.instance
-  }
-
-  public setStorage(storage: ChannelsStorage) {
-    this.storage = storage
-  }
-
-  private constructor(private loadBalancer: ChannelsLoadBalancer) {
-  }
-  
-  async saveChannel(channel: Channel): Promise<void> {
-    await this.storage.saveChannel(channel)
-  }
-  
-  async getChannel(id: string): Promise<Channel | null> {
-    return await this.storage.getChannel(id)
-  }
-
-  async getChannelByName(name: string): Promise<Channel[]> {
-    return await this.storage.getChannelByName(name)
-  }
-  
-  async deleteChannel(name: string): Promise<void> {
-    await this.storage.deleteChannel(name)
-  }
-  
-  async getAllChannels(model?: string): Promise<Channel[]> {
-    return await this.storage.getAllChannels(model)
-  }
-  
-  async getChannelByType(type: Channel['type']): Promise<Channel[]> {
-    return await this.storage.getChannelByType(type)
-  }
-  
-  async getChannelByStatus(status: 'enabled' | 'disabled'): Promise<Channel[]> {
-    return await this.storage.getChannelByStatus(status)
-  }
- 
-  async getChannelByModel(model: string): Promise<Channel[]> {
-    const channels = await this.getAllChannels(model)
-    const channel = await this.loadBalancer.getChannel(model, channels)
-    return channel ? [channel] : []
+    return JSON.stringify(toJsonStr)
   }
 }

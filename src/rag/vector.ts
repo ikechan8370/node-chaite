@@ -61,3 +61,17 @@ export interface VectorDatabase {
    */
   clear(): Promise<void>;
 }
+
+export abstract class AbstractVectorDatabase implements VectorDatabase {
+  abstract addVector(vector: number[], text: string): Promise<string>;
+  abstract addVectors(vectors: number[][], texts: string[]): Promise<string[]>;
+  abstract search(queryVector: number[], k: number): Promise<Array<{ id: string, score: number, text: string }>>;
+  abstract getVector(id: string): Promise<{ vector: number[], text: string } | null>;
+  abstract deleteVector(id: string): Promise<boolean>;
+
+  abstract clear(): Promise<void>
+
+  abstract count(): Promise<number>
+
+  abstract updateVector(id: string, newVector: number[], newText: string): Promise<boolean>
+}
