@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/ikechan8370/node-chaite/compare/v1.0.6...v1.1.0) (2025-03-09)
+
+
+### Features
+
+* add entry class ([018b5a2](https://github.com/ikechan8370/node-chaite/commit/018b5a2c40fde327dfe5f29fc6073c7bd7f49502))
+
 ## [1.0.6](https://github.com/ikechan8370/node-chaite/compare/v1.0.5...v1.0.6) (2025-03-07)
 
 
