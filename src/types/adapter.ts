@@ -134,3 +134,11 @@ export interface HistoryManager {
   deleteConversation(conversationId: string): Promise<void>
   getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined>
 }
+
+export abstract class AbstractHistoryManager implements HistoryManager {
+  name: string
+  abstract saveHistory(message: HistoryMessage, conversationId: string): Promise<void>
+  abstract getHistory(messageId?: string, conversationId?: string): Promise<HistoryMessage[]>
+  abstract deleteConversation(conversationId: string): Promise<void>
+  abstract getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined>
+}

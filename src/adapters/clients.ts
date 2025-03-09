@@ -19,7 +19,10 @@ import DefaultHistoryManager from '../utils/history'
 import { asyncLocalStorage, getKey } from '../utils'
 import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types'
 import { PostProcessor, PreProcessor } from '../types'
-import { ProcessorsManager } from '../share/processors'
+import { ProcessorsManager } from '../share'
+import { OpenAIClient } from './impl/openai/OpenAIClient'
+import { ClaudeClient } from './impl/claude/ClaudeClient'
+import { GeminiClient } from './impl/gemini/GeminiClient'
 
 
 export class AbstractClass implements IClient {
@@ -199,5 +202,19 @@ export class AbstractClass implements IClient {
 
   getEmbedding(_text: string | string[], _options: EmbeddingOption): Promise<EmbeddingResult> {
     throw new Error('Method not implemented.')
+  }
+  
+  public static createClient(name: ClientType, options: BaseClientOptions | Partial<BaseClientOptions>): IClient {
+    switch (name) {
+    case 'openai': {
+      return new OpenAIClient(options)
+    }
+    case 'claude': {
+      return new ClaudeClient(options)
+    }
+    case 'gemini': {
+      return new GeminiClient(options)
+    }
+    }
   }
 }

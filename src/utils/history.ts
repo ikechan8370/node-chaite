@@ -1,10 +1,12 @@
-import { HistoryMessage, HistoryManager } from '../types'
+import { HistoryMessage, AbstractHistoryManager } from '../types'
 
 type HistoryCache = Map<string, Map<string, HistoryMessage>>
 
-class InMemoryHistoryManager implements HistoryManager {
+export class InMemoryHistoryManager extends AbstractHistoryManager {
   cache: HistoryCache
-  constructor(public name: string) {
+  constructor() {
+    super()
+    this.name = 'InMemoryHistoryManager'
     this.cache = new Map<string, Map<string, HistoryMessage>>()
   }
   async saveHistory(message: HistoryMessage, conversationId: string): Promise<void> {
@@ -13,6 +15,7 @@ class InMemoryHistoryManager implements HistoryManager {
     }
     this.cache.get(conversationId)?.set(message.id, message)
   }
+
   async getHistory(messageId?: string, conversationId?: string): Promise<HistoryMessage[]> {
     if (!conversationId) {
       return []
@@ -39,7 +42,9 @@ class InMemoryHistoryManager implements HistoryManager {
   async getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined> {
     return this.cache.get(conversationId)?.get(messageId)
   }
+
+  name: string
   
 }
 
-export default new InMemoryHistoryManager('default')
+export default new InMemoryHistoryManager()
