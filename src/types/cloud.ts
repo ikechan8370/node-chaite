@@ -5,6 +5,8 @@ export interface CloudAPIResponse<T> {
 }
 
 export interface CloudSharingService<T> {
+  setUser(user: User): void,
+  getUser(): User | null,
   authenticate(apiKey: string): Promise<User | null>,
   upload(model: Serializable): Promise<T & { id: string } | null>; // 返回共享ID
   download(shareId: string): Promise<T | null>;
@@ -17,7 +19,7 @@ type FilterValue = string | number | boolean | FilterValue[];
 export type Filter = Record<string, FilterValue | Record<string, FilterValue>>
 
 export interface SearchOption {
-  searchFields: string[];
+  searchFields?: string[];
   // todo
 }
 

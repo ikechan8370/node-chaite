@@ -1,22 +1,58 @@
-import { ILogger } from '../types'
+import EventEmitter from 'node:events'
 
-export class GlobalConfig {
-  private static instance: GlobalConfig | null = null
+export const DEFAULT_HOST = '127.0.0.1'
+export const DEFAULT_PORT = 48370
 
-  static getInstance(): GlobalConfig {
-    if (!GlobalConfig.instance) {
-      GlobalConfig.instance = new GlobalConfig()
+export class GlobalConfig extends EventEmitter {
+  private authKey: string
+  private host: string
+  private port: number
+
+  setAuthKey (key: string) {
+    if (key === this.authKey) {
+      return
     }
-
-    return GlobalConfig.instance
+    this.emit('change', {
+      key: 'authKey',
+      newVal: key,
+      oldVal: this.authKey,
+    })
+    this.authKey = key
   }
 
-  private constructor() {}
+  setHost (host: string) {
+    if (host === this.host) {
+      return
+    }
+    this.emit('change', {
+      key: 'host',
+      newVal: host,
+      oldVal: this.host,
+    })
+    this.host = host
+  }
 
-  processorsDirPath: string = './processors'
-  dataDir: string = './data'
-  toolsDirPath: string = './tools'
-  cloudBaseUrl?: string
-  cloudApiKey?: string
-  logger?: ILogger
+  setPort (port: number) {
+    if (port === this.port) {
+      return
+    }
+    this.emit('change', {
+      key: 'port',
+      newVal: port,
+      oldVal: this.port,
+    })
+    this.port = port
+  }
+
+  getAuthKey () {
+    return this.authKey
+  }
+
+  getHost () {
+    return this.host || DEFAULT_HOST
+  }
+
+  getPort () {
+    return this.port || DEFAULT_PORT
+  }
 }

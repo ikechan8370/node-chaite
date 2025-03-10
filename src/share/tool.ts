@@ -5,7 +5,7 @@ import {
 } from '../types'
 import { CloudSharingService } from '../types'
 import { ExecutableShareableManager } from './shareable'
-import { BasicStorage } from '../types/storage'
+import { BasicStorage } from '../types'
 
 
 export class ToolManager extends ExecutableShareableManager<ToolDTO, Tool> {
@@ -19,7 +19,7 @@ export class ToolManager extends ExecutableShareableManager<ToolDTO, Tool> {
     this.cloudService = cloudService
   }
 
-  public async init (toolsDirectory: string, storage: BasicStorage<ToolDTO>): Promise<ToolManager> {
+  public static async init (toolsDirectory: string, storage: BasicStorage<ToolDTO>): Promise<ToolManager> {
     if (ToolManager.instance) {
       return ToolManager.instance
     }

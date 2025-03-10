@@ -1,12 +1,11 @@
 import { promises as fsPromises } from 'fs'
 import path from 'path'
 import {
-  Tool,
   ProcessorDTO, Processor,
 } from '../types'
 import { CloudSharingService } from '../types'
 import { ExecutableShareableManager } from './shareable'
-import { BasicStorage } from '../types/storage'
+import { BasicStorage } from '../types'
 
 
 export class ProcessorsManager extends ExecutableShareableManager<ProcessorDTO, Processor> {

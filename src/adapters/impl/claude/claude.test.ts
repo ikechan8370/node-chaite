@@ -1,6 +1,6 @@
 import DefaultHistoryManager from '../../../utils/history'
 import {ArgumentValue, Function, Parameter, Tool, UserMessage} from "../../../types";
-import {DefaultLogger} from "../../../types/common";
+import {DefaultLogger} from "../../../types";
 import {ClaudeClient} from "./ClaudeClient";
 
 const searchTool = new class SearchTool implements Tool {

@@ -104,26 +104,26 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
 }
 
 export interface ILogger {
-  debug(msg: string, ...args: never[]): void
-  info(msg: string, ...args: never[]): void
-  warn(msg: string, ...args: never[]): void
-  error(msg: string, ...args: never[]): void
+  debug(msg: object | string, ...args: never[]): void
+  info(msg: object | string, ...args: never[]): void
+  warn(msg: object | string, ...args: never[]): void
+  error(msg: object | string, ...args: never[]): void
 }
 
 export const DefaultLogger = new class DefaultLogger implements ILogger {
-  debug(msg: string, ...args: never[]): void {
+  debug(msg: object | string, ...args: never[]): void {
     console.log(msg, ...args)
   }
 
-  error(msg: string, ...args: never[]): void {
+  error(msg: object | string, ...args: never[]): void {
     console.log(msg, ...args)
   }
 
-  info(msg: string, ...args: never[]): void {
+  info(msg: object | string, ...args: never[]): void {
     console.log(msg, ...args)
   }
 
-  warn(msg: string, ...args: never[]): void {
+  warn(msg: object | string, ...args: never[]): void {
     console.log(msg, ...args)
   }
 }()
@@ -166,3 +166,6 @@ export interface Vectorizer {
 
 
 export type CloudAPIType = 'tool' | 'processor' | 'chat-preset' | 'tool-setting' | 'channel'
+
+export type CustomConfigValueType = string | number | boolean | object | undefined | null | CustomConfigValueType[]
+export type CustomConfig = Record<string, CustomConfigValueType | Record<string, CustomConfigValueType>>

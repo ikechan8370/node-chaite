@@ -7,10 +7,10 @@ import {
   SearchOption,
   User,
 } from '../types'
-import { HttpClient } from '../utils'
+import { createHttpClient, HttpClient } from '../utils'
 import { CloudAPI } from '../const'
 
-export abstract class DefaultCloudService<T extends AbstractShareable<T>> implements CloudSharingService<T> {
+export class DefaultCloudService<T extends AbstractShareable<T>> implements CloudSharingService<T> {
 
   client: HttpClient
 
@@ -20,13 +20,16 @@ export abstract class DefaultCloudService<T extends AbstractShareable<T>> implem
 
   identifier: string
 
-  cloudApiBaseUrl: string
+  constructor(private cloudApiBaseUrl: string) {
+    this.client = createHttpClient({
+      baseURL: this.cloudApiBaseUrl,
+    })
+  }
 
-  // constructor(private cloudApiBaseUrl: string, public identifier: string, public user: User) {
-  //   this.client = createHttpClient({
-  //     baseURL: this.cloudApiBaseUrl,
-  //   })
-  // }
+  setUser(user: User) {
+    this.user = user
+    this.identifier = user.user_id + ''
+  }
 
   async authenticate(apiKey: string): Promise<User | null> {
     const response = await this.client.post<CloudAPIResponse<User>, unknown>(CloudAPI.USER, {
@@ -79,5 +82,9 @@ export abstract class DefaultCloudService<T extends AbstractShareable<T>> implem
     })
     return response.data?.data || false
   }
-  
+
+  getUser(): User | null {
+    return this.user
+  }
+
 }

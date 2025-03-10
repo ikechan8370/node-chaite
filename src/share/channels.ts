@@ -1,7 +1,6 @@
 import { NonExecutableShareableManager } from './shareable'
 import { Channel, DefaultChannelLoadBalancer } from '../channels'
-import { BasicStorage } from '../types/storage'
-import { ChannelsLoadBalancer } from '../types'
+import { BasicStorage, ChannelsLoadBalancer } from '../types'
 
 export class ChannelsManager extends NonExecutableShareableManager<Channel> {
   private static instance: ChannelsManager
@@ -48,5 +47,11 @@ export class ChannelsManager extends NonExecutableShareableManager<Channel> {
     const channel = await this.loadBalancer.getChannel(model, channels)
     return channel ? [channel] : []
   }
+  
+  async getChannelsByModel(model: string, totalQuantity: number): Promise<{ channel: Channel; quantity: number }[]> {
+    const channels = await this.getAllChannels(model)
+    return await this.loadBalancer.getChannels(model, channels, totalQuantity)
+  }
+  
 
 }

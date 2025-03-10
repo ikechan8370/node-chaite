@@ -29,7 +29,9 @@
   "description": "core for chatgpt-plugin and karin-plugin-chatgpt",
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/pdf-parse": "^1.1.4",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
@@ -52,6 +54,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@google/generative-ai": "^0.22.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.9.0",
     "openai": "^4.86.1"
   }

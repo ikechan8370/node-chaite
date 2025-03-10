@@ -1,8 +1,7 @@
-import { Vectorizer } from '../../types'
-import { OpenAIClient } from '../../adapters'
+import { IClient, Vectorizer } from '../../types'
 
-export class OpenAIVectorizer implements Vectorizer {
-  constructor(private client: OpenAIClient, private model: string, private dimensions: number) {
+export class VectorizerImpl implements Vectorizer {
+  constructor(private client: IClient, private model: string, private dimensions: number) {
   }
 
   async textToVector(text: string): Promise<number[]> {

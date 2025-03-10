@@ -1,6 +1,6 @@
 import { NonExecutableShareableManager } from './shareable'
 import { ChatPreset } from '../channels'
-import { BasicStorage } from '../types/storage'
+import { BasicStorage } from '../types'
 
 export class ChatPresetManager extends NonExecutableShareableManager<ChatPreset> {
   private static instance: ChatPresetManager

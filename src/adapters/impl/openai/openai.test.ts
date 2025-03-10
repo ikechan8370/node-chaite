@@ -1,7 +1,7 @@
 import {OpenAIClient} from "./OpenAIClient";
 import DefaultHistoryManager from '../../../utils/history'
 import {ArgumentValue, Function, ModelResponseChunk, Parameter, Tool, UserMessage} from "../../../types";
-import {BaseClientOptions, DefaultLogger} from "../../../types/common";
+import {BaseClientOptions, DefaultLogger} from "../../../types";
 
 const searchTool = new class SearchTool implements Tool {
   constructor() {

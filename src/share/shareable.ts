@@ -96,9 +96,18 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
    * 返回实例名字们
    * @returns 实例名字列表
    */
-  public async listInstances(): Promise<string[]> {
+  public async listInstanceNames(): Promise<string[]> {
     return Array.from(this.instanceMap.keys())
   }
+
+  public async listInstances(): Promise<T[]> {
+    return this.storage.listItems()
+  }
+
+  public async getInstanceT(id: string): Promise<T | null> {
+    return this.storage.getItem(id)
+  }
+
 
   /**
    * 获取实例对象而非Shareable DTO
@@ -121,7 +130,12 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     }
   }
 
-  public async addInstance(name: string, code: string): Promise<void> {
+  public async addInstance(instance: T): Promise<void> {
+    await this.storage.setItem(instance.id, instance)
+    await this.addInstanceCode(instance.name, instance.code as string)
+  }
+
+  public async addInstanceCode(name: string, code: string): Promise<void> {
     const filename = `${Date.now()}_${name.replace(/[^a-zA-Z0-9_]/g, '_')}.js`
     const filePath = path.join(this.codeDirectory, filename)
 
@@ -134,7 +148,9 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
 
     if (!filename) {
       // 如果实例不存在，创建一个新的
-      return this.addInstance(name, code)
+      return this.addInstance({
+        name, code,
+      } as T)
     }
 
     const filePath = path.join(this.codeDirectory, filename)
@@ -160,7 +176,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
   abstract serializeInstance(name: string): Promise<T | null>
 
   public async deserializeExecutableInstance(serialized: T): Promise<C> {
-    await this.addInstance(serialized.name, serialized.code as string)
+    await this.addInstance(serialized)
     const tool = await this.getInstance(serialized.name)
     if (!tool) throw new Error(`Failed to deserialize ${this.type} '${serialized.name}'`)
     return tool
@@ -183,7 +199,12 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     return instance?.id
   }
 
-  public async getExecutableFromCloud(shareId: string): Promise<C | null> {
+  public async listFromCloud(filter: Filter, query: string, searchOption: SearchOption): Promise<T[] | null> {
+    const service = this.checkCloudService()
+    return await service.list(filter, query, searchOption)
+  }
+
+  public async getFromCloud(shareId: string): Promise<C | null> {
     const service = this.checkCloudService()
     const serialized = await service.download(shareId)
     return serialized ? this.deserializeExecutableInstance(serialized) : null
@@ -210,6 +231,10 @@ export abstract class NonExecutableShareableManager<T extends Shareable<T>> {
   cloudService?: CloudSharingService<T>
 
   protected constructor(protected type: NonExecutableSShareableType, protected storage: BasicStorage<T>) {
+  }
+
+  public setCloudService (cloudService: CloudSharingService<T>) {
+    this.cloudService = cloudService
   }
 
   async addInstance(instance: T) {

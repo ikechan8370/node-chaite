@@ -22,5 +22,6 @@ export class ChannelStatistics implements Serializable, DeSerializable<ChannelSt
 
 export interface ChannelsLoadBalancer {
   getChannel(model: string, channels: Channel[]): Promise<Channel | null>
+  getChannels(model: string, channels: Channel[], totalQuantity: number): Promise<{ channel: Channel; quantity: number }[]>
 }
 
