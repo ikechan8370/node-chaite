@@ -1,11 +1,11 @@
 import express from 'express'
-import AuthRouter from './auth'
-import ChannelsRouter from './channels'
-import ToolsRouter from './tools'
-import ChatPresetRouter from './preset'
-import StateRouter from './state'
-import ConfigRouter from './config'
-import { authenticateToken } from './middlewares'
+import AuthRouter from './auth.js'
+import ChannelsRouter from './channels.js'
+import ToolsRouter from './tools.js'
+import ChatPresetRouter from './preset.js'
+import StateRouter from './state.js'
+import ConfigRouter from './config.js'
+import { authenticateToken } from './middlewares.js'
 
 export function runServer (host: string, port: number) {
   const app = express()

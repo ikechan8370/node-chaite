@@ -6,9 +6,9 @@ import {
   Filter,
   SearchOption,
   User,
-} from '../types'
-import { createHttpClient, HttpClient } from '../utils'
-import { CloudAPI } from '../const'
+} from '../types/index.js'
+import { createHttpClient, HttpClient } from '../utils/index.js'
+import { CloudAPI } from '../const/index.js'
 
 export class DefaultCloudService<T extends AbstractShareable<T>> implements CloudSharingService<T> {
 

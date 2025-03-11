@@ -3,7 +3,7 @@ import {
   ILogger,
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
-} from '../types'
+} from '../types/index.js'
 import { AsyncLocalStorage } from 'async_hooks'
 import fs from 'fs/promises'
 import path from 'path'

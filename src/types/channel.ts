@@ -1,5 +1,5 @@
-import { DeSerializable, Serializable } from './cloud'
-import { Channel } from '../channels'
+import { DeSerializable, Serializable } from './cloud.js'
+import { Channel } from '../channels/index.js'
 
 export class ChannelStatistics implements Serializable, DeSerializable<ChannelStatistics> {
   callTimes?: number

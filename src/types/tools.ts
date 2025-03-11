@@ -1,5 +1,5 @@
-import { ArgumentValue } from './models'
-import { AbstractShareable } from './cloud'
+import { ArgumentValue } from './models.js'
+import { AbstractShareable } from './cloud.js'
 
 export interface Function {
     name: string

@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express'
-import { Chaite, ChaiteResponse } from '../index'
+import { Chaite, ChaiteResponse } from '../index.js'
 
 const router = express.Router()
 

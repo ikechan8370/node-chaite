@@ -1,7 +1,6 @@
 import express from 'express'
 import { Request, Response } from 'express'
-import { Chaite, ChaiteResponse, Channel, Filter, SearchOption } from '../index'
-import { authenticateToken } from './middlewares'
+import { Chaite, ChaiteResponse, Channel, Filter, SearchOption } from '../index.js'
 const router = express.Router()
 
 interface ListChannels {

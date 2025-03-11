@@ -5,7 +5,7 @@ import {
   ChannelStatistics,
   ClientType,
   Wait,
-} from '../types'
+} from '../types/index.js'
 
 export class DefaultChannelLoadBalancer implements ChannelsLoadBalancer {
   public constructor() {}

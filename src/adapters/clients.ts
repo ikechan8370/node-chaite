@@ -7,25 +7,22 @@ import {
   Tool, ToolCallResult,
   ToolCallResultMessage,
   UserMessage,
-} from '../types'
+} from '../types/index.js'
 import {
   BaseClientOptions, ChaiteContext,
   DefaultLogger,
   ILogger,
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
-} from '../types'
-import DefaultHistoryManager from '../utils/history'
-import { asyncLocalStorage, getKey } from '../utils'
-import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types'
-import { PostProcessor, PreProcessor } from '../types'
-import { ProcessorsManager } from '../share'
-import { OpenAIClient } from './impl/openai/OpenAIClient'
-import { ClaudeClient } from './impl/claude/ClaudeClient'
-import { GeminiClient } from './impl/gemini/GeminiClient'
+} from '../types/index.js'
+import DefaultHistoryManager from '../utils/history.js'
+import { asyncLocalStorage, getKey } from '../utils/index.js'
+import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types/index.js'
+import { PostProcessor, PreProcessor } from '../types/index.js'
+import { ProcessorsManager } from '../share/index.js'
 
 
-export class AbstractClass implements IClient {
+export class AbstractClient implements IClient {
 
   options: BaseClientOptions
   constructor(options: BaseClientOptions | Partial<BaseClientOptions>) {
@@ -202,19 +199,5 @@ export class AbstractClass implements IClient {
 
   getEmbedding(_text: string | string[], _options: EmbeddingOption): Promise<EmbeddingResult> {
     throw new Error('Method not implemented.')
-  }
-  
-  public static createClient(name: ClientType, options: BaseClientOptions | Partial<BaseClientOptions>): IClient {
-    switch (name) {
-    case 'openai': {
-      return new OpenAIClient(options)
-    }
-    case 'claude': {
-      return new ClaudeClient(options)
-    }
-    case 'gemini': {
-      return new GeminiClient(options)
-    }
-    }
   }
 }

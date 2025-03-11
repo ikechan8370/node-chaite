@@ -1,6 +1,6 @@
 import express from 'express'
 import { Request, Response } from 'express'
-import { Chaite, ChaiteResponse, Channel, ChatPreset, Filter, SearchOption } from '../index'
+import { Chaite, ChaiteResponse, ChatPreset, Filter, SearchOption } from '../index.js'
 const router = express.Router()
 
 interface ListPresets {

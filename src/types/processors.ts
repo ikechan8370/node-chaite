@@ -1,7 +1,7 @@
 // ************** 处理器 **************
 
-import { AbstractShareable } from './cloud'
-import { AssistantMessage, UserMessage } from './models'
+import { AbstractShareable } from './cloud.js'
+import { AssistantMessage, UserMessage } from './models.js'
 
 export class ProcessorDTO extends AbstractShareable<ProcessorDTO> {
   constructor(public name: string, public code: string) {

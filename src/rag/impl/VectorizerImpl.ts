@@ -1,4 +1,4 @@
-import { IClient, Vectorizer } from '../../types'
+import { IClient, Vectorizer } from '../../types/index.js'
 
 export class VectorizerImpl implements Vectorizer {
   constructor(private client: IClient, private model: string, private dimensions: number) {

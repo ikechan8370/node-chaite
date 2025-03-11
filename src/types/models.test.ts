@@ -1,5 +1,5 @@
-import {UserMessage} from "./models";
-import {PreProcessor} from "./processors";
+import {UserMessage} from "./models.js";
+import {PreProcessor} from "./processors.js";
 
 describe('ProcessorSerialize', () => {
   test('ProcessorSerialize works correctly', () => {

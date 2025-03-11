@@ -1,7 +1,7 @@
 import fs, { promises as fsPromises } from 'fs'
 import path from 'path'
-import { CloudSharingService, Filter, SearchOption, Shareable } from '../types'
-import { BasicStorage } from '../types/storage'
+import { CloudSharingService, Filter, SearchOption, Shareable } from '../types/index.js'
+import { BasicStorage } from '../types/storage.js'
 
 // todo
 export type ExecutableSShareableType = 'tool' | 'processor'
@@ -12,7 +12,6 @@ export type ExecutableSShareableType = 'tool' | 'processor'
  * @interface ExecutableShareableManager
  */
 export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
-  private type: ExecutableSShareableType
   private watcher: fs.FSWatcher | null = null
   /**
    * 存储示例名称和文件名的映射
@@ -24,10 +23,10 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
    * @private
    */
   protected codeDirectory: string
-  storage: BasicStorage<T>
   cloudService?: CloudSharingService<T>
 
-  protected constructor(type: ExecutableSShareableType, codeDirectory: string, storage: BasicStorage<T>) {
+  protected constructor(private type: ExecutableSShareableType, codeDirectory: string, private storage: BasicStorage<T>) {
+    this.codeDirectory = codeDirectory
   }
   public setCloudService (cloudService: CloudSharingService<T>) {
     this.cloudService = cloudService

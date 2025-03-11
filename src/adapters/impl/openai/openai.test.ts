@@ -1,7 +1,7 @@
-import {OpenAIClient} from "./OpenAIClient";
-import DefaultHistoryManager from '../../../utils/history'
-import {ArgumentValue, Function, ModelResponseChunk, Parameter, Tool, UserMessage} from "../../../types";
-import {BaseClientOptions, DefaultLogger} from "../../../types";
+import {OpenAIClient} from "./OpenAIClient.js";
+import DefaultHistoryManager from '../../../utils/history.js'
+import {ArgumentValue, Function, ModelResponseChunk, Parameter, Tool, UserMessage} from "../../../types/index.js";
+import {BaseClientOptions, DefaultLogger} from "../../../types/index.js";
 
 const searchTool = new class SearchTool implements Tool {
   constructor() {

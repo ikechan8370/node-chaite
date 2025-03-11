@@ -1,4 +1,4 @@
-import { AbstractVectorDatabase, VectorDatabase } from '../vector'
+import { AbstractVectorDatabase } from '../vector.js'
 
 /**
  * 使用Cloudflare的Vectorize数据库实现向量数据库

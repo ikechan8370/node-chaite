@@ -1,7 +1,7 @@
-import { VectorDatabase } from './vector'
-import { RAGResult, Vectorizer } from '../types'
-import { TextProcessor } from './text'
-import { RAGAggregator } from './result'
+import { VectorDatabase } from './vector.js'
+import { RAGResult, Vectorizer } from '../types/index.js'
+import { TextProcessor } from './text.js'
+import { RAGAggregator } from './result.js'
 
 export class RAGManager {
 

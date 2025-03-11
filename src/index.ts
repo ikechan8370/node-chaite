@@ -1,4 +1,4 @@
-import { ChannelsManager, ChatPresetManager, DefaultCloudService, ProcessorsManager, ToolManager } from './share'
+import { ChannelsManager, ChatPresetManager, DefaultCloudService, ProcessorsManager, ToolManager } from './share/index.js'
 import {
   CustomConfig,
   HistoryManager,
@@ -7,23 +7,23 @@ import {
   SendMessageOption,
   ToolDTO,
   UserMessage,
-} from './types'
-import { MessageEvent, UserModeSelector } from './types/external'
-import { AbstractClass } from './adapters'
-import { BasicStorage, UserState } from './types'
-import { DEFAULT_HOST, DEFAULT_PORT, FrontEndAuthHandler, GlobalConfig, InMemoryHistoryManager } from './utils'
-import { Channel, ChatPreset } from './channels'
-import { RAGManager } from './rag'
+} from './types/index.js'
+import { MessageEvent, UserModeSelector } from './types/external.js'
+import { createClient } from './adapters/index.js'
+import { BasicStorage, UserState } from './types/index.js'
+import { DEFAULT_HOST, DEFAULT_PORT, FrontEndAuthHandler, GlobalConfig, InMemoryHistoryManager } from './utils/index.js'
+import { Channel, ChatPreset } from './channels/index.js'
+import { RAGManager } from './rag/index.js'
 import EventEmitter from 'node:events'
-import { runServer } from './controllers'
+import { runServer } from './controllers/index.js'
 
-export * from './types'
-export * from './utils'
-export * from './adapters'
-export * from './rag'
-export * from './channels'
-export * from './const'
-export * from './share'
+export * from './types/index.js'
+export * from './utils/index.js'
+export * from './adapters/index.js'
+export * from './rag/index.js'
+export * from './channels/index.js'
+export * from './const/index.js'
+export * from './share/index.js'
 
 
 /**
@@ -117,7 +117,7 @@ export class Chaite extends EventEmitter {
       await channel.options.ready()
       channel.options.setHistoryManager(this.historyManager)
       channel.options.setLogger(this.logger)
-      const client = AbstractClass.createClient(channel.adapterType, channel.options)
+      const client = createClient(channel.adapterType, channel.options)
       const userState = await this.userStateStorage.getItem(e.sender.user_id)
       const newOptions = Object.assign(options.chatPreset.sendMessageOption, options)
       newOptions.conversationId = userState?.current?.conversationId

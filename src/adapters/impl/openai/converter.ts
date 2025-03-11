@@ -4,7 +4,7 @@ import {
   registerFromChaiteConverter,
   registerFromChaiteToolConverter,
   registerIntoChaiteConverter,
-} from '../../../utils/converter'
+} from '../../../utils/converter.js'
 import {
   AssistantMessage,
   IMessage, MessageContent, ReasoningContent,
@@ -13,10 +13,10 @@ import {
   ToolCall,
   ToolCallResultMessage,
   UserMessage,
-} from '../../../types'
+} from '../../../types/index.js'
 import OpenAI from 'openai'
 import FunctionDefinition = OpenAI.FunctionDefinition;
-import { FunctionParameters } from 'openai/src/resources/shared'
+import { FunctionParameters } from 'openai/src/resources/shared.js'
 
 // 将消息IMessage转换为OpenAI格式
 registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompletionMessageParam[]>('openai', (source: IMessage) => {

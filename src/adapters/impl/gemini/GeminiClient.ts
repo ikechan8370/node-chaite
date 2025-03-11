@@ -1,11 +1,11 @@
-import { BaseClientOptions } from '../../../types/common'
-import { AbstractClass } from '../../clients'
+import { BaseClientOptions } from '../../../types/common.js'
+import { AbstractClient } from '../../clients.js'
 import {
   EmbeddingOption,
   EmbeddingResult,
   HistoryMessage,
   ModelUsage,
-} from '../../../types'
+} from '../../../types/index.js'
 import {
   Content,
   FunctionCallingConfig, FunctionCallingMode,
@@ -13,13 +13,13 @@ import {
   GoogleGenerativeAI,
   ToolConfig,
 } from '@google/generative-ai'
-import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
-import './converter'
-import { asyncLocalStorage, getKey } from '../../../utils'
-import { SendMessageOption } from '../../../types'
+import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter.js'
+import './converter.js'
+import { asyncLocalStorage, getKey } from '../../../utils/index.js'
+import { SendMessageOption } from '../../../types/index.js'
 
 export type GeminiClientOptions = BaseClientOptions
-export class GeminiClient extends AbstractClass {
+export class GeminiClient extends AbstractClient {
   constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>) {
     super(options)
     this.name = 'gemini'

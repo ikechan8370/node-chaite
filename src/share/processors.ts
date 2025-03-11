@@ -2,16 +2,16 @@ import { promises as fsPromises } from 'fs'
 import path from 'path'
 import {
   ProcessorDTO, Processor,
-} from '../types'
-import { CloudSharingService } from '../types'
-import { ExecutableShareableManager } from './shareable'
-import { BasicStorage } from '../types'
+} from '../types/index.js'
+import { CloudSharingService } from '../types/cloud.js'
+import { ExecutableShareableManager } from './shareable.js'
+import { BasicStorage } from '../types/index.js'
 
 
 export class ProcessorsManager extends ExecutableShareableManager<ProcessorDTO, Processor> {
   private static instance: ProcessorsManager
 
-  private constructor(private processorsDirectory: string, public storage: BasicStorage<ProcessorDTO>) {
+  private constructor(processorsDirectory: string, storage: BasicStorage<ProcessorDTO>) {
     super('tool', processorsDirectory, storage)
   }
 

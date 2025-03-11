@@ -1,17 +1,15 @@
 import { promises as fsPromises } from 'fs'
 import path from 'path'
 import {
-  Tool, ToolDTO,
-} from '../types'
-import { CloudSharingService } from '../types'
-import { ExecutableShareableManager } from './shareable'
-import { BasicStorage } from '../types'
+  Tool, ToolDTO, BasicStorage, CloudSharingService,
+} from '../types/index.js'
+import { ExecutableShareableManager } from './shareable.js'
 
 
 export class ToolManager extends ExecutableShareableManager<ToolDTO, Tool> {
   private static instance: ToolManager
 
-  private constructor(private toolsDirectory: string, public storage: BasicStorage<ToolDTO>) {
+  private constructor(toolsDirectory: string, storage: BasicStorage<ToolDTO>) {
     super('tool', toolsDirectory, storage)
   }
 

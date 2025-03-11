@@ -1,6 +1,6 @@
-import { NonExecutableShareableManager } from './shareable'
-import { Channel, DefaultChannelLoadBalancer } from '../channels'
-import { BasicStorage, ChannelsLoadBalancer } from '../types'
+import { NonExecutableShareableManager } from './shareable.js'
+import { Channel, DefaultChannelLoadBalancer } from '../channels/index.js'
+import { BasicStorage, ChannelsLoadBalancer } from '../types/index.js'
 
 export class ChannelsManager extends NonExecutableShareableManager<Channel> {
   private static instance: ChannelsManager

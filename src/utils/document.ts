@@ -1,4 +1,4 @@
-import { Parser, ValidExtension } from '../types'
+import { Parser, ValidExtension } from '../types/index.js'
 import {
   DocxBufferParser,
   DocxFileParser,
@@ -6,7 +6,7 @@ import {
   PdfFileParser,
   PureTextBufferParser,
   PureTextFileParser,
-} from '../rag'
+} from '../rag/index.js'
 
 /**
  * 文档解析器管理

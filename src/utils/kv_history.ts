@@ -1,4 +1,4 @@
-import { HistoryManager, HistoryMessage } from '../types'
+import { HistoryManager, HistoryMessage } from '../types/index.js'
 
 // 抽象的 KV 存储接口，可以基于redis或keyv等来实现该接口
 export interface KVStore {

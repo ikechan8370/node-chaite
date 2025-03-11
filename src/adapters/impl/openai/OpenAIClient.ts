@@ -6,18 +6,18 @@ import {
   ModelResponseChunk, ModelUsage,
   TextContent,
   ToolCall,
-} from '../../../types'
-import { AbstractClass } from '../../clients'
-import { BaseClientOptions, ChaiteContext } from '../../../types/common'
+} from '../../../types/index.js'
+import { AbstractClient } from '../../clients.js'
+import { BaseClientOptions, ChaiteContext } from '../../../types/common.js'
 import OpenAI from 'openai'
-import { asyncLocalStorage, getKey } from '../../../utils'
-import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
-import './converter'
-import { EmbeddingOption, SendMessageOption } from '../../../types'
+import { asyncLocalStorage, getKey } from '../../../utils/index.js'
+import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter.js'
+import './converter.js'
+import { EmbeddingOption, SendMessageOption } from '../../../types/index.js'
 
 export type OpenAIClientOptions = BaseClientOptions
 
-export class OpenAIClient extends AbstractClass {
+export class OpenAIClient extends AbstractClient {
 
   constructor(options: OpenAIClientOptions  | Partial<OpenAIClientOptions>) {
     super(options)

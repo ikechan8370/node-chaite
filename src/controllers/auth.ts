@@ -1,6 +1,6 @@
 import express from 'express'
 import { Request, Response } from 'express'
-import { Chaite, ChaiteResponse, FrontEndAuthHandler, GlobalConfig } from '../index'
+import { Chaite, ChaiteResponse, FrontEndAuthHandler, GlobalConfig } from '../index.js'
 const router = express.Router()
 
 interface LoginRequest {

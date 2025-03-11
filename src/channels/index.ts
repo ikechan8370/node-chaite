@@ -1,2 +1,2 @@
-export * from './channels'
-export * from './preset'
+export * from './channels.js'
+export * from './preset.js'

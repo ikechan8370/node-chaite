@@ -1,7 +1,7 @@
-import DefaultHistoryManager from '../../../utils/history'
-import {ArgumentValue, Function, Parameter, Tool, UserMessage} from "../../../types";
-import {DefaultLogger} from "../../../types";
-import {ClaudeClient} from "./ClaudeClient";
+import DefaultHistoryManager from '../../../utils/history.js'
+import {ArgumentValue, Function, Parameter, Tool, UserMessage} from "../../../types/index.js";
+import {DefaultLogger} from "../../../types/index.js";
+import {ClaudeClient} from "./ClaudeClient.js";
 
 const searchTool = new class SearchTool implements Tool {
   constructor() {

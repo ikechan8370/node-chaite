@@ -1,4 +1,4 @@
-import { DocumentFileParser, DocumentPathParser, ParserType } from '../../types'
+import { DocumentFileParser, DocumentPathParser, ParserType } from '../../types/document.js'
 import * as fs from 'node:fs'
 
 export class PdfFileParser extends DocumentPathParser {
