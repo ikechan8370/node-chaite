@@ -111,20 +111,63 @@ export interface ILogger {
 }
 
 export const DefaultLogger = new class DefaultLogger implements ILogger {
+
+  readonly name: string
+  readonly enableColors: boolean
+
+  static readonly COLORS = {
+    reset: '\x1b[0m',
+    debug: '\x1b[36m', // 青色
+    info: '\x1b[32m',  // 绿色
+    warn: '\x1b[33m',  // 黄色
+    error: '\x1b[31m', // 红色
+  }
+
+  constructor(name: string = 'Chaite', enableColors: boolean = true) {
+    this.name = name
+    this.enableColors = enableColors
+  }
+
+  formatDate(): string {
+    const now = new Date()
+    const hours = now.getHours().toString().padStart(2, '0')
+    const minutes = now.getMinutes().toString().padStart(2, '0')
+    const seconds = now.getSeconds().toString().padStart(2, '0')
+    const milliseconds = now.getMilliseconds().toString().padStart(3, '0')
+
+    return `${hours}:${minutes}:${seconds}.${milliseconds}`
+  }
+
+  formatMessage(level: string, msg: object | string, args: never[]): string {
+    // 格式化前缀
+    const prefix = `[${this.name}][${this.formatDate()}][${level}]`
+
+    // 格式化消息内容
+    const formattedMsg = typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)
+
+    // 添加颜色（如果启用）
+    if (this.enableColors) {
+      const color = DefaultLogger.COLORS[level.toLowerCase() as keyof typeof DefaultLogger.COLORS] || ''
+      return `${color}${prefix}${DefaultLogger.COLORS.reset} ${formattedMsg}`
+    }
+
+    return `${prefix} ${formattedMsg}`
+  }
+  
   debug(msg: object | string, ...args: never[]): void {
-    console.log(msg, ...args)
+    console.log(this.formatMessage('DEBUG', msg, args), ...args)
   }
 
   error(msg: object | string, ...args: never[]): void {
-    console.log(msg, ...args)
+    console.log(this.formatMessage('ERROR', msg, args), ...args)
   }
 
   info(msg: object | string, ...args: never[]): void {
-    console.log(msg, ...args)
+    console.log(this.formatMessage('INFO', msg, args), ...args)
   }
 
   warn(msg: object | string, ...args: never[]): void {
-    console.log(msg, ...args)
+    console.log(this.formatMessage('WARN', msg, args), ...args)
   }
 }()
 

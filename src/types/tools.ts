@@ -19,6 +19,7 @@ export interface Property {
 }
 
 export interface Tool {
+    name: Function['name']
     type: 'function'
     function: Function
     run(args: Record<string, ArgumentValue | Record<string, ArgumentValue>>): Promise<string>

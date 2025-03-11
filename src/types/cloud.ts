@@ -53,8 +53,8 @@ export interface CloudModel {
   embedded: boolean
   description: string
   uploader: User
-  utime: number
-  ctime: number
+  updatedAt: string
+  createdAt: string
 }
 
 export type Shareable<T> = Serializable & DeSerializable<T> & CloudModel
@@ -62,13 +62,13 @@ export type Shareable<T> = Serializable & DeSerializable<T> & CloudModel
 export abstract class AbstractShareable<T> implements Shareable<T> {
   modelType: 'settings' | 'executable'
   code?: string
-  ctime: number
+  createdAt: string
   description: string
   embedded: boolean
   id: string
   name: string
   uploader: User
-  utime: number
+  updatedAt: string
 
   fromString(str: string): T {
     return JSON.parse(str) as T

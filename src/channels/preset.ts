@@ -13,8 +13,8 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
   toString(): string {
     return JSON.stringify({
       id: this.id,
-      ctime: this.ctime,
-      utime: this.utime,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
       embedded: this.embedded,
       uploader: this.uploader,
       modelType: this.modelType,
@@ -39,8 +39,8 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     preset.namespace = raw.namespace
     preset.description = raw.description
     preset.id = raw.id
-    preset.ctime = raw.ctime
-    preset.utime = raw.utime
+    preset.createdAt = raw.createdAt
+    preset.updatedAt = raw.updatedAt
     preset.embedded = raw.embedded
     preset.uploader = raw.uploader
     preset.modelType = raw.modelType

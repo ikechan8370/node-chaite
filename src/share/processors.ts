@@ -12,7 +12,7 @@ export class ProcessorsManager extends ExecutableShareableManager<ProcessorDTO, 
   private static instance: ProcessorsManager
 
   private constructor(processorsDirectory: string, storage: BasicStorage<ProcessorDTO>) {
-    super('tool', processorsDirectory, storage)
+    super('processor', processorsDirectory, storage)
   }
 
   public setCloudService(cloudService: CloudSharingService<ProcessorDTO>) {

@@ -24,7 +24,7 @@ const searchTool = new class SearchTool implements Tool {
       } as Parameter
     } as Function
   }
-
+  name: 'search'
   type: "function";
   function: Function
 

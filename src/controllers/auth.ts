@@ -23,6 +23,9 @@ router.post('/login', async (req: Request<object, object, LoginRequest>, res: Re
         token: token,
         expiresIn: 24 * 60 * 60,
       }))
+  } else {
+    res.status(401)
+      .json(ChaiteResponse.fail(null, 'Invalid token'))
   }
 })
 

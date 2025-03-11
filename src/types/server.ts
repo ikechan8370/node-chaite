@@ -1,5 +1,5 @@
 export class ChaiteResponse<T> {
-  constructor(private code: number, private data: T, private msg: string) {
+  constructor(private code: number, private data: T, private message: string) {
   }
 
   static ok<T>(data: T) {

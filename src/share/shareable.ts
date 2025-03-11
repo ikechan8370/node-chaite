@@ -2,6 +2,7 @@ import fs, { promises as fsPromises } from 'fs'
 import path from 'path'
 import { CloudSharingService, Filter, SearchOption, Shareable } from '../types/index.js'
 import { BasicStorage } from '../types/storage.js'
+import { getLogger } from '../index.js'
 
 // todo
 export type ExecutableSShareableType = 'tool' | 'processor'
@@ -57,7 +58,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
       await this.scanInstances()
     })
 
-    console.log(`File watcher set up for directory: ${this.codeDirectory}`)
+    getLogger().debug(`File watcher set up for directory: ${this.codeDirectory}`)
   }
 
   private async scanInstances(): Promise<void> {
@@ -70,7 +71,6 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
           try {
             const filePath = path.join(this.codeDirectory, file)
             // 清除模块缓存以确保获取最新版本
-            delete require.cache[require.resolve(filePath)]
             const module = await import(filePath)
 
             if (module.default && typeof module.default === 'object' && module.default.name) {
@@ -78,16 +78,14 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
               newInstanceMap.set(module.default.name, file)
             }
           } catch (error) {
-            console.error(`Error loading ${this.type} from file '${file}':`, error)
-            // 跳过无法加载的文件
+            getLogger().error(`Error loading ${this.type} from file '${file}':`, error as never)
           }
         }
       }
-
       this.instanceMap = newInstanceMap
-      console.log(`Scanned ${this.instanceMap.size} ${this.type}`)
+      getLogger().info(`Scanned ${this.instanceMap.size} ${this.type}: [${[...this.instanceMap.keys()].join(', ')}]`)
     } catch (error) {
-      console.error(`Error scanning ${this.type} directory:`, error)
+      getLogger().error(`Error scanning ${this.type} directory:`, error as never)
     }
   }
 
@@ -120,7 +118,6 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     const filePath = path.join(this.codeDirectory, filename)
     try {
       // 清除模块缓存，确保获取最新版本
-      delete require.cache[require.resolve(filePath)]
       const module = await import(filePath)
       return module.default as C
     } catch (error) {

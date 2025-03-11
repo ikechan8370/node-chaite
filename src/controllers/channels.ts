@@ -10,15 +10,15 @@ interface ListChannels {
   model?: string
 }
 // todo pageable
-router.get('/list', async (req: Request<object, object, ListChannels>, res: Response) => {
-  const body = req.body
+router.get('/list', async (req: Request<object, object, object, ListChannels>, res: Response) => {
+  const body = req.query
   const chaite = Chaite.getInstance()
   let allChannels = await chaite.getChannelsManager().listInstances()
   if (body.name) {
     allChannels = allChannels.filter(channel => channel.name.includes(body.name as string))
   }
   if (body.type) {
-    allChannels = allChannels.filter(channel => channel.type === body.type)
+    allChannels = allChannels.filter(channel => channel.adapterType === body.type)
   }
   if (body.status) {
     allChannels = allChannels.filter(channel => channel.status === body.status)

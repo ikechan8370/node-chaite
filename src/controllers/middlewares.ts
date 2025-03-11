@@ -6,7 +6,7 @@ export const authenticateToken: RequestHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  const token = req.header('Authorization')
+  const token = req.header('Authorization')?.replace('Bearer ', '')
 
   if (!token) {
     res.status(401).json({ message: 'Access denied, token missing' })
