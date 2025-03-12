@@ -1,5 +1,6 @@
 import { ChannelsManager, ChatPresetManager, DefaultCloudService, ProcessorsManager, ToolManager } from './share/index.js'
 import {
+  ChaiteContext,
   CustomConfig,
   HistoryManager,
   ILogger,
@@ -11,7 +12,14 @@ import {
 import { MessageEvent, UserModeSelector } from './types/external.js'
 import { createClient } from './adapters/index.js'
 import { BasicStorage, UserState } from './types/index.js'
-import { DEFAULT_HOST, DEFAULT_PORT, FrontEndAuthHandler, GlobalConfig, InMemoryHistoryManager } from './utils/index.js'
+import {
+  asyncLocalStorage,
+  DEFAULT_HOST,
+  DEFAULT_PORT,
+  FrontEndAuthHandler,
+  GlobalConfig,
+  InMemoryHistoryManager
+} from './utils/index.js'
 import { Channel, ChatPreset } from './channels/index.js'
 import { RAGManager } from './rag/index.js'
 import EventEmitter from 'node:events'
@@ -108,25 +116,30 @@ export class Chaite extends EventEmitter {
    * @param options 包含对话id和消息id
    */
   async sendMessage (message: UserMessage, e: MessageEvent, options: SendMessageOption & { chatPreset?: ChatPreset }): Promise<ModelResponse> {
-    if (!options.chatPreset) {
-      options.chatPreset = await this.userModeSelector.getChatPreset(e)
-    }
-    const channels = await this.channelsManager.getChannelByModel(options.chatPreset.sendMessageOption.model || '')
-    if (channels.length > 0) {
-      const channel = channels[0]
-      await channel.options.ready()
-      channel.options.setHistoryManager(this.historyManager)
-      channel.options.setLogger(this.logger)
-      const client = createClient(channel.adapterType, channel.options)
-      const userState = await this.userStateStorage.getItem(e.sender.user_id)
-      const newOptions = Object.assign(options.chatPreset.sendMessageOption, options)
-      newOptions.conversationId = userState?.current?.conversationId
-      newOptions.parentMessageId = userState?.current?.messageId || userState?.conversations.find(c => c.id === newOptions.conversationId)?.lastMessageId
-      
-      return  await client.sendMessage(message, newOptions)
-    } else {
-      throw new Error('No available channels')
-    }
+    const context = new ChaiteContext(this.logger)
+    context.setEvent(e)
+    return asyncLocalStorage.run(context, async () => {
+      if (!options.chatPreset) {
+        options.chatPreset = await this.userModeSelector.getChatPreset(e)
+      }
+      const channels = await this.channelsManager.getChannelByModel(options.chatPreset.sendMessageOption.model || '')
+      if (channels.length > 0) {
+        const channel = channels[0]
+        await channel.options.ready()
+        channel.options.setHistoryManager(this.historyManager)
+        channel.options.setLogger(this.logger)
+        const client = createClient(channel.adapterType, channel.options, context)
+        const userState = await this.userStateStorage.getItem(e.sender.user_id)
+        const newOptions = Object.assign(options.chatPreset.sendMessageOption, options)
+        newOptions.conversationId = userState?.current?.conversationId
+        newOptions.parentMessageId = userState?.current?.messageId || userState?.conversations.find(c => c.id === newOptions.conversationId)?.lastMessageId
+
+        return  await client.sendMessage(message, newOptions)
+      } else {
+        throw new Error('No available channels')
+      }
+    })
+
   }
   
   getChannelsManager () {

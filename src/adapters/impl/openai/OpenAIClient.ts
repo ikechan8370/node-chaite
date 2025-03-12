@@ -19,10 +19,9 @@ export type OpenAIClientOptions = BaseClientOptions
 
 export class OpenAIClient extends AbstractClient {
 
-  constructor(options: OpenAIClientOptions  | Partial<OpenAIClientOptions>) {
-    super(options)
+  constructor(options: OpenAIClientOptions  | Partial<OpenAIClientOptions>, context?: ChaiteContext) {
+    super(options, context)
     this.name = 'openai'
-    this.context = new ChaiteContext(this.logger)
   }
 
   async _sendMessage(histories: HistoryMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {

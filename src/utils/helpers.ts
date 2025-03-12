@@ -40,7 +40,9 @@ export async function getKey(apiKeys: string[] | string, strategy: MultipleKeySt
 }
 
 export const asyncLocalStorage = new AsyncLocalStorage<ChaiteContext>()
-
+export async function useEvent() {
+  return asyncLocalStorage.getStore()?.getEvent()
+}
 /**
  * 表示构造函数的类型
  */

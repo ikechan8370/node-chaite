@@ -2,14 +2,14 @@ import Anthropic from '@anthropic-ai/sdk'
 // import type { MessageParam, ToolChoice, ToolChoiceTool } from '@anthropic-ai/sdk/src/resources/messages/messages'
 import { AbstractClient } from '../../clients.js'
 import { GeminiClientOptions } from '../gemini/GeminiClient.js'
-import { HistoryMessage, ModelUsage } from '../../../types/index.js'
+import { ChaiteContext, HistoryMessage, ModelUsage } from '../../../types/index.js'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter.js'
 import './converter.js'
 import { SendMessageOption } from '../../../types/index.js'
 
 export class ClaudeClient extends AbstractClient {
-  constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>) {
-    super(options)
+  constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>, context?: ChaiteContext) {
+    super(options, context)
     this.name = 'claude'
   }
   

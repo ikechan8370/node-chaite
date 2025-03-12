@@ -25,7 +25,7 @@ import { ProcessorsManager } from '../share/index.js'
 export class AbstractClient implements IClient {
 
   options: BaseClientOptions
-  constructor(options: BaseClientOptions | Partial<BaseClientOptions>) {
+  constructor(options: BaseClientOptions | Partial<BaseClientOptions>, context?: ChaiteContext) {
     options = BaseClientOptions.create(options)
     this.features = options.features || []
     this.tools = options.tools || []
@@ -36,6 +36,9 @@ export class AbstractClient implements IClient {
     this.historyManager = options.historyManager || DefaultHistoryManager
     this.context = new ChaiteContext(this.logger)
     this.options = options as BaseClientOptions
+    if (context) {
+      this.context = context
+    }
   }
   
   async fullfillProcessors () {
@@ -86,7 +89,7 @@ export class AbstractClient implements IClient {
 
   sendMessage(message: UserMessage | undefined, options: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse> {
     options = SendMessageOption.create(options)
-    return asyncLocalStorage.run(this.context, async () => {
+    const logicFn = async () => {
       await this.options.ready()
       this.preProcessors = this.options.getPreProcessors()
       this.postProcessors = this.options.getPostProcessors()
@@ -170,14 +173,20 @@ export class AbstractClient implements IClient {
         return await this.sendMessage(undefined, options)
       }
 
-
       return {
         id: modelResponse.id,
         model: options.model,
         contents: modelResponse.content,
         usage: modelResponse.usage,
       } as ModelResponse
-    })
+    }
+    if (!asyncLocalStorage.getStore()) {
+      return asyncLocalStorage.run(this.context, async () => {
+        return logicFn()
+      })
+    } else {
+      return logicFn()
+    }
   }
   
   _sendMessage(_histories: HistoryMessage[], _apiKey: string, _options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {

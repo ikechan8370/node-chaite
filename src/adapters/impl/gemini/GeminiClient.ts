@@ -1,4 +1,4 @@
-import { BaseClientOptions } from '../../../types/common.js'
+import {BaseClientOptions, ChaiteContext} from '../../../types/common.js'
 import { AbstractClient } from '../../clients.js'
 import {
   EmbeddingOption,
@@ -20,8 +20,8 @@ import { SendMessageOption } from '../../../types/index.js'
 
 export type GeminiClientOptions = BaseClientOptions
 export class GeminiClient extends AbstractClient {
-  constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>) {
-    super(options)
+  constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>, context?: ChaiteContext) {
+    super(options, context)
     this.name = 'gemini'
   }
 
