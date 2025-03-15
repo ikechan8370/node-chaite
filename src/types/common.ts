@@ -3,7 +3,7 @@ import { Tool } from './tools.js'
 import { HistoryManager } from './adapter.js'
 import { PostProcessor, PreProcessor } from './processors.js'
 import { DeSerializable, Serializable, Wait } from './cloud.js'
-import { MessageEvent } from './external.js'
+import { EventMessage } from './external.js'
 
 export const MultipleKeyStrategyChoice = {
   RANDOM: 'random' as MultipleKeyStrategy,
@@ -177,11 +177,11 @@ export class ChaiteContext {
     this.logger = logger
   }
   logger?: ILogger
-  private event?: MessageEvent
-  setEvent(event: MessageEvent) {
+  private event?: EventMessage
+  setEvent(event: EventMessage) {
     this.event = event
   }
-  getEvent(): MessageEvent | undefined {
+  getEvent(): EventMessage | undefined {
     return this.event
   }
 }

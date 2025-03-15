@@ -5,6 +5,7 @@ const router = express.Router()
 
 interface ListProcessorDTO {
   name?: string;
+  ptype: 'pre' | 'post'
 }
 
 // todo pageable
@@ -14,6 +15,9 @@ router.get('/list', async (req: Request<object, object, ListProcessorDTO>, res: 
   let allProcessorDTO = await chaite.getProcessorsManager().listInstances()
   if (body.name) {
     allProcessorDTO = allProcessorDTO.filter(tool => tool.name.includes(body.name as string))
+  }
+  if (body.ptype) {
+    allProcessorDTO = allProcessorDTO.filter(tool => tool.type === body.ptype)
   }
   res.status(200)
     .json(ChaiteResponse.ok(allProcessorDTO))

@@ -5,7 +5,7 @@ import { AbstractShareable, SendMessageOption } from '../types/index.js'
  */
 export class ChatPreset extends AbstractShareable<ChatPreset> {
   prefix: string
-  channelId: string
+  // channelId: string
   local: boolean
   namespace?: string
   sendMessageOption: SendMessageOption
@@ -19,7 +19,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       uploader: this.uploader,
       modelType: this.modelType,
       prefix: this.prefix,
-      channelId: this.channelId,
+      // channelId: this.channelId,
       name: this.name,
       local: this.local,
       namespace: this.namespace,
@@ -33,7 +33,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     const preset = new ChatPreset()
 
     preset.prefix = raw.prefix
-    preset.channelId = raw.channelId
+    // preset.channelId = raw.channelId
     preset.name = raw.name
     preset.local = raw.local
     preset.namespace = raw.namespace
@@ -54,9 +54,9 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
 
   toFormatedString(verbose?: boolean): string {
     let base = `预设ID：${this.id}\n预设名称：${this.name} \nnamespace：${this.namespace}\n描述：${this.description}\n前缀：${this.prefix}\n`
-    if (verbose) {
-      base += `渠道：${this.channelId}\n`
-    }
+    // if (verbose) {
+    //   base += `渠道：${this.channelId}\n`
+    // }
     base += `创建时间：${this.createdAt}\n最后更新时间：${this.updatedAt}\n上传者：${this.uploader.username ? ('@' + this.uploader.username) : ''}`
     return base.trimEnd()
   }

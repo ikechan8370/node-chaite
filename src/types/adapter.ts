@@ -25,6 +25,8 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.reasoningEffort = option.reasoningEffort
     this.reasoningBudgetTokens = option.reasoningBudgetTokens
     this.toolChoice = option.toolChoice
+    this.preProcessorIds = option.preProcessorIds
+    this.postProcessorIds = option.postProcessorIds
     this.onChunk = option.onChunk
   }
 
@@ -68,6 +70,13 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
   reasoningBudgetTokens?: number
 
   toolChoice?: ToolChoice
+
+  postProcessorIds?: string[]
+  private postProcessors?: PostProcessor[]
+
+  preProcessorIds?: string[]
+  private preProcessors?: PreProcessor[]
+
   /**
    * 流模式的回调
    * @param chunk
@@ -93,6 +102,8 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       reasoningEffort: this.reasoningEffort,
       reasoningBudgetTokens: this.reasoningBudgetTokens,
       toolChoice: this.toolChoice,
+      preProcessorIds: this.preProcessorIds,
+      postProcessorIds: this.postProcessorIds,
     }
     return JSON.stringify(json)
   }

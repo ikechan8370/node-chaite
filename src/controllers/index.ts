@@ -5,6 +5,7 @@ import ToolsRouter from './tools.js'
 import ChatPresetRouter from './preset.js'
 import StateRouter from './state.js'
 import ConfigRouter from './config.js'
+import ProcessorsRouter from './processors.js'
 import cors from 'cors'
 import { authenticateToken } from './middlewares.js'
 
@@ -18,6 +19,7 @@ export function runServer (host: string, port: number) {
   app.use('/preset', authenticateToken, ChatPresetRouter)
   app.use('/state', authenticateToken, StateRouter)
   app.use('/config', authenticateToken, ConfigRouter)
+  app.use('/processors', authenticateToken, ProcessorsRouter)
 
   app.listen(port, host, () => {
     console.log(`Server is running at http://${host}:${port}`)

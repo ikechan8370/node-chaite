@@ -41,7 +41,7 @@ export class AbstractClient implements IClient {
     }
   }
   
-  async fullfillProcessors () {
+  async fullfillProcessors (preIds?: string[], postIds?: string[]): Promise<{ pre: PreProcessor[], post: PostProcessor[] }> {
     const processorsManager = await ProcessorsManager.getInstance()
     if (!this.preProcessors) {
       this.preProcessors = []
@@ -50,9 +50,9 @@ export class AbstractClient implements IClient {
       this.postProcessors = []
     }
     if (processorsManager) {
-      if (this.options.preProcessorIds) {
+      if (preIds) {
         const preProcessors = []
-        for (const preProcessorId of this.options.preProcessorIds) {
+        for (const preProcessorId of preIds) {
           const existProcessor = this.preProcessors.find(p => p.id === preProcessorId)
           if (!existProcessor) {
             const preProcessor = await processorsManager.getInstance(preProcessorId)
@@ -67,9 +67,9 @@ export class AbstractClient implements IClient {
         }
         this.preProcessors = preProcessors
       }
-      if (this.options.postProcessorIds) {
+      if (postIds) {
         const postProcessors = []
-        for (const postProcessorId of this.options.postProcessorIds) {
+        for (const postProcessorId of postIds) {
           const existProcessor = this.postProcessors.find(p => p.id === postProcessorId)
           if (!existProcessor) {
             const postProcessor = await processorsManager.getInstance(postProcessorId)
@@ -85,6 +85,11 @@ export class AbstractClient implements IClient {
         this.postProcessors = postProcessors
       }
     }
+
+    return {
+      pre: this.preProcessors,
+      post: this.postProcessors,
+    }
   }
 
   sendMessage(message: UserMessage | undefined, options: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse> {
@@ -99,7 +104,7 @@ export class AbstractClient implements IClient {
         options.conversationId = crypto.randomUUID()
       }
       let thisRequestMsg
-      await this.fullfillProcessors()
+      await this.fullfillProcessors(options.preProcessorIds, options.postProcessorIds)
       if (message) {
         // 前处理器
         for (const preProcessors of this.preProcessors || []) {

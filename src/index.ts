@@ -9,7 +9,7 @@ import {
   ToolDTO,
   UserMessage,
 } from './types/index.js'
-import { MessageEvent, UserModeSelector } from './types/external.js'
+import { EventMessage, UserModeSelector } from './types/external.js'
 import { createClient } from './adapters/index.js'
 import { BasicStorage, UserState } from './types/index.js'
 import {
@@ -115,7 +115,7 @@ export class Chaite extends EventEmitter {
    * @param e
    * @param options 包含对话id和消息id
    */
-  async sendMessage (message: UserMessage, e: MessageEvent, options: SendMessageOption & { chatPreset?: ChatPreset }): Promise<ModelResponse> {
+  async sendMessage (message: UserMessage, e: EventMessage, options: SendMessageOption & { chatPreset?: ChatPreset }): Promise<ModelResponse> {
     const context = new ChaiteContext(this.logger)
     context.setEvent(e)
     return asyncLocalStorage.run(context, async () => {

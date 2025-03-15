@@ -1,6 +1,6 @@
 import { ChatPreset } from '../channels/index.js'
 
-export interface MessageEvent {
+export interface EventMessage {
   sender: {
     user_id: string,
     nickname?: string
@@ -12,9 +12,9 @@ export interface MessageEvent {
 }
 
 export interface UserModeSelector {
-  getChatPreset(e: MessageEvent): Promise<ChatPreset>
+  getChatPreset(e: EventMessage): Promise<ChatPreset>
 }
 
 export abstract class AbstractUserModeSelector implements UserModeSelector {
-  abstract getChatPreset(e: MessageEvent): Promise<ChatPreset>
+  abstract getChatPreset(e: EventMessage): Promise<ChatPreset>
 }
