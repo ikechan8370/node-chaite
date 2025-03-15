@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.2](https://github.com/ikechan8370/node-chaite/compare/v1.1.1...v1.1.2) (2025-03-15)
+
+
+### Bug Fixes
+
+* adjust executable manager ([0fd6d9e](https://github.com/ikechan8370/node-chaite/commit/0fd6d9ecc16293b649babd008d7a293c1a8a1fd1))
+* api ([07c134d](https://github.com/ikechan8370/node-chaite/commit/07c134d907dfccbcf0d6e90363d55996bff3bf13))
+* move processors etc. to send preset from channel ([41df60a](https://github.com/ikechan8370/node-chaite/commit/41df60a99d5708618c89e0cb148f4308179a4f5a))
+* thread local context ([21cf264](https://github.com/ikechan8370/node-chaite/commit/21cf2643a7e710adff6cade4160804171729372d))
+* use nodenext ([700b3e7](https://github.com/ikechan8370/node-chaite/commit/700b3e77f4dfef0cfe617d4937c5fb84bccc1d37))
+
 ## [1.1.1](https://github.com/ikechan8370/node-chaite/compare/v1.1.0...v1.1.1) (2025-03-10)
 
 
