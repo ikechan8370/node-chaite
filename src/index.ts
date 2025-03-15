@@ -18,7 +18,7 @@ import {
   DEFAULT_PORT,
   FrontEndAuthHandler,
   GlobalConfig,
-  InMemoryHistoryManager
+  InMemoryHistoryManager,
 } from './utils/index.js'
 import { Channel, ChatPreset } from './channels/index.js'
 import { RAGManager } from './rag/index.js'

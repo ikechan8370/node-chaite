@@ -6,6 +6,7 @@ import {
   ClientType,
   Wait,
 } from '../types/index.js'
+import { CHANNEL_STATUS_MAP } from '../const/index.js'
 
 export class DefaultChannelLoadBalancer implements ChannelsLoadBalancer {
   public constructor() {}
@@ -166,5 +167,14 @@ export class Channel extends AbstractShareable<Channel> implements Wait {
       disabledReason: this.disabledReason,
     }
     return JSON.stringify(toJsonStr)
+  }
+
+  toFormatedString(verbose: boolean = false): string {
+    let base = `渠道ID：${this.id}\n渠道名称：${this.name} \n渠道类型：${this.type}\n渠道状态：${CHANNEL_STATUS_MAP[this.status]}\n渠道权重：${this.weight}\n渠道优先级：${this.priority}\n渠道禁用原因：${this.disabledReason}\n支持模型：${this.models.join(', ')}\n`
+    if (verbose) {
+      base += `BaseURL: ${this.options.baseUrl}\nAPI Key：${Array.isArray(this.options.apiKey) ? this.options.apiKey.join(',') : this.options.apiKey}\n`
+    }
+    base += `创建时间：${this.createdAt}\n最后更新时间：${this.updatedAt}\n上传者：${this.uploader.username ? ('@' + this.uploader.username) : ''}`
+    return base.trimEnd()
   }
 }

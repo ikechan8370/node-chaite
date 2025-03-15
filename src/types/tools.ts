@@ -1,5 +1,6 @@
 import { ArgumentValue } from './models.js'
 import { AbstractShareable } from './cloud.js'
+import { CHANNEL_STATUS_MAP } from '../const/index.js'
 
 export interface Function {
     name: string
@@ -34,6 +35,12 @@ export class ToolDTO extends AbstractShareable<ToolDTO> {
   }
 
   public permission: 'public' | 'private' | 'onetime'
+
+  toFormatedString(_verbose?: boolean): string {
+    let base = `工具名称：${this.name}\n工具描述：${this.description}`
+    base += `创建时间：${this.createdAt}\n最后更新时间：${this.updatedAt}\n上传者：${this.uploader.username ? ('@' + this.uploader.username) : ''}`
+    return base.trimEnd()
+  }
 }
 
 /**

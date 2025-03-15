@@ -126,13 +126,18 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     }
   }
 
+  /**
+   * 新增或更新
+   * 有id就是更新，靠storage实现去控制，这里不管
+   * @param instance
+   */
   public async addInstance(instance: T): Promise<void> {
     await this.storage.setItem(instance.id, instance)
     await this.addInstanceCode(instance.name, instance.code as string)
   }
 
   public async addInstanceCode(name: string, code: string): Promise<void> {
-    const filename = `${Date.now()}_${name.replace(/[^a-zA-Z0-9_]/g, '_')}.js`
+    const filename = `${name.replace(/[^a-zA-Z0-9_]/g, '_')}.js`
     const filePath = path.join(this.codeDirectory, filename)
 
     await fsPromises.writeFile(filePath, code)
@@ -154,14 +159,33 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     // 文件监听器会自动触发扫描
   }
 
-  public async deleteInstance(name: string): Promise<void> {
-    const filename = this.instanceMap.get(name)
+  public async renameFile (id: string, oldName: string, newName: string) {
+    const filename = `${oldName.replace(/[^a-zA-Z0-9_]/g, '_')}.js`
+    if (filename) {
+      const filePath = path.join(this.codeDirectory, filename)
+      const newFilename = `${newName.replace(/[^a-zA-Z0-9_]/g, '_')}.js`
+      const newFilePath = path.join(this.codeDirectory, newFilename)
+      await fsPromises.rename(filePath, newFilePath)
+      // 文件监听器会自动触发扫描
+    }
+  }
+
+  public async deleteInstance(id: string): Promise<void> {
+    const t = await this.storage.getItem(id)
+    if (!t) {
+      return
+    }
+
+    const filename = this.instanceMap.get(t.name)
 
     if (filename) {
       const filePath = path.join(this.codeDirectory, filename)
       await fsPromises.unlink(filePath)
       // 文件监听器会自动触发扫描
     }
+
+    await this.storage.removeItem(id)
+    // todo transactional?
   }
   
   // Sharing methods

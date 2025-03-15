@@ -3,7 +3,7 @@ import { Tool } from './tools.js'
 import { HistoryManager } from './adapter.js'
 import { PostProcessor, PreProcessor } from './processors.js'
 import { DeSerializable, Serializable, Wait } from './cloud.js'
-import {MessageEvent} from "./external.js";
+import { MessageEvent } from './external.js'
 
 export const MultipleKeyStrategyChoice = {
   RANDOM: 'random' as MultipleKeyStrategy,

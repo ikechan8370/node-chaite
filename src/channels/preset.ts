@@ -51,4 +51,13 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
 
     return preset
   }
+
+  toFormatedString(verbose?: boolean): string {
+    let base = `预设ID：${this.id}\n预设名称：${this.name} \nnamespace：${this.namespace}\n描述：${this.description}\n前缀：${this.prefix}\n`
+    if (verbose) {
+      base += `渠道：${this.channelId}\n`
+    }
+    base += `创建时间：${this.createdAt}\n最后更新时间：${this.updatedAt}\n上传者：${this.uploader.username ? ('@' + this.uploader.username) : ''}`
+    return base.trimEnd()
+  }
 }

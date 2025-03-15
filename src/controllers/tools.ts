@@ -23,6 +23,18 @@ router.post('/', async (req: Request<object, object, ToolDTO>, res: Response) =>
   const body = req.body
   const chaite = Chaite.getInstance()
   try {
+    if (body.id) {
+      const old = await chaite.getToolsManager().getInstanceT(body.id)
+      if (!old) {
+        res.status(404)
+          .json(ChaiteResponse.fail(null, 'Tool not found'))
+        return
+      }
+      if (old.name !== body.name) {
+        // 给工具改名，需要调整文件名，删除原本的C
+        await chaite.getToolsManager().renameFile(body.id, old.name, body.name)
+      }
+    }
     const channel = await chaite.getToolsManager().addInstance(body)
     res.status(200)
       .json(ChaiteResponse.ok(channel))

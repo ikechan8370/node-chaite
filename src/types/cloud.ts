@@ -55,6 +55,8 @@ export interface CloudModel {
   uploader: User
   updatedAt: string
   createdAt: string
+
+  toFormatedString(verbose?: boolean): string
 }
 
 export type Shareable<T> = Serializable & DeSerializable<T> & CloudModel
@@ -76,6 +78,10 @@ export abstract class AbstractShareable<T> implements Shareable<T> {
 
   toString(): string {
     return JSON.stringify(this)
+  }
+
+  toFormatedString(verbose?: boolean): string {
+    return JSON.stringify(this, null, 2)
   }
 }
 

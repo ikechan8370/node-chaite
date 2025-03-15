@@ -1,4 +1,4 @@
-import {BaseClientOptions, ChaiteContext, ClientType, IClient} from '../types/index.js'
+import { BaseClientOptions, ChaiteContext, ClientType, IClient } from '../types/index.js'
 import { OpenAIClient } from './impl/openai/OpenAIClient.js'
 import { ClaudeClient } from './impl/claude/ClaudeClient.js'
 import { GeminiClient } from './impl/gemini/GeminiClient.js'

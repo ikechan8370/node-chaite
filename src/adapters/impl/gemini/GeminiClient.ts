@@ -1,4 +1,4 @@
-import {BaseClientOptions, ChaiteContext} from '../../../types/common.js'
+import { BaseClientOptions, ChaiteContext } from '../../../types/common.js'
 import { AbstractClient } from '../../clients.js'
 import {
   EmbeddingOption,
