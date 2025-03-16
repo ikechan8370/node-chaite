@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/ikechan8370/node-chaite/compare/v1.2.0...v1.2.1) (2025-03-16)
+
+
+### Bug Fixes
+
+* reduce lib size ([c6e3e4c](https://github.com/ikechan8370/node-chaite/commit/c6e3e4cb807f75703772d7e37c514af71d74317b))
+
 ## [1.2.0](https://github.com/ikechan8370/node-chaite/compare/v1.1.2...v1.2.0) (2025-03-16)
 
 
