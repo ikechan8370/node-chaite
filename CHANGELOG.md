@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/ikechan8370/node-chaite/compare/v1.1.2...v1.2.0) (2025-03-16)
+
+
+### Features
+
+* embeded frontend ([970b510](https://github.com/ikechan8370/node-chaite/commit/970b510adc3aae5d0350b7ce92994ebc6162e339))
+
 ## [1.1.2](https://github.com/ikechan8370/node-chaite/compare/v1.1.1...v1.1.2) (2025-03-15)
 
 
