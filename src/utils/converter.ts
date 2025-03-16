@@ -2,7 +2,7 @@ import { AssistantMessage, ClientType, IMessage, ReasoningPart, Tool } from '../
 import { Content, GenerateContentResult } from '@google/generative-ai'
 import { Tool as GeminiTool } from '@google/generative-ai'
 // import type { Anthropic.MessageParam, ToolUnion } from '@anthropic-ai/sdk/src/resources'
-type IntoChaiteConverter<T> = (source: T) => AssistantMessage;
+type IntoChaiteConverter<T> = (source: T) => IMessage;
 import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
 class IntoChaiteConverterEntry {

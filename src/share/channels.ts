@@ -43,7 +43,8 @@ export class ChannelsManager extends NonExecutableShareableManager<Channel> {
   }
 
   async getChannelByModel(model: string): Promise<Channel[]> {
-    const channels = await this.getAllChannels(model)
+    let channels = await this.getAllChannels()
+    channels = channels.filter(channel => channel.models.includes(model))
     const channel = await this.loadBalancer.getChannel(model, channels)
     return channel ? [channel] : []
   }

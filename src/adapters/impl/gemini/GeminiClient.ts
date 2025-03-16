@@ -3,7 +3,7 @@ import { AbstractClient } from '../../clients.js'
 import {
   EmbeddingOption,
   EmbeddingResult,
-  HistoryMessage,
+  HistoryMessage, IMessage,
   ModelUsage,
 } from '../../../types/index.js'
 import {
@@ -25,7 +25,7 @@ export class GeminiClient extends AbstractClient {
     this.name = 'gemini'
   }
 
-  async _sendMessage(histories: HistoryMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
+  async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
     const messages: Content[] = []
     const model = options.model || 'gemini-2.0-flash-001'
     const converter = getFromChaiteConverter('gemini')

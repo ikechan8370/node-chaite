@@ -15,6 +15,8 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "build": "tsc",
+    "copy-frontend": "copyfiles -u 1 \"frontend/build/**/*\" dist/frontend",
+    "prepublishOnly": "npm run build && npm run copy-frontend",
     "test": "jest",
     "dev": "nodemon --exec ts-node src/index.ts",
     "pub": "npm publish --access public"
@@ -36,6 +38,7 @@
     "@types/pdf-parse": "^1.1.4",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
+    "copyfiles": "^2.4.1",
     "eslint": "^9.21.0",
     "eslint-config-prettier": "^10.0.2",
     "eslint-plugin-prettier": "^5.2.3",

@@ -62,6 +62,37 @@ export interface CloudModel {
 export type Shareable<T> = Serializable & DeSerializable<T> & CloudModel
 
 export abstract class AbstractShareable<T> implements Shareable<T> {
+  constructor(params?: Partial<AbstractShareable<T>>) {
+    if (params) {
+      if (params.id) {
+        this.id = params.id
+      }
+      if (params.name) {
+        this.name = params.name
+      }
+      if (params.embedded) {
+        this.embedded = params.embedded
+      }
+      if (params.uploader) {
+        this.uploader = params.uploader
+      }
+      if (params.createdAt) {
+        this.createdAt = params.createdAt
+      }
+      if (params.updatedAt) {
+        this.updatedAt = params.updatedAt
+      }
+      if (params.description) {
+        this.description = params.description
+      }
+      if (params.modelType) {
+        this.modelType = params.modelType
+      }
+      if (params.code) {
+        this.code = params.code
+      }
+    }
+  }
   modelType: 'settings' | 'executable'
   code?: string
   createdAt: string

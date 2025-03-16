@@ -29,17 +29,41 @@ export interface Tool {
 
 
 export class ToolDTO extends AbstractShareable<ToolDTO> {
-  constructor(public name: string, public code: string) {
-    super()
+  constructor(params: Partial<ToolDTO>) {
+    super(params)
     this.modelType = 'executable'
   }
 
   public permission: 'public' | 'private' | 'onetime'
 
   toFormatedString(_verbose?: boolean): string {
-    let base = `工具名称：${this.name}\n工具描述：${this.description}`
-    base += `创建时间：${this.createdAt}\n最后更新时间：${this.updatedAt}\n上传者：${this.uploader.username ? ('@' + this.uploader.username) : ''}`
+    let base = `工具名称：${this.name}`
+
+    if (this.description) {
+      base += `\n工具描述：${this.description}`
+    }
+
+    if (this.permission) {
+      base += `\n权限：${this.permission}`
+    }
+
+    if (this.createdAt) {
+      base += `\n创建时间：${this.createdAt}`
+    }
+
+    if (this.updatedAt) {
+      base += `\n最后更新时间：${this.updatedAt}`
+    }
+
+    if (this.uploader?.username) {
+      base += `\n上传者：@${this.uploader.username}`
+    }
+
     return base.trimEnd()
+  }
+
+  fromString(str: string): ToolDTO {
+    return new ToolDTO(JSON.parse(str))
   }
 }
 

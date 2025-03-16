@@ -110,25 +110,28 @@ export class DefaultChannelLoadBalancer implements ChannelsLoadBalancer {
  * 每个渠道对应一个adapter，并记录客户端的options
  */
 export class Channel extends AbstractShareable<Channel> implements Wait {
-  constructor(id: string, models: string[], adapterType: ClientType, options: BaseClientOptions, name: string, type: ClientType, status: 'enabled' | 'disabled', statistics: ChannelStatistics, weight?: number, priority?: number, disabledReason?: string) {
-    super()
+  constructor(params: Partial<Channel>) {
+    super(params)
     this.modelType = 'settings'
-    this.id = id
-    this.models = models
-    this.adapterType = adapterType
-    this.options = options
-    this.name = name
-    this.type = type
-    this.weight = weight || 1
-    this.priority = priority || 1
-    this.status = status
-    this.disabledReason = disabledReason
-    this.statistics = statistics
+    this.models = params.models || []
+    if (params.adapterType) {
+      this.adapterType = params.adapterType
+    }
+    if (params.options) {
+      this.options = new BaseClientOptions().fromString(JSON.stringify(params.options))
+    }
+    this.weight = params.weight || 1
+    this.priority = params.priority || 1
+    this.status = params.status || 'enabled'
+    this.disabledReason = params.disabledReason
+    this.statistics = params.statistics || new ChannelStatistics()
     this.init()
   }
 
   async init() {
-    return this.options.ready()
+    if (this.options) {
+      return this.options.ready()
+    }
   }
 
   async ready(): Promise<void> {
@@ -138,8 +141,6 @@ export class Channel extends AbstractShareable<Channel> implements Wait {
   adapterType: ClientType
   options: BaseClientOptions
   models: string[]
-  id: string
-  name: string
   type: ClientType
   weight: number
   priority: number
@@ -149,7 +150,7 @@ export class Channel extends AbstractShareable<Channel> implements Wait {
 
   fromString(str: string): Channel {
     const channel = JSON.parse(str)
-    return new Channel(channel.id, channel.adapterType, channel.models, new BaseClientOptions().fromString(channel.options), channel.name, channel.type, channel.status, new ChannelStatistics().fromString(channel.statistics), channel.weight, channel.priority, channel.disabledReason)
+    return new Channel(channel)
   }
 
   toString(): string {
@@ -170,11 +171,57 @@ export class Channel extends AbstractShareable<Channel> implements Wait {
   }
 
   toFormatedString(verbose: boolean = false): string {
-    let base = `渠道ID：${this.id}\n渠道名称：${this.name} \n渠道类型：${this.type}\n渠道状态：${CHANNEL_STATUS_MAP[this.status]}\n渠道权重：${this.weight}\n渠道优先级：${this.priority}\n渠道禁用原因：${this.disabledReason}\n支持模型：${this.models.join(', ')}\n`
-    if (verbose) {
-      base += `BaseURL: ${this.options.baseUrl}\nAPI Key：${Array.isArray(this.options.apiKey) ? this.options.apiKey.join(',') : this.options.apiKey}\n`
+    let base = `渠道ID：${this.id}\n渠道名称：${this.name}`
+
+    if (this.adapterType) {
+      base += `\n渠道类型：${this.adapterType}`
     }
-    base += `创建时间：${this.createdAt}\n最后更新时间：${this.updatedAt}\n上传者：${this.uploader.username ? ('@' + this.uploader.username) : ''}`
+
+    if (this.status) {
+      base += `\n渠道状态：${CHANNEL_STATUS_MAP[this.status]}`
+    }
+
+    if (this.weight) {
+      base += `\n渠道权重：${this.weight}`
+    }
+
+    if (this.priority) {
+      base += `\n渠道优先级：${this.priority}`
+    }
+
+    if (this.disabledReason) {
+      base += `\n渠道禁用原因：${this.disabledReason}`
+    }
+
+    if (this.models && this.models.length > 0) {
+      base += `\n支持模型：${this.models.join(', ')}`
+    }
+
+    if (verbose) {
+      if (this.options?.baseUrl) {
+        base += `\nBaseURL: ${this.options.baseUrl}`
+      }
+
+      if (this.options?.apiKey) {
+        const apiKeyStr = Array.isArray(this.options.apiKey) ? this.options.apiKey.join(',') : this.options.apiKey
+        if (apiKeyStr) {
+          base += `\nAPI Key：${apiKeyStr}`
+        }
+      }
+    }
+
+    if (this.createdAt) {
+      base += `\n创建时间：${this.createdAt}`
+    }
+
+    if (this.updatedAt) {
+      base += `\n最后更新时间：${this.updatedAt}`
+    }
+
+    if (this.uploader?.username) {
+      base += `\n上传者：@${this.uploader.username}`
+    }
+
     return base.trimEnd()
   }
 }

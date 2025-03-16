@@ -5,7 +5,7 @@ export type Feature = 'chat' | 'visual' | 'tool' | 'embedding'
 /**
  * other roles like developer or function should be handled by different implementations
  */
-export type Role = 'system' | 'user' | 'assistant' | 'tool'
+export type Role = 'system' | 'user' | 'assistant' | 'tool' | 'developer'
 
 export interface MessageContent {
   type: 'text' | 'image' | 'audio' | 'video' | 'tool' | 'reasoning'
@@ -82,6 +82,17 @@ export type FunctionCall = {
 export interface UserMessage extends IMessage {
   role: 'user'
   content: Array<TextContent | ImageContent | AudioContent>
+}
+
+
+export interface SystemMessage extends IMessage {
+  role: 'system'
+  content: TextContent[]
+}
+
+export interface DeveloperMessage extends IMessage {
+  role: 'developer'
+  content: TextContent[]
 }
 
 /**

@@ -1,7 +1,7 @@
 import {
   EmbeddingResult,
   FunctionCall,
-  HistoryMessage,
+  HistoryMessage, IMessage,
   MessageContent,
   ModelResponseChunk, ModelUsage,
   TextContent,
@@ -24,7 +24,7 @@ export class OpenAIClient extends AbstractClient {
     this.name = 'openai'
   }
 
-  async _sendMessage(histories: HistoryMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
+  async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
     const client = new OpenAI({
       apiKey,
       baseURL: this.baseUrl,
@@ -72,15 +72,15 @@ export class OpenAIClient extends AbstractClient {
       }
       }
     }
+    const tools = this.tools.map(toolConvert)
     if (options.stream) {
-      
       const stream = client.beta.chat.completions.stream({
         messages,
         model,
         stream: true,
-        tools: this.tools.map(toolConvert),
+        tools,
         reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
-        tool_choice: toolChoice,
+        tool_choice: tools.length > 0 ? toolChoice : undefined,
       })
       if (options.onChunk) {
         let incompleteToolCallChunk = {
@@ -137,8 +137,8 @@ export class OpenAIClient extends AbstractClient {
       chatCompletion = await client.chat.completions.create({
         messages,
         model,
-        tools: this.tools.map(toolConvert),
-        tool_choice: toolChoice,
+        tools,
+        tool_choice: tools.length > 0 ? toolChoice : undefined,
         reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
       })
     }

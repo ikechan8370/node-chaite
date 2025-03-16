@@ -4,6 +4,18 @@ import { AbstractShareable, SendMessageOption } from '../types/index.js'
  * 对话模式预设，最终使用的
  */
 export class ChatPreset extends AbstractShareable<ChatPreset> {
+  constructor(params?: Partial<ChatPreset>) {
+    super(params)
+    if (params) {
+      this.prefix = params.prefix || ''
+      if (params.sendMessageOption) {
+        this.sendMessageOption = params.sendMessageOption
+      }
+      this.local = params.local || false
+      this.namespace = params.namespace
+    }
+  }
+
   prefix: string
   // channelId: string
   local: boolean
@@ -46,18 +58,45 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     preset.modelType = raw.modelType
 
     if (raw.sendMessageOption) {
-      preset.sendMessageOption = SendMessageOption.create().fromString(raw.sendMessageOption)
+      preset.sendMessageOption = typeof raw.sendMessageOption === 'string'
+        ? SendMessageOption.create().fromString(raw.sendMessageOption)
+        : SendMessageOption.create().fromString(JSON.stringify(raw.sendMessageOption))
     }
 
     return preset
   }
 
   toFormatedString(verbose?: boolean): string {
-    let base = `预设ID：${this.id}\n预设名称：${this.name} \nnamespace：${this.namespace}\n描述：${this.description}\n前缀：${this.prefix}\n`
-    // if (verbose) {
-    //   base += `渠道：${this.channelId}\n`
-    // }
-    base += `创建时间：${this.createdAt}\n最后更新时间：${this.updatedAt}\n上传者：${this.uploader.username ? ('@' + this.uploader.username) : ''}`
+    let base = `预设ID：${this.id}`
+
+    if (this.name) {
+      base += `\n预设名称：${this.name}`
+    }
+
+    if (this.namespace) {
+      base += `\nnamespace：${this.namespace}`
+    }
+
+    if (this.description) {
+      base += `\n描述：${this.description}`
+    }
+
+    if (this.prefix) {
+      base += `\n前缀：${this.prefix}`
+    }
+
+    if (this.createdAt) {
+      base += `\n创建时间：${this.createdAt}`
+    }
+
+    if (this.updatedAt) {
+      base += `\n最后更新时间：${this.updatedAt}`
+    }
+
+    if (this.uploader?.username) {
+      base += `\n上传者：@${this.uploader.username}`
+    }
+
     return base.trimEnd()
   }
 }

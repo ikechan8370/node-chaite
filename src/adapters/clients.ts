@@ -2,7 +2,7 @@ import {
   AssistantMessage,
   EmbeddingResult,
   Feature, History,
-  HistoryMessage, ModelResponse,
+  HistoryMessage, IMessage, ModelResponse,
   ModelUsage,
   Tool, ToolCallResult,
   ToolCallResultMessage,
@@ -194,8 +194,13 @@ export class AbstractClient implements IClient {
     }
   }
   
-  _sendMessage(_histories: HistoryMessage[], _apiKey: string, _options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
+  _sendMessage(_histories: IMessage[], _apiKey: string, _options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
     throw new Error('Abstract class not implemented')
+  }
+
+  async sendMessageWithHistory(history: IMessage[], options?: SendMessageOption | Partial<SendMessageOption>): Promise<IMessage & { usage: ModelUsage }> {
+    const apiKey = await getKey(this.apiKey, this.multipleKeyStrategy || MultipleKeyStrategyChoice.RANDOM)
+    return this._sendMessage(history, apiKey, SendMessageOption.create(options))
   }
 
   apiKey: string | string[]

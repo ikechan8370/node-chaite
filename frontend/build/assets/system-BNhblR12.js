@@ -1,0 +1,1 @@
+import{p as t}from"./index-CucaxZT9.js";function n(){return t.Get("/getUserRoutes")}function c(){return t.Get("/userPage")}function o(){return t.Get("/role/list")}function u(e){const r={code:e};return t.Get("/dict/list",{params:r})}export{c as a,o as b,n as c,u as f};

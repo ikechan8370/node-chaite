@@ -1,0 +1,1 @@
+import{k as e,c,o as r}from"./index-CucaxZT9.js";const s={},t={src:"https://cn.vitejs.dev/guide/",frameborder:"0",class:"wh-full"};function o(n,a){return r(),c("iframe",t)}const f=e(s,[["render",o]]);export{f as default};

@@ -42,10 +42,9 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
       this.proxy = options.proxy
       this.preProcessorIds = options.preProcessorIds
       this.postProcessorIds = options.postProcessorIds
-      if (!options.historyManager) {
-        throw new Error('historyManager is required')
+      if (options.historyManager) {
+        this.historyManager = options.historyManager
       }
-      this.historyManager = options.historyManager
       this.logger = options.logger
       this.init()
     }

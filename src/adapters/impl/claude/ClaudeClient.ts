@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 // import type { MessageParam, ToolChoice, ToolChoiceTool } from '@anthropic-ai/sdk/src/resources/messages/messages'
 import { AbstractClient } from '../../clients.js'
 import { GeminiClientOptions } from '../gemini/GeminiClient.js'
-import { ChaiteContext, HistoryMessage, ModelUsage } from '../../../types/index.js'
+import { ChaiteContext, HistoryMessage, IMessage, ModelUsage } from '../../../types/index.js'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter.js'
 import './converter.js'
 import { SendMessageOption } from '../../../types/index.js'
@@ -13,7 +13,7 @@ export class ClaudeClient extends AbstractClient {
     this.name = 'claude'
   }
   
-  async _sendMessage(histories: HistoryMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
+  async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
     const messages: Anthropic.MessageParam[] = []
     const model = options.model || 'claude-3-7-sonnet-20250219'
     const converter = getFromChaiteConverter('claude')

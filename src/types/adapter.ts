@@ -1,8 +1,8 @@
 import {
   EmbeddingResult,
-  Feature, HistoryMessage,
+  Feature, HistoryMessage, IMessage,
   ModelResponse,
-  ModelResponseChunk,
+  ModelResponseChunk, ModelUsage,
   UserMessage,
 } from './models.js'
 import { Tool } from './tools.js'
@@ -134,6 +134,7 @@ export interface IClient {
   postProcessors?: PostProcessor[]
   preProcessors?: PreProcessor[]
   sendMessage(message: UserMessage | undefined, options?: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse>
+  sendMessageWithHistory(history: IMessage[], options?: SendMessageOption | Partial<SendMessageOption>): Promise<IMessage & { usage: ModelUsage }>
   getEmbedding(text: string | string[], options: EmbeddingOption): Promise<EmbeddingResult>
   logger: ILogger
 }

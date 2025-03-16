@@ -98,6 +98,9 @@ export class Chaite extends EventEmitter {
   }
 
   getGlobalConfig() {
+    if (!this.globalConfig) {
+      this.setGlobalConfig(new GlobalConfig())
+    }
     return this.globalConfig
   }
 

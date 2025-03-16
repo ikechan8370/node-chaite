@@ -43,7 +43,7 @@ export class ProcessorsManager extends ExecutableShareableManager<ProcessorDTO, 
     const filePath = path.join(this.codeDirectory, filename)
     try {
       const code = await fsPromises.readFile(filePath, 'utf-8')
-      return new ProcessorDTO(name, code)
+      return new ProcessorDTO({ name, code })
     } catch (error) {
       console.error(`Error serializing tool '${name}':`, error)
       return null

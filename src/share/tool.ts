@@ -41,7 +41,7 @@ export class ToolManager extends ExecutableShareableManager<ToolDTO, Tool> {
     const filePath = path.join(this.codeDirectory, filename)
     try {
       const code = await fsPromises.readFile(filePath, 'utf-8')
-      return new ToolDTO(name, code)
+      return new ToolDTO({ name, code })
     } catch (error) {
       console.error(`Error serializing tool '${name}':`, error)
       return null

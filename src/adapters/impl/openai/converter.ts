@@ -6,11 +6,11 @@ import {
   registerIntoChaiteConverter,
 } from '../../../utils/converter.js'
 import {
-  AssistantMessage,
+  AssistantMessage, AudioContent, DeveloperMessage, ImageContent,
   IMessage, MessageContent, ReasoningContent,
-  ReasoningPart,
+  ReasoningPart, SystemMessage,
   TextContent,
-  ToolCall,
+  ToolCall, ToolCallResult,
   ToolCallResultMessage,
   UserMessage,
 } from '../../../types/index.js'
@@ -26,7 +26,7 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
     return {
       role: 'assistant',
       content: msg.content.map(t => t as unknown as OpenAI.ChatCompletionContentPartText),
-      tool_calls: msg.toolCalls?.map(t => {
+      tool_calls: (msg.toolCalls && msg.toolCalls?.length > 0) ? msg.toolCalls?.map(t => {
         return {
           id: t.id,
           type: t.type,
@@ -35,7 +35,7 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
             name: t.function.name,
           } as OpenAI.ChatCompletionMessageToolCall.Function,
         }
-      }),
+      }) : undefined,
     } as OpenAI.ChatCompletionAssistantMessageParam
   }
   case 'user': {
@@ -115,6 +115,76 @@ registerIntoChaiteConverter<OpenAICompatibleMessageParam>('openai', msg => {
         } as ToolCall
       }),
     } as AssistantMessage
+  }
+  case 'user': {
+    if (typeof msg.content === 'string') {
+      return {
+        role: 'user',
+        content: [{ type: 'text', text: msg.content }],
+      } as UserMessage
+    }
+    return {
+      role: 'user',
+      content: msg.content?.map(t => {
+        switch (t.type) {
+        case 'image_url': {
+          return {
+            type: 'image',
+            image: t.image_url.url,
+          } as ImageContent
+        }
+        case 'text': {
+          return {
+            type: 'text',
+            text: t.text,
+          } as TextContent
+        }
+        case 'input_audio': {
+          return {
+            type: 'audio',
+            data: t.input_audio.data,
+          } as AudioContent
+        }
+        }
+      }),
+    } as UserMessage
+  }
+  case 'system': {
+    return {
+      role: 'system',
+      content: typeof msg.content === 'string' ? [{ type: 'text', text: msg.content } as TextContent] : msg.content?.map(t => {
+        return {
+          type: 'text',
+          text: t.text,
+        }
+      }),
+    } as SystemMessage
+  }
+  case 'tool': {
+    return {
+      role: 'tool',
+      content: typeof msg.content === 'string' ? [{
+        type: 'tool',
+        tool_call_id: msg.tool_call_id,
+        content: msg.content,
+      } as ToolCallResult] : msg.content.map(t => {
+        return {
+          tool_call_id: msg.tool_call_id,
+          content: t.text,
+        } as ToolCallResult
+      }),
+    } as ToolCallResultMessage
+  }
+  case 'developer': {
+    return {
+      role: 'developer',
+      content: typeof msg.content === 'string' ? [{ type: 'text', text: msg.content } as TextContent] : msg.content?.map(t => {
+        return {
+          type: 'text',
+          text: t.text,
+        }
+      }),
+    } as DeveloperMessage
   }
   default: {
     // other roles don't need to call this converter
