@@ -36,7 +36,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.RELEASE }}
         if: ${{ steps.release.outputs.release_created }}
       # 构建输出
-      - run: npm run build
+      - run: npm run prepublishOnly
         if: ${{ steps.release.outputs.release_created }}
       # 发布到 npm
       - run: npm run pub
