@@ -1,6 +1,6 @@
 import {
   EmbeddingResult,
-  Feature, HistoryMessage, IMessage,
+  Feature, HistoryMessage, IMessage, MessageContent,
   ModelResponse,
   ModelResponseChunk, ModelUsage,
   UserMessage,
@@ -28,6 +28,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.preProcessorIds = option.preProcessorIds
     this.postProcessorIds = option.postProcessorIds
     this.onChunk = option.onChunk
+    this.onMessageWithToolCall = option.onMessageWithToolCall
   }
 
   static create(options?: SendMessageOption | Partial<SendMessageOption>): SendMessageOption {
@@ -82,6 +83,12 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
    * @param chunk
    */
   onChunk?(chunk: ModelResponseChunk): Promise<void>
+
+  /**
+   * 工具调用轮次，如果有其他非tool_call类消息会被丢弃最后不会返回，但是可以通过onMessageWithToolCall来处理
+   * @param message
+   */
+  onMessageWithToolCall?(message: MessageContent): Promise<void>
 
   fromString(str: string): SendMessageOption {
     return JSON.parse(str) as SendMessageOption

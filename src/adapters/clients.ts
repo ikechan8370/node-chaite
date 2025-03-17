@@ -99,7 +99,7 @@ export class AbstractClient implements IClient {
       this.preProcessors = this.options.getPreProcessors()
       this.postProcessors = this.options.getPostProcessors()
       const apiKey = await getKey(this.apiKey, this.multipleKeyStrategy)
-      const histories = await this.historyManager.getHistory(options.parentMessageId, options.conversationId)
+      const histories = options.disableHistoryRead ? [] : await this.historyManager.getHistory(options.parentMessageId, options.conversationId)
       if (!options.conversationId) {
         options.conversationId = crypto.randomUUID()
       }
@@ -142,6 +142,17 @@ export class AbstractClient implements IClient {
       await this.historyManager.saveHistory(modelResponse, options.conversationId)
       options.parentMessageId = modelResponse.id
       if (modelResponse.toolCalls && modelResponse.toolCalls?.length > 0) {
+        if (options.onMessageWithToolCall) {
+          for (const messageContent of modelResponse.content) {
+            try {
+              await options.onMessageWithToolCall(messageContent)
+            } catch (err) {
+              if (err instanceof Error) {
+                this.logger.warn(err)
+              }
+            }
+          }
+        }
         const toolCallResults: ToolCallResult[] = []
         for (const r of modelResponse.toolCalls) {
           const fcName = r.function.name
@@ -178,6 +189,10 @@ export class AbstractClient implements IClient {
         return await this.sendMessage(undefined, options)
       }
 
+      if (options.disableHistorySave) {
+        // 由于工具调用逻辑依赖存储，选择在完成后删除会话而不是中途不存储。
+        await this.historyManager.deleteConversation(options.conversationId)
+      }
       return {
         id: modelResponse.id,
         model: options.model,
