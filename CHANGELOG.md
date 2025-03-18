@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/ikechan8370/node-chaite/compare/v1.2.3...v1.2.4) (2025-03-18)
+
+
+### Bug Fixes
+
+* claude baseurl and image mimetype ([24f773a](https://github.com/ikechan8370/node-chaite/commit/24f773a9483a6bed893901bc4e40d190e7f4fa80))
+
 ## [1.2.3](https://github.com/ikechan8370/node-chaite/compare/v1.2.2...v1.2.3) (2025-03-18)
 
 
