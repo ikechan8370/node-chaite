@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.2](https://github.com/ikechan8370/node-chaite/compare/v1.2.1...v1.2.2) (2025-03-17)
+
+
+### Bug Fixes
+
+* add toolcall msg callback ([69dc308](https://github.com/ikechan8370/node-chaite/commit/69dc308fa039e350ccb52107883903a3205beac2))
+* change v3 branch for chatgpt-plugin ([ebf4486](https://github.com/ikechan8370/node-chaite/commit/ebf4486fb6e7e1fa056e792231a688cf2c5b465c))
+* replace monaco with codemirror ([7577690](https://github.com/ikechan8370/node-chaite/commit/7577690058afc704e52e12c0f04b729126699ae6))
+
 ## [1.2.1](https://github.com/ikechan8370/node-chaite/compare/v1.2.0...v1.2.1) (2025-03-16)
 
 
