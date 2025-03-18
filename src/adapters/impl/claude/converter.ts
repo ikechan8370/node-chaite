@@ -53,7 +53,7 @@ registerFromChaiteConverter<Anthropic.MessageParam>('claude', (source: IMessage)
           return {
             type: 'image', source: t.image.startsWith('http') ? {
               type: 'url', url: t.image,
-            } as Anthropic.URLImageSource : { type: 'base64', media_type: t.mimeType, data: t.image } as Anthropic.Base64ImageSource,
+            } as Anthropic.URLImageSource : { type: 'base64', media_type: t.mimeType || 'image/jpeg', data: t.image } as Anthropic.Base64ImageSource,
           } as Anthropic.ImageBlockParam
         }
         }

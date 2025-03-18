@@ -25,6 +25,7 @@ export class ClaudeClient extends AbstractClient {
 
     const anthropic = new Anthropic({
       apiKey,
+      baseURL: this.baseUrl,
     })
 
     const tools = this.tools.map(toolConverter)
