@@ -1,0 +1,1 @@
+import{p as t}from"./index-BdXsfUTR.js";function s(e){return t.Get("/api/preset/list",{params:e})}function a(e){return t.Post("/api/preset/",e)}function p(e){return t.Delete(`/api/preset/${e}`)}export{a as c,p as d,s as f};

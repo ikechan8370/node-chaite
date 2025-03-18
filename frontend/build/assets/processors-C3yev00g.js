@@ -1,1 +1,0 @@
-import{p as s}from"./index-DTsNwqi0.js";function o(r={}){return s.Get("/api/processors/list",{params:r})}function t(r){return s.Post("/api/processors/",r)}function c(r){return s.Delete(`/api/processors/${r}`)}export{t as c,c as d,o as f};

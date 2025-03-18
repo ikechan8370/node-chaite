@@ -97,6 +97,25 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       base += `\n上传者：@${this.uploader.username}`
     }
 
+    if (this.sendMessageOption) {
+      if (this.sendMessageOption.model) {
+        base += `\n模型：${this.sendMessageOption.model}`
+      }
+      if (this.sendMessageOption.temperature) {
+        base += `\n温度：${this.sendMessageOption.temperature}`
+      }
+      if (this.sendMessageOption.maxToken) {
+        base += `\n最大Token：${this.sendMessageOption.maxToken}`
+      }
+      if (verbose) {
+        if (this.sendMessageOption.systemOverride) {
+          base += `\n系统提示：${this.sendMessageOption.systemOverride}`
+        }
+      } else {
+        base += '\n预设内容仅主人可查看'
+      }
+    }
+
     return base.trimEnd()
   }
 }

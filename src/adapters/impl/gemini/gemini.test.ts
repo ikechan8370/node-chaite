@@ -1,9 +1,10 @@
-import {GeminiClient} from "./GeminiClient.js";
+import {GeminiClient} from "./GeminiClient.js"
 import DefaultHistoryManager from '../../../utils/history.js'
-import {ArgumentValue, Function, Parameter, Tool, UserMessage} from "../../../types/index.js";
-import {DefaultLogger} from "../../../types/index.js";
+import { Parameter, Tool, Function } from "../../../types/tools.js"
+import { ArgumentValue, UserMessage } from "../../../types/models.js"
+import { DefaultLogger } from "../../../types/common.js"
 
-const searchTool = new class SearchTool implements Tool {
+class SearchTool implements Tool {
   constructor() {
     this.function = {
       name: 'search',
@@ -23,6 +24,7 @@ const searchTool = new class SearchTool implements Tool {
         }
       } as Parameter
     } as Function
+    this.name = 'search'
   }
 
   type: "function";
@@ -32,7 +34,11 @@ const searchTool = new class SearchTool implements Tool {
     DefaultLogger.info(`search query: ${args.query}`)
     return "search failed"
   }
-}()
+
+  name: Function["name"];
+}
+
+const searchTool = new SearchTool()
 
 describe('GeminiClient', () => {
   test('GeminiClient works correctly', async () => {
