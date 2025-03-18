@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/ikechan8370/node-chaite/compare/v1.2.2...v1.2.3) (2025-03-18)
+
+
+### Bug Fixes
+
+* options and new config ([0b5b9d2](https://github.com/ikechan8370/node-chaite/commit/0b5b9d2b1085e4dad7b1a9806b2b7b84ba0f12e9))
+
 ## [1.2.2](https://github.com/ikechan8370/node-chaite/compare/v1.2.1...v1.2.2) (2025-03-17)
 
 
