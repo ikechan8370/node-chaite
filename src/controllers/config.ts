@@ -1,7 +1,7 @@
-import express, { Request, Response } from 'express'
-import { Chaite, ChaiteResponse, CustomConfig } from '../index.js'
+import express, { Request, Response, Router } from 'express'
+import { Chaite, ChaiteResponse, CustomConfig } from '../index'
 
-const router = express.Router()
+const router: Router = express.Router()
 
 router.get('/', async (req: Request, res: Response) => {
   const chaite = Chaite.getInstance()

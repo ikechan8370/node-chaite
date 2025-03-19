@@ -1,8 +1,8 @@
 // ************** 处理器 **************
 
-import { AbstractShareable } from './cloud.js'
-import { AssistantMessage, UserMessage } from './models.js'
-import { PROCESSOR_TYPE_MAP } from '../const/index.js'
+import { AbstractShareable } from './cloud'
+import { AssistantMessage, UserMessage } from './models'
+import { PROCESSOR_TYPE_MAP } from '../const/index'
 
 export class ProcessorDTO extends AbstractShareable<ProcessorDTO> {
   constructor(params: Partial<ProcessorDTO>) {

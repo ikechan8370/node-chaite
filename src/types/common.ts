@@ -1,9 +1,9 @@
-import { Feature } from './models.js'
-import { Tool } from './tools.js'
-import { HistoryManager } from './adapter.js'
-import { PostProcessor, PreProcessor } from './processors.js'
-import { DeSerializable, Serializable, Wait } from './cloud.js'
-import { EventMessage } from './external.js'
+import { Feature } from './models'
+import { Tool } from './tools'
+import { HistoryManager } from './adapter'
+import { PostProcessor, PreProcessor } from './processors'
+import { DeSerializable, Serializable, Wait } from './cloud'
+import { EventMessage } from './external'
 
 export const MultipleKeyStrategyChoice = {
   RANDOM: 'random' as MultipleKeyStrategy,

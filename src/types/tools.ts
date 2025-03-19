@@ -1,6 +1,6 @@
-import { ArgumentValue } from './models.js'
-import { AbstractShareable } from './cloud.js'
-import { CHANNEL_STATUS_MAP } from '../const/index.js'
+import { ArgumentValue } from './models'
+import { AbstractShareable } from './cloud'
+import { CHANNEL_STATUS_MAP } from '../const/index'
 
 export interface Function {
     name: string
@@ -32,6 +32,7 @@ export class ToolDTO extends AbstractShareable<ToolDTO> {
   constructor(params: Partial<ToolDTO>) {
     super(params)
     this.modelType = 'executable'
+    this.permission = params.permission || 'private'
   }
 
   public permission: 'public' | 'private' | 'onetime'
@@ -71,8 +72,16 @@ export class ToolDTO extends AbstractShareable<ToolDTO> {
  * js写的工具可以继承这个抽象类
  */
 export abstract class CustomTool {
-  type: 'function'
-  function: Function
+  type = 'function' as const
+  function: Function = {
+    name: '',
+    description: '',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: [],
+    },
+  }
 
   async run(_args: Record<string, ArgumentValue | Record<string, ArgumentValue>>): Promise<string> {
     throw new Error('Not implemented')

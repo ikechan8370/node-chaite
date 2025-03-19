@@ -6,19 +6,19 @@ import {
   Filter,
   SearchOption,
   User,
-} from '../types/index.js'
-import { createHttpClient, HttpClient } from '../utils/index.js'
-import { CloudAPI } from '../const/index.js'
+} from '../types/index'
+import { createHttpClient, HttpClient } from '../utils/index'
+import { CloudAPI } from '../const/index'
 
 export class DefaultCloudService<T extends AbstractShareable<T>> implements CloudSharingService<T> {
 
   client: HttpClient
 
-  type: CloudAPIType
+  type!: CloudAPIType
 
-  user: User
+  user!: User
 
-  identifier: string
+  identifier!: string
 
   constructor(private cloudApiBaseUrl: string) {
     this.client = createHttpClient({

@@ -1,7 +1,7 @@
-import express from 'express'
+import express, { Router } from 'express'
 import { Request, Response } from 'express'
-import { Chaite, ChaiteResponse, Filter, ProcessorDTO, SearchOption } from '../index.js'
-const router = express.Router()
+import { Chaite, ChaiteResponse, Filter, ProcessorDTO, SearchOption } from '../index'
+const router: Router = express.Router()
 
 interface ListProcessorDTO {
   name?: string;

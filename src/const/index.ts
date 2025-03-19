@@ -1,2 +1,2 @@
-export * from './cloud_api.js'
-export * from './map.js'
+export * from './cloud_api'
+export * from './map'

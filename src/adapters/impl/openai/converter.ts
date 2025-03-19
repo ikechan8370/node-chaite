@@ -4,7 +4,7 @@ import {
   registerFromChaiteConverter,
   registerFromChaiteToolConverter,
   registerIntoChaiteConverter,
-} from '../../../utils/converter.js'
+} from '../../../utils/converter'
 import {
   AssistantMessage, AudioContent, DeveloperMessage, ImageContent,
   IMessage, MessageContent, ReasoningContent,
@@ -13,7 +13,7 @@ import {
   ToolCall, ToolCallResult,
   ToolCallResultMessage,
   UserMessage,
-} from '../../../types/index.js'
+} from '../../../types/index'
 import OpenAI from 'openai'
 import FunctionDefinition = OpenAI.FunctionDefinition;
 import { FunctionParameters } from 'openai/src/resources/shared.js'

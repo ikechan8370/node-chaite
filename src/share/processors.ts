@@ -2,10 +2,10 @@ import { promises as fsPromises } from 'fs'
 import path from 'path'
 import {
   ProcessorDTO, Processor,
-} from '../types/index.js'
-import { CloudSharingService } from '../types/cloud.js'
-import { ExecutableShareableManager } from './shareable.js'
-import { BasicStorage } from '../types/index.js'
+} from '../types/index'
+import { CloudSharingService } from '../types/cloud'
+import { ExecutableShareableManager } from './shareable'
+import { BasicStorage } from '../types/index'
 
 
 export class ProcessorsManager extends ExecutableShareableManager<ProcessorDTO, Processor> {

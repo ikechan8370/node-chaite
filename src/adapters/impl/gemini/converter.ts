@@ -2,8 +2,8 @@ import {
   registerFromChaiteConverter,
   registerFromChaiteToolConverter,
   registerIntoChaiteConverter,
-} from '../../../utils/converter.js'
-import { AssistantMessage, IMessage, ToolCallResultMessage, UserMessage } from '../../../types/index.js'
+} from '../../../utils/converter'
+import { AssistantMessage, IMessage, ToolCallResultMessage, UserMessage } from '../../../types/index'
 import {
   Content,
   FunctionCall,
