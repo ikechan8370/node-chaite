@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/ikechan8370/node-chaite/compare/v1.2.4...v1.2.5) (2025-03-19)
+
+
+### Bug Fixes
+
+* sideEffects ([46aa581](https://github.com/ikechan8370/node-chaite/commit/46aa5810c5c33650a6e098ad6fdf036b6de86710))
+
 ## [1.2.4](https://github.com/ikechan8370/node-chaite/compare/v1.2.3...v1.2.4) (2025-03-18)
 
 
