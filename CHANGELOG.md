@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.8](https://github.com/ikechan8370/node-chaite/compare/v1.2.7...v1.2.8) (2025-03-19)
+
+
+### Bug Fixes
+
+* static files ([7c4b609](https://github.com/ikechan8370/node-chaite/commit/7c4b609fb0dbaf1c59a5c41661ef63b3cc45754c))
+
 ## [1.2.7](https://github.com/ikechan8370/node-chaite/compare/v1.2.6...v1.2.7) (2025-03-19)
 
 
