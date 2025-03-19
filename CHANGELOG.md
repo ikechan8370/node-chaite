@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.6](https://github.com/ikechan8370/node-chaite/compare/v1.2.5...v1.2.6) (2025-03-19)
+
+
+### Bug Fixes
+
+* load executables ([fd37748](https://github.com/ikechan8370/node-chaite/commit/fd377480f7a1a4c5046ef1d649ed3a68281ae39e))
+
 ## [1.2.5](https://github.com/ikechan8370/node-chaite/compare/v1.2.4...v1.2.5) (2025-03-19)
 
 
