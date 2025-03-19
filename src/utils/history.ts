@@ -1,4 +1,4 @@
-import { HistoryMessage, AbstractHistoryManager } from '../types/index.js'
+import { HistoryMessage, AbstractHistoryManager } from '../types/index'
 
 type HistoryCache = Map<string, Map<string, HistoryMessage>>
 

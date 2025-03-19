@@ -7,19 +7,19 @@ import {
   Tool, ToolCallResult,
   ToolCallResultMessage,
   UserMessage,
-} from '../types/index.js'
+} from '../types/index'
 import {
   BaseClientOptions, ChaiteContext,
   DefaultLogger,
   ILogger,
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
-} from '../types/index.js'
-import DefaultHistoryManager from '../utils/history.js'
-import { asyncLocalStorage, getKey } from '../utils/index.js'
-import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types/index.js'
-import { PostProcessor, PreProcessor } from '../types/index.js'
-import { ProcessorsManager } from '../share/index.js'
+} from '../types/index'
+import DefaultHistoryManager from '../utils/history'
+import { asyncLocalStorage, getKey } from '../utils/index'
+import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types/index'
+import { PostProcessor, PreProcessor } from '../types/index'
+import { ProcessorsManager } from '../share/index'
 
 
 export class AbstractClient implements IClient {

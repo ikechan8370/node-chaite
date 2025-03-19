@@ -1,4 +1,4 @@
-import { DocumentFileParser, DocumentPathParser, ParserType } from '../../types/document.js'
+import { DocumentFileParser, DocumentPathParser, ParserType } from '../../types/document'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
@@ -14,7 +14,7 @@ const pureTextExtensions = [
   '.json',
 
   // 编程语言
-  '.js', '.jsx', '.ts', '.tsx',
+  '', '.jsx', '.ts', '.tsx',
   '.py',
   '.java',
   '.c', '.cpp', '.h', '.hpp',

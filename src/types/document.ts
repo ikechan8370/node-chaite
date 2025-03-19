@@ -15,8 +15,8 @@ export class DocumentPathParser implements Parser<FilePath> {
     return typeof value === 'string'
   }
 
-  supportedExtensions: ValidExtension[]
-  type: ParserType
+  supportedExtensions!: ValidExtension[]
+  type!: ParserType
 
   parse(document: FilePath): Promise<string> {
     throw new Error('abstract class')
@@ -28,8 +28,8 @@ export class DocumentFileParser implements Parser<Buffer> {
     return Buffer.isBuffer(value)
   }
 
-  supportedExtensions: ValidExtension[]
-  type: ParserType
+  supportedExtensions!: ValidExtension[]
+  type!: ParserType
 
   parse(document: Buffer): Promise<string> {
     throw new Error('abstract class')

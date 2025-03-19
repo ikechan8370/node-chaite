@@ -1,5 +1,5 @@
 import {OpenAIClient} from "./OpenAIClient.js";
-import DefaultHistoryManager from '../../../utils/history.js'
+import DefaultHistoryManager from '../../../utils/history'
 import {ArgumentValue, Function, ModelResponseChunk, Parameter, Tool, UserMessage} from "../../../types/index.js";
 import {BaseClientOptions, DefaultLogger} from "../../../types/index.js";
 

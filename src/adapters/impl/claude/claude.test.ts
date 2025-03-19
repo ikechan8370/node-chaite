@@ -1,4 +1,4 @@
-import DefaultHistoryManager from '../../../utils/history.js'
+import DefaultHistoryManager from '../../../utils/history'
 import {ArgumentValue, Function, Parameter, Tool, UserMessage} from "../../../types/index.js";
 import {DefaultLogger} from "../../../types/index.js";
 import {ClaudeClient} from "./ClaudeClient.js";

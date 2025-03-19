@@ -1,8 +1,8 @@
 import fs, { promises as fsPromises } from 'fs'
 import path from 'path'
-import { CloudSharingService, Filter, SearchOption, Shareable } from '../types/index.js'
-import { BasicStorage } from '../types/storage.js'
-import { getLogger } from '../index.js'
+import { CloudSharingService, Filter, SearchOption, Shareable } from '../types/index'
+import { BasicStorage } from '../types/storage'
+import { getLogger } from '../index'
 
 // todo
 export type ExecutableSShareableType = 'tool' | 'processor'
@@ -52,7 +52,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
 
     this.watcher = fs.watch(this.codeDirectory, { recursive: true }, async (eventType, filename) => {
       if (!filename) return
-      if (path.extname(filename) !== '.js') return
+      if (path.extname(filename) !== '') return
       
       // 文件变化时重新扫描代码目录
       await this.scanInstances()
@@ -67,7 +67,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
       const newInstanceMap = new Map<string, string>()
 
       for (const file of files) {
-        if (path.extname(file) === '.js') {
+        if (path.extname(file) === '') {
           try {
             const filePath = path.join(this.codeDirectory, file)
             const fileURL = `file://${path.resolve(filePath).replace(/\\/g, '/')}`

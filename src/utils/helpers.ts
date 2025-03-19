@@ -3,11 +3,11 @@ import {
   ILogger,
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
-} from '../types/index.js'
+} from '../types/index'
 import { AsyncLocalStorage } from 'async_hooks'
 import fs from 'fs/promises'
 import path from 'path'
-import { Chaite } from '../index.js'
+import { Chaite } from '../index'
 
 export async function getKey(apiKeys: string[] | string, strategy: MultipleKeyStrategy): Promise<string> {
   const logger = asyncLocalStorage.getStore()?.logger as ILogger

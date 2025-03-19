@@ -1,4 +1,4 @@
-import { CloudAPIType } from '../types/index.js'
+import { CloudAPIType } from '../types/index'
 
 const API_V1_PREFIX = '/api/v1'
 export const CloudAPI: Record<'USER', string> & Record<'LIST' | 'ADD' | 'GET' | 'TEMP_SHARE' | 'DELETE', Record<CloudAPIType, string>> = {

@@ -1,4 +1,4 @@
-import { ToolChoice } from './adapter.js'
+import { ToolChoice } from './adapter'
 
 /**
  * 基本存储接口

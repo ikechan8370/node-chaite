@@ -2,7 +2,7 @@ import {
   registerFromChaiteConverter,
   registerFromChaiteToolConverter,
   registerIntoChaiteConverter,
-} from '../../../utils/converter.js'
+} from '../../../utils/converter'
 import {
   AssistantMessage,
   IMessage,
@@ -10,7 +10,7 @@ import {
   ToolCallResultMessage,
   UserMessage,
   FunctionCall, ReasoningContent, TextContent,
-} from '../../../types/index.js'
+} from '../../../types/index'
 import Anthropic from '@anthropic-ai/sdk'
 // 将消息IMessage转换为Claude格式
 registerFromChaiteConverter<Anthropic.MessageParam>('claude', (source: IMessage) => {

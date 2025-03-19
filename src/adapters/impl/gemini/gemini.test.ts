@@ -1,5 +1,5 @@
 import {GeminiClient} from "./GeminiClient.js"
-import DefaultHistoryManager from '../../../utils/history.js'
+import DefaultHistoryManager from '../../../utils/history'
 import { Parameter, Tool, Function } from "../../../types/tools.js"
 import { ArgumentValue, UserMessage } from "../../../types/models.js"
 import { DefaultLogger } from "../../../types/common.js"

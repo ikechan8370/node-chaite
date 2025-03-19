@@ -5,8 +5,8 @@ import {
   ChannelStatistics,
   ClientType,
   Wait,
-} from '../types/index.js'
-import { CHANNEL_STATUS_MAP } from '../const/index.js'
+} from '../types/index'
+import { CHANNEL_STATUS_MAP } from '../const/index'
 
 export class DefaultChannelLoadBalancer implements ChannelsLoadBalancer {
   public constructor() {}

@@ -1,7 +1,7 @@
-import express from 'express'
+import express, { Router } from 'express'
 import { Request, Response } from 'express'
-import { Chaite, ChaiteResponse, ToolDTO, Filter, SearchOption } from '../index.js'
-const router = express.Router()
+import { Chaite, ChaiteResponse, ToolDTO, Filter, SearchOption } from '../index'
+const router: Router = express.Router()
 
 interface ListToolDTOs {
   name?: string;

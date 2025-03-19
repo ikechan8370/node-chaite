@@ -1,4 +1,4 @@
-import { DocumentFileParser, DocumentPathParser, ParserType } from '../../types/index.js'
+import { DocumentFileParser, DocumentPathParser, ParserType } from '../../types/index'
 import mammoth from 'mammoth'
 
 export class DocxFileParser extends DocumentPathParser {

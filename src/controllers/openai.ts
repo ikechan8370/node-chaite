@@ -1,12 +1,12 @@
-import express from 'express'
+import express, { Router } from 'express'
 import { Request, Response } from 'express'
-import { ModelResponseChunk, SendMessageOption } from '../types/index.js'
-import { Chaite } from '../index.js'
-import { createClient } from '../adapters/index.js'
-import { getFromChaiteConverter, getIntoChaiteConverter } from '../utils/converter.js'
+import { ModelResponseChunk, SendMessageOption } from '../types/index'
+import { Chaite } from '../index'
+import { createClient } from '../adapters/index'
+import { getFromChaiteConverter, getIntoChaiteConverter } from '../utils/converter'
 import OpenAI from 'openai'
 
-const router = express.Router()
+const router: Router = express.Router()
 
 // List models endpoint
 router.get('/models', async (req, res) => {

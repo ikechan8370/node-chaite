@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express'
-import { Chaite, FrontEndAuthHandler } from '../index.js'
+import { Chaite, FrontEndAuthHandler } from '../index'
 
 export const authenticateToken: RequestHandler = (
   req: Request,

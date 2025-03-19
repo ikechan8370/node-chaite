@@ -1,4 +1,4 @@
-import { AssistantMessage, ClientType, IMessage, ReasoningPart, Tool } from '../types/index.js'
+import { AssistantMessage, ClientType, IMessage, ReasoningPart, Tool } from '../types/index'
 import { Content, GenerateContentResult } from '@google/generative-ai'
 import { Tool as GeminiTool } from '@google/generative-ai'
 // import type { Anthropic.MessageParam, ToolUnion } from '@anthropic-ai/sdk/src/resources'

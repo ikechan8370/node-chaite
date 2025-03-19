@@ -1,4 +1,4 @@
-import { RAGResult } from '../types/common.js'
+import { RAGResult } from '../types/common'
 
 export class RAGAggregator {
   /**

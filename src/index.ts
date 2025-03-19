@@ -1,4 +1,4 @@
-import { ChannelsManager, ChatPresetManager, DefaultCloudService, ProcessorsManager, ToolManager } from './share/index.js'
+import { ChannelsManager, ChatPresetManager, DefaultCloudService, ProcessorsManager, ToolManager } from './share/index'
 import {
   ChaiteContext,
   CustomConfig,
@@ -8,10 +8,10 @@ import {
   SendMessageOption,
   ToolDTO,
   UserMessage,
-} from './types/index.js'
-import { EventMessage, UserModeSelector } from './types/external.js'
-import { createClient } from './adapters/index.js'
-import { BasicStorage, UserState } from './types/index.js'
+} from './types/index'
+import { EventMessage, UserModeSelector } from './types/external'
+import { createClient } from './adapters/index'
+import { BasicStorage, UserState } from './types/index'
 import {
   asyncLocalStorage,
   DEFAULT_HOST,
@@ -19,19 +19,19 @@ import {
   FrontEndAuthHandler,
   GlobalConfig,
   InMemoryHistoryManager,
-} from './utils/index.js'
-import { Channel, ChatPreset } from './channels/index.js'
-import { RAGManager } from './rag/index.js'
+} from './utils/index'
+import { Channel, ChatPreset } from './channels/index'
+import { RAGManager } from './rag/index'
 import EventEmitter from 'node:events'
-import { runServer } from './controllers/index.js'
+import { runServer } from './controllers/index'
 
-export * from './types/index.js'
-export * from './utils/index.js'
-export * from './adapters/index.js'
-export * from './rag/index.js'
-export * from './channels/index.js'
-export * from './const/index.js'
-export * from './share/index.js'
+export * from './types/index'
+export * from './utils/index'
+export * from './adapters/index'
+export * from './rag/index'
+export * from './channels/index'
+export * from './const/index'
+export * from './share/index'
 
 
 /**
@@ -42,18 +42,18 @@ export class Chaite extends EventEmitter {
 
   private ragManager?: RAGManager
 
-  private frontendAuthHandler: FrontEndAuthHandler
+  private frontendAuthHandler!: FrontEndAuthHandler
 
   private globalConfig?: GlobalConfig
 
   private constructor(private channelsManager: ChannelsManager, private toolsManager: ToolManager,
-              private processorsManager: ProcessorsManager, private chatPresetManager: ChatPresetManager,
-              private userModeSelector: UserModeSelector, private userStateStorage: BasicStorage<UserState>,
-              private historyManager: HistoryManager = new InMemoryHistoryManager(), private logger: ILogger) {
+    private processorsManager: ProcessorsManager, private chatPresetManager: ChatPresetManager,
+    private userModeSelector: UserModeSelector, private userStateStorage: BasicStorage<UserState>,
+    private historyManager: HistoryManager = new InMemoryHistoryManager(), private logger: ILogger) {
     super()
   }
-  
-  public static init (channelsManager: ChannelsManager, toolsManager: ToolManager,
+
+  public static init(channelsManager: ChannelsManager, toolsManager: ToolManager,
     processorsManager: ProcessorsManager, chatPresetManager: ChatPresetManager,
     userModeSelector: UserModeSelector, userStateStorage: BasicStorage<UserState>,
     historyManager: HistoryManager = new InMemoryHistoryManager(), logger: ILogger): Chaite {
@@ -69,22 +69,22 @@ export class Chaite extends EventEmitter {
     return Chaite.instance
   }
 
-  onUpdateCustomConfig: (config: CustomConfig) => Promise<CustomConfig>
+  onUpdateCustomConfig!: (config: CustomConfig) => Promise<CustomConfig>
 
-  setUpdateConfigCallback (callback: (config: CustomConfig) => Promise<CustomConfig>) {
+  setUpdateConfigCallback(callback: (config: CustomConfig) => Promise<CustomConfig>) {
     this.onUpdateCustomConfig = callback
   }
-  
-  getCustomConfig: () => Promise<CustomConfig>
-  
-  setGetConfig (callback: () => Promise<CustomConfig>) {
+
+  getCustomConfig!: () => Promise<CustomConfig>
+
+  setGetConfig(callback: () => Promise<CustomConfig>) {
     this.getCustomConfig = callback
   }
 
   setRAGManager(ragManager: RAGManager) {
     this.ragManager = ragManager
   }
-  
+
   getRAGManager() {
     return this.ragManager
   }
@@ -118,7 +118,7 @@ export class Chaite extends EventEmitter {
    * @param e
    * @param options 包含对话id和消息id
    */
-  async sendMessage (message: UserMessage, e: EventMessage, options: SendMessageOption & { chatPreset?: ChatPreset }): Promise<ModelResponse> {
+  async sendMessage(message: UserMessage, e: EventMessage, options: SendMessageOption & { chatPreset?: ChatPreset }): Promise<ModelResponse> {
     const context = new ChaiteContext(this.logger)
     context.setEvent(e)
     return asyncLocalStorage.run(context, async () => {
@@ -144,85 +144,85 @@ export class Chaite extends EventEmitter {
         newOptions.conversationId = userState?.current?.conversationId
         newOptions.parentMessageId = userState?.current?.messageId || userState?.conversations.find(c => c.id === newOptions.conversationId)?.lastMessageId
 
-        return  await client.sendMessage(message, newOptions)
+        return await client.sendMessage(message, newOptions)
       } else {
         throw new Error('No available channels')
       }
     })
 
   }
-  
-  getChannelsManager () {
+
+  getChannelsManager() {
     return this.channelsManager
   }
-  
-  setChannelsManager (channelsManager: ChannelsManager) {
+
+  setChannelsManager(channelsManager: ChannelsManager) {
     this.channelsManager = channelsManager
   }
-  
-  getToolsManager () {
+
+  getToolsManager() {
     return this.toolsManager
   }
-  
-  setToolsManager (toolsManager: ToolManager) {
+
+  setToolsManager(toolsManager: ToolManager) {
     this.toolsManager = toolsManager
   }
-  
-  getProcessorsManager () {
+
+  getProcessorsManager() {
     return this.processorsManager
   }
-  
-  setProcessorsManager (processorsManager: ProcessorsManager) {
+
+  setProcessorsManager(processorsManager: ProcessorsManager) {
     this.processorsManager = processorsManager
   }
-  
-  getChatPresetManager () {
+
+  getChatPresetManager() {
     return this.chatPresetManager
   }
-  
-  setChatPresetManager (chatPresetManager: ChatPresetManager) {
+
+  setChatPresetManager(chatPresetManager: ChatPresetManager) {
     this.chatPresetManager = chatPresetManager
   }
-  
-  getUserModeSelector () {
+
+  getUserModeSelector() {
     return this.userModeSelector
   }
-  
-  setUserModeSelector (userModeSelector: UserModeSelector) {
+
+  setUserModeSelector(userModeSelector: UserModeSelector) {
     this.userModeSelector = userModeSelector
-  } 
-  
-  getUserStateStorage () {
+  }
+
+  getUserStateStorage() {
     return this.userStateStorage
   }
-  
-  setUserStateStorage (userStateStorage: BasicStorage<UserState>) {
+
+  setUserStateStorage(userStateStorage: BasicStorage<UserState>) {
     this.userStateStorage = userStateStorage
   }
-  
-  getHistoryManager () {
+
+  getHistoryManager() {
     return this.historyManager
   }
-  
-  setHistoryManager (historyManager: HistoryManager) {
+
+  setHistoryManager(historyManager: HistoryManager) {
     this.historyManager = historyManager
   }
-  
-  getLogger () {
+
+  getLogger() {
     return this.logger
   }
-  
-  setLogger (logger: ILogger) {
+
+  setLogger(logger: ILogger) {
     this.logger = logger
   }
 
-  setCloudService (cloudServiceBaseUrl: string) {
+  setCloudService(cloudServiceBaseUrl: string) {
     this.channelsManager.setCloudService(new DefaultCloudService<Channel>(cloudServiceBaseUrl))
     this.toolsManager.setCloudService(new DefaultCloudService<ToolDTO>(cloudServiceBaseUrl))
     this.processorsManager.setCloudService(new DefaultCloudService<ProcessorDTO>(cloudServiceBaseUrl))
     this.chatPresetManager.setCloudService(new DefaultCloudService<ChatPreset>(cloudServiceBaseUrl))
   }
-  async auth (apiKey: string) {
+  async auth(apiKey: string) {
     if (!this.toolsManager.cloudService) {
       throw new Error('Cloud service is not initialized')
     }
@@ -233,9 +233,9 @@ export class Chaite extends EventEmitter {
       this.processorsManager.cloudService?.setUser(user)
     }
   }
-  
+
   runApiServer() {
     runServer(this.globalConfig?.getHost() || DEFAULT_HOST, this.globalConfig?.getPort() || DEFAULT_PORT)
   }
-  
+
 }
