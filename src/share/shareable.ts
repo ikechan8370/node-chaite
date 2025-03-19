@@ -1,7 +1,8 @@
-import fs, { promises as fsPromises } from 'fs'
+import { promises as fsPromises } from 'fs'
 import path from 'path'
-import { CloudSharingService, Filter, SearchOption, Shareable } from '../types/index'
-import { BasicStorage } from '../types/storage'
+import chokidar, { FSWatcher } from 'chokidar'
+import { CloudSharingService, Filter, SearchOption, Shareable } from '../types'
+import { BasicStorage } from '../types'
 import { getLogger } from '../index'
 
 // todo
@@ -13,7 +14,7 @@ export type ExecutableSShareableType = 'tool' | 'processor'
  * @interface ExecutableShareableManager
  */
 export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
-  private watcher: fs.FSWatcher | null = null
+  private watcher: FSWatcher | null = null;
   /**
    * 存储示例名称和文件名的映射
    * @private
@@ -42,20 +43,29 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     await this.scanInstances()
 
     // 设置文件监听
-    this.setupFileWatcher()
+    await this.setupFileWatcher()
   }
 
-  private setupFileWatcher(): void {
+  private async setupFileWatcher(): Promise<void> {
     if (this.watcher) {
-      this.watcher.close()
+      await this.watcher.close()
     }
 
-    this.watcher = fs.watch(this.codeDirectory, { recursive: true }, async (eventType, filename) => {
-      if (!filename) return
-      if (path.extname(filename) !== '') return
-      
-      // 文件变化时重新扫描代码目录
+    this.watcher = chokidar.watch(this.codeDirectory, {
+      persistent: true,
+      ignoreInitial: true,
+      ignorePermissionErrors: true,
+      depth: 1
+    }).on('all', async (event, filepath) => {
+      // Only react to add/change/unlink events
+      if (!['add', 'change', 'unlink'].includes(event)) return
+
+      // Only react to JS files
+      if (path.extname(filepath) !== '.js') return
+
+      // Re-scan instances when files change
       await this.scanInstances()
+      getLogger().debug(`File ${filepath} ${event}, rescanned instances`)
     })
 
     getLogger().debug(`File watcher set up for directory: ${this.codeDirectory}`)
@@ -240,7 +250,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
 
   public async dispose(): Promise<void> {
     if (this.watcher) {
-      this.watcher.close()
+      await this.watcher.close()
       this.watcher = null
     }
   }

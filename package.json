@@ -41,6 +41,7 @@
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "axios": "^1.8.1",
+    "chokidar": "^4.0.3",
     "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
     "eslint": "^9.21.0",
