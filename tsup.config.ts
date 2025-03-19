@@ -26,9 +26,9 @@ export const options: Options = {
   }, // 是否生成 .d.ts 文件
   outDir: 'dist', // 输出目录
   treeshake: true, // 树摇优化
-  minify: false, // 压缩代码
+  minify: true, // 压缩代码
   ignoreWatch: [],
-  shims: false,
+  shims: true,
   external: [...builtinModules, ...builtinModules.map((node) => `node:${node}`)],
 }
 
