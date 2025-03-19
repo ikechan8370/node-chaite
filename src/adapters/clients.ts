@@ -20,6 +20,7 @@ import { asyncLocalStorage, getKey } from '../utils/index'
 import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types/index'
 import { PostProcessor, PreProcessor } from '../types/index'
 import { ProcessorsManager } from '../share/index'
+import * as crypto from "node:crypto"
 
 
 export class AbstractClient implements IClient {
