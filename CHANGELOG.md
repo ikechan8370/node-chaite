@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.7](https://github.com/ikechan8370/node-chaite/compare/v1.2.6...v1.2.7) (2025-03-19)
+
+
+### Bug Fixes
+
+* use chokidar ([fa85d3b](https://github.com/ikechan8370/node-chaite/commit/fa85d3b4612830b4fccf5cccc562d8e7f379c166))
+
 ## [1.2.6](https://github.com/ikechan8370/node-chaite/compare/v1.2.5...v1.2.6) (2025-03-19)
 
 
