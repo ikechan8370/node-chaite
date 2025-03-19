@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.9](https://github.com/ikechan8370/node-chaite/compare/v1.2.8...v1.2.9) (2025-03-19)
+
+
+### Bug Fixes
+
+* add ctypro import ([1dc0246](https://github.com/ikechan8370/node-chaite/commit/1dc0246a3585356d46dd1dd0b0bd635ea3d39716))
+
 ## [1.2.8](https://github.com/ikechan8370/node-chaite/compare/v1.2.7...v1.2.8) (2025-03-19)
 
 
