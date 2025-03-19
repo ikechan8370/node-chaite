@@ -67,15 +67,15 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
       const newInstanceMap = new Map<string, string>()
 
       for (const file of files) {
-        if (path.extname(file) === '') {
+        if (path.extname(file) === '.js') {
           try {
             const filePath = path.join(this.codeDirectory, file)
             const fileURL = `file://${path.resolve(filePath).replace(/\\/g, '/')}`
             // 清除模块缓存以确保获取最新版本
             const module = await import(fileURL)
-
             if (module.default && typeof module.default === 'object' && module.default.name) {
               // 使用示例自己的name作为键，文件名作为值
+              getLogger().debug(`Loaded ${this.type} '${module.default.name}' from file '${file}'`)
               newInstanceMap.set(module.default.name, file)
             }
           } catch (error) {

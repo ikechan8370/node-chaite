@@ -8,9 +8,6 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "types": ["@types/node"],
     "rootDir": "./src",
     "declaration": true,
