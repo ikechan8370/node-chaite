@@ -29,9 +29,9 @@ export function runServer (host: string, port: number) {
   app.use('/api/config', authenticateToken, ConfigRouter)
   app.use('/api/processors', authenticateToken, ProcessorsRouter)
   app.use('/v1', authenticateToken, OpenAIRouter)
-  app.use(express.static(path.join(__dirname, '../frontend/build')))
+  app.use(express.static(path.join(__dirname, './frontend/build')))
   app.get('*', (_req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build/index.html'))
+    res.sendFile(path.join(__dirname, './frontend/build/index.html'))
   })
   app.listen(port, host, () => {
     getLogger().info(`Chaite server is running at http://${host}:${port}`)
