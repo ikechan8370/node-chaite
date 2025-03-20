@@ -20,10 +20,11 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
 
   identifier!: string
 
-  constructor(private cloudApiBaseUrl: string) {
+  constructor(private cloudApiBaseUrl: string, type: CloudAPIType) {
     this.client = createHttpClient({
       baseURL: this.cloudApiBaseUrl,
     })
+    this.type = type
   }
 
   setUser(user: User) {

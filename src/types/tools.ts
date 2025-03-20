@@ -33,8 +33,10 @@ export class ToolDTO extends AbstractShareable<ToolDTO> {
     super(params)
     this.modelType = 'executable'
     this.permission = params.permission || 'private'
+    this.status = params.status || 'enabled'
   }
 
+  status: 'enabled' | 'disabled'
   public permission: 'public' | 'private' | 'onetime'
 
   toFormatedString(_verbose?: boolean): string {
@@ -65,6 +67,49 @@ export class ToolDTO extends AbstractShareable<ToolDTO> {
 
   fromString(str: string): ToolDTO {
     return new ToolDTO(JSON.parse(str))
+  }
+}
+
+/**
+ * 工具组，与若干个工具关联
+ */
+export interface ToolsGroup {
+  id: string;
+  name: string;
+  description: string;
+  toolIds: string[]; // 或者使用实际的工具引用
+  isDefault?: boolean;
+}
+
+export class ToolsGroupDTO extends AbstractShareable<ToolsGroupDTO> implements ToolsGroup {
+  constructor(params: Partial<ToolsGroupDTO>) {
+    super(params)
+    this.modelType = 'settings'
+  }
+
+  toolIds: string[]
+  isDefault?: boolean | undefined
+
+  toFormatedString(_verbose?: boolean): string {
+    let base = `工具组名称：${this.name}`
+
+    if (this.description) {
+      base += `\n工具组描述：${this.description}`
+    }
+
+    if (this.createdAt) {
+      base += `\n创建时间：${this.createdAt}`
+    }
+
+    if (this.updatedAt) {
+      base += `\n最后更新时间：${this.updatedAt}`
+    }
+
+    if (this.uploader?.username) {
+      base += `\n上传者：@${this.uploader.username}`
+    }
+
+    return base.trimEnd()
   }
 }
 

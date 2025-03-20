@@ -143,6 +143,7 @@ export class OpenAIClient extends AbstractClient {
         reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
       })
     }
+    this.logger.debug(`openai response: ${JSON.stringify(chatCompletion)}`)
     const id = crypto.randomUUID()
     const toChaiteConverter = getIntoChaiteConverter('openai')
     const contents = (chatCompletion).choices

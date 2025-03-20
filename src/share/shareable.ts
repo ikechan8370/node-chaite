@@ -256,7 +256,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
   }
 }
 
-export type NonExecutableSShareableType = 'chat-preset' | 'tool-settings' | 'channel'
+export type NonExecutableSShareableType = 'chat-preset' | 'tool-settings' | 'channel' | 'tools-group'
 
 export abstract class NonExecutableShareableManager<T extends Shareable<T>> {
   cloudService?: CloudSharingService<T>

@@ -62,7 +62,7 @@ export class GeminiClient extends AbstractClient {
         } as FunctionCallingConfig,
       } as ToolConfig,
     } as GenerateContentRequest)
-
+    this.logger.debug(`gemini response: ${JSON.stringify(result)}`)
     const id = crypto.randomUUID()
     const intoChaiteConverter = getIntoChaiteConverter('gemini')
     const iMessage = intoChaiteConverter(result)

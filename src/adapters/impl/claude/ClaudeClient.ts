@@ -66,7 +66,7 @@ export class ClaudeClient extends AbstractClient {
       },
       tool_choice: options.toolChoice?.type ? toolModeMap[options.toolChoice.type] : undefined,
     })
-
+    this.logger.debug(`claude response: ${JSON.stringify(result)}`)
     const id = crypto.randomUUID()
     const intoChaiteConverter = getIntoChaiteConverter('claude')
     const iMessage = intoChaiteConverter(result)

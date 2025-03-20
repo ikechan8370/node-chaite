@@ -27,6 +27,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.toolChoice = option.toolChoice
     this.preProcessorIds = option.preProcessorIds
     this.postProcessorIds = option.postProcessorIds
+    this.toolGroupId = option.toolGroupId
     this.onChunk = option.onChunk
     this.onMessageWithToolCall = option.onMessageWithToolCall
   }
@@ -73,10 +74,10 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
   toolChoice?: ToolChoice
 
   postProcessorIds?: string[]
-  private postProcessors?: PostProcessor[]
 
   preProcessorIds?: string[]
-  private preProcessors?: PreProcessor[]
+
+  toolGroupId?: string[]
 
   /**
    * 流模式的回调
@@ -111,6 +112,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       toolChoice: this.toolChoice,
       preProcessorIds: this.preProcessorIds,
       postProcessorIds: this.postProcessorIds,
+      toolGroupId: this.toolGroupId,
     }
     return JSON.stringify(json)
   }

@@ -7,20 +7,21 @@ import {
   Tool, ToolCallResult,
   ToolCallResultMessage,
   UserMessage,
-} from '../types/index'
+} from '../types'
 import {
   BaseClientOptions, ChaiteContext,
   DefaultLogger,
   ILogger,
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
-} from '../types/index'
+} from '../types'
 import DefaultHistoryManager from '../utils/history'
-import { asyncLocalStorage, getKey } from '../utils/index'
-import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types/index'
-import { PostProcessor, PreProcessor } from '../types/index'
-import { ProcessorsManager } from '../share/index'
+import { asyncLocalStorage, getKey } from '../utils'
+import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types'
+import { PostProcessor, PreProcessor } from '../types'
+import { ProcessorsManager } from '../share'
 import * as crypto from "node:crypto"
+import {Chaite} from "../index";
 
 
 export class AbstractClient implements IClient {
@@ -93,6 +94,44 @@ export class AbstractClient implements IClient {
     }
   }
 
+  async fullfillTools (toolGroupIds?: string[]): Promise<Tool[]> {
+    if (!this.tools) {
+      this.tools = []
+    }
+    const toolsGroupManager = Chaite.getInstance().getToolsGroupManager()
+    const toolManager = Chaite.getInstance().getToolsManager()
+    if (toolGroupIds?.includes('default_local')) {
+      const toolDTOS = await toolManager.listInstances()
+      for (let toolDTO of toolDTOS) {
+        const toolC = await toolManager.getInstance(toolDTO.name)
+        if (toolC && !this.tools.find(t => t.name === toolC.name)) {
+          this.tools.push(toolC)
+        }
+      }
+      return this.tools
+    }
+    if (toolGroupIds) {
+      for (const toolGroupId of toolGroupIds) {
+        const toolGroup = await toolsGroupManager.getInstance(toolGroupId)
+        if (toolGroup) {
+          const toolIds = toolGroup.toolIds
+          for (const toolId of toolIds) {
+            const tool = await toolManager.getInstanceT(toolId)
+            if (tool) {
+              const toolC = await toolManager.getInstance(tool.name)
+              if (toolC && !this.tools.find(t => t.name === toolC.name)) {
+                this.tools.push(toolC)
+              } else {
+                this.logger.warn(`tool ${toolId} not found`)
+              }
+            }
+          }
+        }
+      }
+    }
+    return this.tools
+  }
+
   sendMessage(message: UserMessage | undefined, options: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse> {
     options = SendMessageOption.create(options)
     const logicFn = async () => {
@@ -106,6 +145,7 @@ export class AbstractClient implements IClient {
       }
       let thisRequestMsg
       await this.fullfillProcessors(options.preProcessorIds, options.postProcessorIds)
+      await this.fullfillTools(options.toolGroupId)
       if (message) {
         // 前处理器
         for (const preProcessors of this.preProcessors || []) {
@@ -160,12 +200,17 @@ export class AbstractClient implements IClient {
           const fcArgs = r.function.arguments
           const tool = this.tools.find(t => t.function.name === fcName)
           if (tool) {
+            this.logger.info(`run tool ${fcName} with args ${JSON.stringify(fcArgs)}`)
             let toolResult: string
             try {
               toolResult = await tool.run(fcArgs)
+              if (typeof toolResult !== 'string') {
+                toolResult = JSON.stringify(toolResult)
+              }
             } catch (err: unknown) {
               toolResult = (err as Error).message
             }
+            this.logger.info(`tool ${fcName} result ${toolResult}`)
             toolCallResults.push({
               tool_call_id: r.id,
               content: toolResult,

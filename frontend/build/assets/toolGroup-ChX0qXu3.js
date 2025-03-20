@@ -1,0 +1,1 @@
+import{p as t}from"./index-BerDumZT.js";function e(o){return t.Get("/api/toolGroups/list",{params:o})}function p(o){return t.Post("/api/toolGroups/",o)}function u(o){return t.Delete(`/api/toolGroups/${o}`)}export{p as c,u as d,e as f};

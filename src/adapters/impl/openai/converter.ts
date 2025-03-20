@@ -66,9 +66,7 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
       return {
         role: 'tool',
         tool_call_id: tcr.tool_call_id,
-        content: msg.content.map(t => {
-          return { type: 'text', text: t.content } as OpenAI.ChatCompletionContentPartText
-        }),
+        content: tcr.content,
       } as OpenAI.ChatCompletionToolMessageParam
     })
   }

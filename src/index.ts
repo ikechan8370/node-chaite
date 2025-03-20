@@ -6,7 +6,7 @@ import {
   ILogger,
   ModelResponse, ProcessorDTO,
   SendMessageOption,
-  ToolDTO,
+  ToolDTO, ToolsGroupDTO,
   UserMessage,
 } from './types/index'
 import { EventMessage, UserModeSelector } from './types/external'
@@ -24,6 +24,7 @@ import { Channel, ChatPreset } from './channels/index'
 import { RAGManager } from './rag/index'
 import EventEmitter from 'node:events'
 import { runServer } from './controllers/index'
+import {ToolsGroupManager} from "./share/tools_group";
 
 export * from './types/index'
 export * from './utils/index'
@@ -47,20 +48,20 @@ export class Chaite extends EventEmitter {
   private globalConfig?: GlobalConfig
 
   private constructor(private channelsManager: ChannelsManager, private toolsManager: ToolManager,
-    private processorsManager: ProcessorsManager, private chatPresetManager: ChatPresetManager,
+    private processorsManager: ProcessorsManager, private chatPresetManager: ChatPresetManager, private toolsGroupManager: ToolsGroupManager,
     private userModeSelector: UserModeSelector, private userStateStorage: BasicStorage<UserState>,
     private historyManager: HistoryManager = new InMemoryHistoryManager(), private logger: ILogger) {
     super()
   }
 
   public static init(channelsManager: ChannelsManager, toolsManager: ToolManager,
-    processorsManager: ProcessorsManager, chatPresetManager: ChatPresetManager,
+    processorsManager: ProcessorsManager, chatPresetManager: ChatPresetManager, toolsGroupManager: ToolsGroupManager,
     userModeSelector: UserModeSelector, userStateStorage: BasicStorage<UserState>,
     historyManager: HistoryManager = new InMemoryHistoryManager(), logger: ILogger): Chaite {
     if (Chaite.instance) {
       return Chaite.instance
     }
-    Chaite.instance = new Chaite(channelsManager, toolsManager, processorsManager, chatPresetManager, userModeSelector, userStateStorage, historyManager, logger)
+    Chaite.instance = new Chaite(channelsManager, toolsManager, processorsManager, chatPresetManager, toolsGroupManager, userModeSelector, userStateStorage, historyManager, logger)
     Chaite.instance.setFrontendAuthHandler(new FrontEndAuthHandler())
     return Chaite.instance
   }
@@ -184,6 +185,14 @@ export class Chaite extends EventEmitter {
     this.chatPresetManager = chatPresetManager
   }
 
+  getToolsGroupManager() {
+    return this.toolsGroupManager
+  }
+
+  setToolsGroupManager(toolsGroupManager: ToolsGroupManager) {
+    this.toolsGroupManager = toolsGroupManager
+  }
+
   getUserModeSelector() {
     return this.userModeSelector
   }
@@ -217,10 +226,11 @@ export class Chaite extends EventEmitter {
   }
 
   setCloudService(cloudServiceBaseUrl: string) {
-    this.channelsManager.setCloudService(new DefaultCloudService<Channel>(cloudServiceBaseUrl))
-    this.toolsManager.setCloudService(new DefaultCloudService<ToolDTO>(cloudServiceBaseUrl))
-    this.processorsManager.setCloudService(new DefaultCloudService<ProcessorDTO>(cloudServiceBaseUrl))
-    this.chatPresetManager.setCloudService(new DefaultCloudService<ChatPreset>(cloudServiceBaseUrl))
+    this.channelsManager.setCloudService(new DefaultCloudService<Channel>(cloudServiceBaseUrl, "channel"))
+    this.toolsManager.setCloudService(new DefaultCloudService<ToolDTO>(cloudServiceBaseUrl, 'tool'))
+    this.processorsManager.setCloudService(new DefaultCloudService<ProcessorDTO>(cloudServiceBaseUrl, 'processor'))
+    this.chatPresetManager.setCloudService(new DefaultCloudService<ChatPreset>(cloudServiceBaseUrl, 'chat-preset'))
+    this.toolsGroupManager.setCloudService(new DefaultCloudService<ToolsGroupDTO>(cloudServiceBaseUrl, 'tool-group'))
   }
   async auth(apiKey: string) {
     if (!this.toolsManager.cloudService) {
