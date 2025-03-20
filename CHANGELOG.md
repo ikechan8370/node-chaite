@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/ikechan8370/node-chaite/compare/v1.2.9...v1.3.0) (2025-03-20)
+
+
+### Features
+
+* tool group ([8a4caf4](https://github.com/ikechan8370/node-chaite/commit/8a4caf4cc0a2f2f106a36175ff0c2fd78c6e56c5))
+
 ## [1.2.9](https://github.com/ikechan8370/node-chaite/compare/v1.2.8...v1.2.9) (2025-03-19)
 
 
