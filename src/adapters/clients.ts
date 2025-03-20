@@ -57,9 +57,12 @@ export class AbstractClient implements IClient {
         for (const preProcessorId of preIds) {
           const existProcessor = this.preProcessors.find(p => p.id === preProcessorId)
           if (!existProcessor) {
-            const preProcessor = await processorsManager.getInstance(preProcessorId)
+            const preProcessor = await processorsManager.getInstanceT(preProcessorId)
             if (preProcessor && preProcessor.type === 'pre') {
-              preProcessors.push(preProcessor as PreProcessor)
+              const p = await processorsManager.getInstance(preProcessor.name)
+              if (p) {
+                preProcessors.push(p as PreProcessor)
+              }
             } else {
               this.logger.warn(`preProcessor ${preProcessorId} not found`)
             }
@@ -74,11 +77,14 @@ export class AbstractClient implements IClient {
         for (const postProcessorId of postIds) {
           const existProcessor = this.postProcessors.find(p => p.id === postProcessorId)
           if (!existProcessor) {
-            const postProcessor = await processorsManager.getInstance(postProcessorId)
-            if (postProcessor && postProcessor.type === 'post') {
-              postProcessors.push(postProcessor as PostProcessor)
+            const postProcessor = await processorsManager.getInstanceT(postProcessorId)
+            if (postProcessor && postProcessor.type === 'pre') {
+              const p = await processorsManager.getInstance(postProcessor.name)
+              if (p) {
+                postProcessors.push(p as PostProcessor)
+              }
             } else {
-              this.logger.warn(`postProcessor ${postProcessorId} not found`)
+              this.logger.warn(`preProcessor ${postProcessorId} not found`)
             }
           } else {
             postProcessors.push(existProcessor)
