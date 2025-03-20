@@ -78,7 +78,7 @@ export class AbstractClient implements IClient {
           const existProcessor = this.postProcessors.find(p => p.id === postProcessorId)
           if (!existProcessor) {
             const postProcessor = await processorsManager.getInstanceT(postProcessorId)
-            if (postProcessor && postProcessor.type === 'pre') {
+            if (postProcessor && postProcessor.type === 'post') {
               const p = await processorsManager.getInstance(postProcessor.name)
               if (p) {
                 postProcessors.push(p as PostProcessor)
