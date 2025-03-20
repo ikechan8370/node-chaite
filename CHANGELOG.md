@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/ikechan8370/node-chaite/compare/v1.3.0...v1.3.1) (2025-03-20)
+
+
+### Bug Fixes
+
+* processor not found ([c2b630c](https://github.com/ikechan8370/node-chaite/commit/c2b630c1cf9607ba5528e04d65a785ce10edaf45))
+
 ## [1.3.0](https://github.com/ikechan8370/node-chaite/compare/v1.2.9...v1.3.0) (2025-03-20)
 
 
