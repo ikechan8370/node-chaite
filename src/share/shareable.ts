@@ -14,7 +14,7 @@ export type ExecutableSShareableType = 'tool' | 'processor'
  * @interface ExecutableShareableManager
  */
 export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
-  private watcher: FSWatcher | null = null;
+  private watcher: FSWatcher | null = null
   /**
    * 存储示例名称和文件名的映射
    * @private
@@ -55,7 +55,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
       persistent: true,
       ignoreInitial: true,
       ignorePermissionErrors: true,
-      depth: 1
+      depth: 1,
     }).on('all', async (event, filepath) => {
       // Only react to add/change/unlink events
       if (!['add', 'change', 'unlink'].includes(event)) return

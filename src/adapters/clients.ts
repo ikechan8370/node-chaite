@@ -20,8 +20,8 @@ import { asyncLocalStorage, getKey } from '../utils'
 import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types'
 import { PostProcessor, PreProcessor } from '../types'
 import { ProcessorsManager } from '../share'
-import * as crypto from "node:crypto"
-import {Chaite} from "../index";
+import * as crypto from 'node:crypto'
+import { Chaite } from '../index'
 
 
 export class AbstractClient implements IClient {
@@ -108,7 +108,7 @@ export class AbstractClient implements IClient {
     const toolManager = Chaite.getInstance().getToolsManager()
     if (toolGroupIds?.includes('default_local')) {
       const toolDTOS = await toolManager.listInstances()
-      for (let toolDTO of toolDTOS) {
+      for (const toolDTO of toolDTOS) {
         const toolC = await toolManager.getInstance(toolDTO.name)
         if (toolC && !this.tools.find(t => t.name === toolC.name)) {
           this.tools.push(toolC)
@@ -155,7 +155,13 @@ export class AbstractClient implements IClient {
       if (message) {
         // 前处理器
         for (const preProcessors of this.preProcessors || []) {
-          message = await preProcessors.process(message)
+          try {
+            message = await preProcessors.process(message)
+          } catch (err) {
+            if (err instanceof Error) {
+              this.logger.warn(`error happened with preProcessor ${preProcessors.name}: ${err.message}`)
+            }
+          }
         }
         // 用户消息不会分裂
         const userMsgId = crypto.randomUUID()
@@ -175,7 +181,16 @@ export class AbstractClient implements IClient {
           role: 'assistant',
         } as AssistantMessage
         for (const postProcessor of this.postProcessors || []) {
-          tempResponse = await postProcessor.process(tempResponse)
+          try {
+            const posted = await postProcessor.process(tempResponse)
+            if (posted) {
+              tempResponse = posted
+            }
+          } catch (error) {
+            if (error instanceof Error) {
+              this.logger.warn(`error happened with postProcessor ${postProcessor.name}: ${error.message}`)
+            }
+          }
         }
         modelResponse.content = tempResponse.content
       }

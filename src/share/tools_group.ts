@@ -1,5 +1,5 @@
-import {NonExecutableShareableManager} from "./shareable";
-import {BasicStorage, ToolsGroupDTO} from "../types";
+import { NonExecutableShareableManager } from './shareable'
+import { BasicStorage, ToolsGroupDTO } from '../types'
 
 export class ToolsGroupManager extends NonExecutableShareableManager<ToolsGroupDTO> {
   private static instance: ToolsGroupManager

@@ -1,6 +1,6 @@
 import express, { Router } from 'express'
 import { Request, Response } from 'express'
-import {Chaite, ChaiteResponse, ToolDTO, Filter, SearchOption, ToolsGroupDTO} from '../index'
+import { Chaite, ChaiteResponse, ToolDTO, Filter, SearchOption, ToolsGroupDTO } from '../index'
 const router: Router = express.Router()
 
 interface ListToolGroupDTOs {

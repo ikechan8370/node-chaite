@@ -14,7 +14,7 @@ import { asyncLocalStorage, getKey } from '../../../utils/index'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
 import './converter.js'
 import { EmbeddingOption, SendMessageOption } from '../../../types/index'
-import * as crypto from "node:crypto"
+import * as crypto from 'node:crypto'
 
 export type OpenAIClientOptions = BaseClientOptions
 

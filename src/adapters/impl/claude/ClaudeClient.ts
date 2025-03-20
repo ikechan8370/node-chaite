@@ -6,7 +6,7 @@ import { ChaiteContext, HistoryMessage, IMessage, ModelUsage } from '../../../ty
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
 import './converter.js'
 import { SendMessageOption } from '../../../types/index'
-import * as crypto from "node:crypto"
+import * as crypto from 'node:crypto'
 
 export class ClaudeClient extends AbstractClient {
   constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>, context?: ChaiteContext) {

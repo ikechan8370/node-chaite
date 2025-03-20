@@ -24,7 +24,7 @@ import { Channel, ChatPreset } from './channels/index'
 import { RAGManager } from './rag/index'
 import EventEmitter from 'node:events'
 import { runServer } from './controllers/index'
-import {ToolsGroupManager} from "./share/tools_group";
+import { ToolsGroupManager } from './share/tools_group'
 
 export * from './types/index'
 export * from './utils/index'
@@ -226,7 +226,7 @@ export class Chaite extends EventEmitter {
   }
 
   setCloudService(cloudServiceBaseUrl: string) {
-    this.channelsManager.setCloudService(new DefaultCloudService<Channel>(cloudServiceBaseUrl, "channel"))
+    this.channelsManager.setCloudService(new DefaultCloudService<Channel>(cloudServiceBaseUrl, 'channel'))
     this.toolsManager.setCloudService(new DefaultCloudService<ToolDTO>(cloudServiceBaseUrl, 'tool'))
     this.processorsManager.setCloudService(new DefaultCloudService<ProcessorDTO>(cloudServiceBaseUrl, 'processor'))
     this.chatPresetManager.setCloudService(new DefaultCloudService<ChatPreset>(cloudServiceBaseUrl, 'chat-preset'))
