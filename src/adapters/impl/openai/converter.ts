@@ -54,7 +54,7 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
           } as OpenAI.ChatCompletionContentPartInputAudio
         }
         case 'image': {
-          return { type: 'image_url', image_url: { url: t.image } } as OpenAI.ChatCompletionContentPartImage
+          return { type: 'image_url', image_url: { url: t.image.startsWith('http') ? t.image : `data:image/jpeg;base64,${t.image}` } } as OpenAI.ChatCompletionContentPartImage
         }
         }
       }),
