@@ -104,8 +104,9 @@ registerIntoChaiteConverter<GenerateContentResult>('gemini', msg => {
     role: 'assistant',
     content: text ? [{ type: 'text', text: text }] : [],
     toolCalls: toolCalls?.map(toolCall => {
+      const randomString = Math.random().toString(36).substring(2, 15)
       return {
-        id: '',
+        id: randomString,
         type: 'function',
         function: {
           name: toolCall.name,
