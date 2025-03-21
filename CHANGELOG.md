@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.4](https://github.com/ikechan8370/node-chaite/compare/v1.3.3...v1.3.4) (2025-03-21)
+
+
+### Bug Fixes
+
+* allowed mimetypes for gemini ([a59f6a6](https://github.com/ikechan8370/node-chaite/commit/a59f6a64822989b7cb1d735df8a679eb99c2b7ee))
+* empty tool groups ([0d67ede](https://github.com/ikechan8370/node-chaite/commit/0d67ede6ea48e08dad6d91fc86253f2499a7880d))
+* fake tool call id for gemini ([615f843](https://github.com/ikechan8370/node-chaite/commit/615f84379271c31bc7c07bcc6fd0f7b883697b39))
+* openai image format ([f9b9a47](https://github.com/ikechan8370/node-chaite/commit/f9b9a47809a7cdc42130420d4af1653448353c2d))
+* try to purge import cache ([8a03e1f](https://github.com/ikechan8370/node-chaite/commit/8a03e1f4cfa8c93c1a1086f65abb26a28dab1f49))
+
 ## [1.3.3](https://github.com/ikechan8370/node-chaite/compare/v1.3.2...v1.3.3) (2025-03-20)
 
 
