@@ -82,7 +82,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
             const filePath = path.join(this.codeDirectory, file)
             const fileURL = `file://${path.resolve(filePath).replace(/\\/g, '/')}`
             // 清除模块缓存以确保获取最新版本
-            const module = await import(fileURL)
+            const module = await import(fileURL + `?t=${Date.now()}`)
             if (module.default && typeof module.default === 'object' && module.default.name) {
               // 使用示例自己的name作为键，文件名作为值
               getLogger().debug(`Loaded ${this.type} '${module.default.name}' from file '${file}'`)
@@ -129,7 +129,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     const filePath = path.join(this.codeDirectory, filename)
     try {
       // 清除模块缓存，确保获取最新版本
-      const module = await import(filePath)
+      const module = await import(filePath + `?t=${Date.now()}`)
       return module.default as C
     } catch (error) {
       console.error(`Error loading tool '${name}':`, error)
