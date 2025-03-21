@@ -103,3 +103,19 @@ export async function saveAndLoadModule<T>(
 export function getLogger (): ILogger {
   return Chaite.getInstance()?.getLogger() || DefaultLogger
 }
+
+/**
+ * 解析 JavaScript 代码中的 class 变量 name 的值
+ * @param {string} code - 输入的 JavaScript 代码
+ * @returns {string|null} - 解析出的 class 的 name 值，或者 null 如果没有找到
+ */
+export function extractClassName(code: string) {
+  // 定义正则匹配 class 继承和 name 属性赋值的模式
+  const classRegex = /class\s+\w+\s+extends\s+\w+\s+{[\s\S]*?name\s*=\s*['"]([^'"]+)['"]/
+
+  // 使用正则匹配整个代码字符串
+  const match = classRegex.exec(code)
+
+  // 如果匹配成功，返回变量 name 的值，否则返回 null
+  return match ? match[1] : null
+}

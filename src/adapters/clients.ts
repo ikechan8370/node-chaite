@@ -16,7 +16,7 @@ import {
   MultipleKeyStrategyChoice,
 } from '../types'
 import DefaultHistoryManager from '../utils/history'
-import { asyncLocalStorage, getKey } from '../utils'
+import { asyncLocalStorage, extractClassName, getKey } from '../utils'
 import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types'
 import { PostProcessor, PreProcessor } from '../types'
 import { ProcessorsManager } from '../share'
@@ -59,7 +59,8 @@ export class AbstractClient implements IClient {
           if (!existProcessor) {
             const preProcessor = await processorsManager.getInstanceT(preProcessorId)
             if (preProcessor && preProcessor.type === 'pre') {
-              const p = await processorsManager.getInstance(preProcessor.name)
+              const processorName = extractClassName(preProcessor.code as string) || preProcessor.name
+              const p = await processorsManager.getInstance(processorName)
               if (p) {
                 preProcessors.push(p as PreProcessor)
               }
@@ -79,7 +80,8 @@ export class AbstractClient implements IClient {
           if (!existProcessor) {
             const postProcessor = await processorsManager.getInstanceT(postProcessorId)
             if (postProcessor && postProcessor.type === 'post') {
-              const p = await processorsManager.getInstance(postProcessor.name)
+              const postProcessorName = extractClassName(postProcessor.code as string) || postProcessor.name
+              const p = await processorsManager.getInstance(postProcessorName)
               if (p) {
                 postProcessors.push(p as PostProcessor)
               }
@@ -109,7 +111,8 @@ export class AbstractClient implements IClient {
     if (toolGroupIds?.includes('default_local')) {
       const toolDTOS = await toolManager.listInstances()
       for (const toolDTO of toolDTOS) {
-        const toolC = await toolManager.getInstance(toolDTO.name)
+        const toolName = extractClassName(toolDTO.code as string) || toolDTO.name
+        const toolC = await toolManager.getInstance(toolName)
         if (toolC && !this.tools.find(t => t.name === toolC.name)) {
           this.tools.push(toolC)
         }
@@ -124,7 +127,8 @@ export class AbstractClient implements IClient {
           for (const toolId of toolIds) {
             const tool = await toolManager.getInstanceT(toolId)
             if (tool) {
-              const toolC = await toolManager.getInstance(tool.name)
+              const toolName = extractClassName(tool.code as string) || tool.name
+              const toolC = await toolManager.getInstance(toolName)
               if (toolC && !this.tools.find(t => t.name === toolC.name)) {
                 this.tools.push(toolC)
               } else {
