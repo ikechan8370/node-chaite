@@ -120,7 +120,7 @@ export class AbstractClient implements IClient {
       for (const toolGroupId of toolGroupIds) {
         const toolGroup = await toolsGroupManager.getInstance(toolGroupId)
         if (toolGroup) {
-          const toolIds = toolGroup.toolIds
+          const toolIds = toolGroup.toolIds || []
           for (const toolId of toolIds) {
             const tool = await toolManager.getInstanceT(toolId)
             if (tool) {
