@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.5](https://github.com/ikechan8370/node-chaite/compare/v1.3.4...v1.3.5) (2025-03-21)
+
+
+### Bug Fixes
+
+* executable name extract from code ([369fbb8](https://github.com/ikechan8370/node-chaite/commit/369fbb8342f204da9f0dd923879274ed1794e85f))
+
 ## [1.3.4](https://github.com/ikechan8370/node-chaite/compare/v1.3.3...v1.3.4) (2025-03-21)
 
 
