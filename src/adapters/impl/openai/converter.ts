@@ -13,7 +13,7 @@ import {
   ToolCall, ToolCallResult,
   ToolCallResultMessage,
   UserMessage,
-} from '../../../types/index'
+} from '../../../types'
 import OpenAI from 'openai'
 import FunctionDefinition = OpenAI.FunctionDefinition;
 import { FunctionParameters } from 'openai/src/resources/shared.js'
@@ -23,9 +23,20 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
   switch (source.role) {
   case 'assistant': {
     const msg = source as AssistantMessage
+    // bym用的ephone不支持assistant是array类型的，索性全都转成字符串吧
+    const text = msg.content.map(t => t as unknown as OpenAI.ChatCompletionContentPartText).reduce((acc, cur) => {
+      if (acc) {
+        return {
+          type: 'text',
+          text: acc.text + cur.text,
+        } as OpenAI.ChatCompletionContentPartText
+      } else {
+        return cur as OpenAI.ChatCompletionContentPartText
+      }
+    }).text
     return {
       role: 'assistant',
-      content: msg.content.map(t => t as unknown as OpenAI.ChatCompletionContentPartText),
+      content: text,
       tool_calls: (msg.toolCalls && msg.toolCalls?.length > 0) ? msg.toolCalls?.map(t => {
         return {
           id: t.id,
