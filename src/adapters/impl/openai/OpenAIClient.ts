@@ -15,6 +15,7 @@ import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConver
 import './converter.js'
 import { EmbeddingOption, SendMessageOption } from '../../../types/index'
 import * as crypto from 'node:crypto'
+import {Chaite} from "../../../index";
 
 export type OpenAIClientOptions = BaseClientOptions
 
@@ -26,6 +27,7 @@ export class OpenAIClient extends AbstractClient {
   }
 
   async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
+    const debug = Chaite.getInstance().getGlobalConfig()?.getDebug()
     const client = new OpenAI({
       apiKey,
       baseURL: this.baseUrl,
@@ -74,6 +76,9 @@ export class OpenAIClient extends AbstractClient {
       }
     }
     const tools = this.tools.map(toolConvert)
+    if (debug) {
+      this.logger.debug(`openai request messages: ${JSON.stringify(messages)}`)
+    }
     if (options.stream) {
       const stream = client.beta.chat.completions.stream({
         messages,
@@ -143,7 +148,9 @@ export class OpenAIClient extends AbstractClient {
         reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
       })
     }
-    this.logger.debug(`openai response: ${JSON.stringify(chatCompletion)}`)
+    if (debug) {
+      this.logger.info(`openai response: ${JSON.stringify(chatCompletion)}`)
+    }
     const id = crypto.randomUUID()
     const toChaiteConverter = getIntoChaiteConverter('openai')
     const contents = (chatCompletion).choices

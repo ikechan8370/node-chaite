@@ -143,6 +143,7 @@ export class AbstractClient implements IClient {
   }
 
   sendMessage(message: UserMessage | undefined, options: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse> {
+    const debug = Chaite.getInstance().getGlobalConfig()?.getDebug()
     options = SendMessageOption.create(options)
     const logicFn = async () => {
       await this.options.ready()
@@ -155,11 +156,21 @@ export class AbstractClient implements IClient {
       }
       let thisRequestMsg
       await this.fullfillProcessors(options.preProcessorIds, options.postProcessorIds)
+      if (debug) {
+        this.logger.debug(`using ${this.preProcessors.length} preProcessors: [${this.preProcessors.map(p => p.name).join(', ')}]`)
+        this.logger.debug(`using ${this.postProcessors.length} postProcessors: [${this.postProcessors.map(p => p.name).join(', ')}]`)
+      }
       await this.fullfillTools(options.toolGroupId)
+      if (debug) {
+        this.logger.debug(`using ${this.tools.length} tools: [${this.tools.map(t => t.name).join(', ')}]`)
+      }
       if (message) {
         // 前处理器
         for (const preProcessors of this.preProcessors || []) {
           try {
+            if (debug) {
+              this.logger.debug(`into preProcessor ${preProcessors.name}}`)
+            }
             message = await preProcessors.process(message)
           } catch (err) {
             if (err instanceof Error) {
@@ -186,6 +197,9 @@ export class AbstractClient implements IClient {
         } as AssistantMessage
         for (const postProcessor of this.postProcessors || []) {
           try {
+            if (debug) {
+              this.logger.debug(`into postProcessor ${postProcessor.name}}`)
+            }
             const posted = await postProcessor.process(tempResponse)
             if (posted) {
               tempResponse = posted

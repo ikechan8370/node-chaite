@@ -133,7 +133,7 @@ export class Chaite extends EventEmitter {
         channel.options.setHistoryManager(this.historyManager)
         channel.options.setLogger(this.logger)
         const client = createClient(channel.adapterType, channel.options, context)
-        const userState = await this.userStateStorage.getItem(e.sender.user_id + '')
+        // const userState = await this.userStateStorage.getItem(e.sender.user_id + '')
         // const newOptions = Object.assign(options.chatPreset.sendMessageOption, options)
         const newOptions = {
           ...options.chatPreset.sendMessageOption,
@@ -142,9 +142,12 @@ export class Chaite extends EventEmitter {
               .filter(([_, value]) => value !== undefined),
           ),
         }
-        newOptions.conversationId = userState?.current?.conversationId
-        newOptions.parentMessageId = userState?.current?.messageId || userState?.conversations.find(c => c.id === newOptions.conversationId)?.lastMessageId
-
+        // 客户端去控制消息id，更灵活
+        // newOptions.conversationId = userState?.current?.conversationId
+        // newOptions.parentMessageId = userState?.current?.messageId || userState?.conversations.find(c => c.id === newOptions.conversationId)?.lastMessageId
+        if (this.globalConfig?.getDebug()) {
+          this.logger.debug(`sendMessage options: ${JSON.stringify(newOptions)}`)
+        }
         return await client.sendMessage(message, newOptions)
       } else {
         throw new Error('No available channels')

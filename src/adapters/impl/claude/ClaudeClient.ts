@@ -7,6 +7,7 @@ import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConver
 import './converter.js'
 import { SendMessageOption } from '../../../types/index'
 import * as crypto from 'node:crypto'
+import {Chaite} from "../../../index";
 
 export class ClaudeClient extends AbstractClient {
   constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>, context?: ChaiteContext) {
@@ -15,6 +16,7 @@ export class ClaudeClient extends AbstractClient {
   }
   
   async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
+    const debug = Chaite.getInstance().getGlobalConfig()?.getDebug()
     const messages: Anthropic.MessageParam[] = []
     const model = options.model || 'claude-3-7-sonnet-20250219'
     const converter = getFromChaiteConverter('claude')
@@ -51,6 +53,9 @@ export class ClaudeClient extends AbstractClient {
     if (options.toolChoice?.tools && options.toolChoice.tools.length > 0) {
       (toolModeMap.specified as Anthropic.ToolChoiceTool).name = options.toolChoice.tools[0]
     }
+    if (debug) {
+      this.logger.debug(`Claude request: ${JSON.stringify(messages)}`)
+    }
     const result = await anthropic.messages.create({
       model,
       max_tokens: options.maxToken || 1024,
@@ -66,7 +71,9 @@ export class ClaudeClient extends AbstractClient {
       },
       tool_choice: options.toolChoice?.type ? toolModeMap[options.toolChoice.type] : undefined,
     })
-    this.logger.debug(`claude response: ${JSON.stringify(result)}`)
+    if (debug) {
+      this.logger.debug(`claude response: ${JSON.stringify(result)}`)
+    }
     const id = crypto.randomUUID()
     const intoChaiteConverter = getIntoChaiteConverter('claude')
     const iMessage = intoChaiteConverter(result)

@@ -18,6 +18,7 @@ import './converter.js'
 import { asyncLocalStorage, getKey } from '../../../utils/index'
 import { SendMessageOption } from '../../../types/index'
 import * as crypto from 'node:crypto'
+import {Chaite} from "../../../index";
 
 export type GeminiClientOptions = BaseClientOptions
 export class GeminiClient extends AbstractClient {
@@ -27,6 +28,7 @@ export class GeminiClient extends AbstractClient {
   }
 
   async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
+    const debug = Chaite.getInstance().getGlobalConfig()?.getDebug()
     const messages: Content[] = []
     const model = options.model || 'gemini-2.0-flash-001'
     const converter = getFromChaiteConverter('gemini')
@@ -50,19 +52,26 @@ export class GeminiClient extends AbstractClient {
       'auto': FunctionCallingMode.AUTO,
       'specified': FunctionCallingMode.ANY,
     }
+    const toolConfig = {
+      functionCallingConfig: {
+        mode: modeMap[options.toolChoice?.type || 'auto'],
+        // 只有specified才有这个
+        allowedFunctionNames: options.toolChoice?.type === 'specified' ? options.toolChoice?.tools : undefined,
+      } as FunctionCallingConfig,
+    } as ToolConfig
+    if (debug) {
+      this.logger.debug(`gemini request: ${JSON.stringify(messages)}`)
+      this.logger.debug(`gemini toolConfig: ${JSON.stringify(toolConfig)}`)
+    }
     const result = await geminiModel.generateContent({
       contents: messages,
       tools,
       systemInstruction: options.systemOverride,
-      toolConfig: {
-        functionCallingConfig: {
-          mode: modeMap[options.toolChoice?.type || 'auto'],
-          // 只有specified才有这个
-          allowedFunctionNames: options.toolChoice?.type === 'specified' ? options.toolChoice?.tools : undefined,
-        } as FunctionCallingConfig,
-      } as ToolConfig,
+      toolConfig,
     } as GenerateContentRequest)
-    this.logger.debug(`gemini response: ${JSON.stringify(result)}`)
+    if (debug) {
+      this.logger.info(`gemini response: ${JSON.stringify(result)}`)
+    }
     const id = crypto.randomUUID()
     const intoChaiteConverter = getIntoChaiteConverter('gemini')
     const iMessage = intoChaiteConverter(result)

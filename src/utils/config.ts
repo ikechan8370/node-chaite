@@ -7,6 +7,7 @@ export class GlobalConfig extends EventEmitter {
   private authKey: string
   private host: string
   private port: number
+  private debug: boolean
 
   setAuthKey (key: string) {
     if (key === this.authKey) {
@@ -44,6 +45,18 @@ export class GlobalConfig extends EventEmitter {
     this.port = port
   }
 
+  setDebug (debug: boolean) {
+    if (debug === this.debug) {
+      return
+    }
+    this.emit('change', {
+      key: 'debug',
+      newVal: debug,
+      oldVal: this.debug,
+    })
+    this.debug = debug
+  }
+
   getAuthKey () {
     return this.authKey
   }
@@ -54,5 +67,9 @@ export class GlobalConfig extends EventEmitter {
 
   getPort () {
     return this.port || DEFAULT_PORT
+  }
+
+  getDebug () {
+    return this.debug
   }
 }
