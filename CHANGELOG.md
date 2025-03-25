@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.6](https://github.com/ikechan8370/node-chaite/compare/v1.3.5...v1.3.6) (2025-03-25)
+
+
+### Bug Fixes
+
+* win path ([0216c1e](https://github.com/ikechan8370/node-chaite/commit/0216c1ee69c45c5d22af280f3f069f6f3db75722))
+
 ## [1.3.5](https://github.com/ikechan8370/node-chaite/compare/v1.3.4...v1.3.5) (2025-03-21)
 
 
