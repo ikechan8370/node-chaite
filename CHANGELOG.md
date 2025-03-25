@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.7](https://github.com/ikechan8370/node-chaite/compare/v1.3.6...v1.3.7) (2025-03-25)
+
+
+### Bug Fixes
+
+* openai assistant use string instead of array ([3169c34](https://github.com/ikechan8370/node-chaite/commit/3169c34c72ecbff291133775a96447a601b5eace))
+
 ## [1.3.6](https://github.com/ikechan8370/node-chaite/compare/v1.3.5...v1.3.6) (2025-03-25)
 
 
