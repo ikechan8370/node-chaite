@@ -127,9 +127,10 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     if (!filename) return undefined
 
     const filePath = path.join(this.codeDirectory, filename)
+    const fileURL = `file://${path.resolve(filePath).replace(/\\/g, '/')}`
     try {
       // 清除模块缓存，确保获取最新版本
-      const module = await import(filePath + `?t=${Date.now()}`)
+      const module = await import(fileURL + `?t=${Date.now()}`)
       return module.default as C
     } catch (error) {
       console.error(`Error loading tool '${name}':`, error)
