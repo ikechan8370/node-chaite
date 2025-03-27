@@ -242,7 +242,7 @@ export class AbstractClient implements IClient {
             this.logger.info(`run tool ${fcName} with args ${JSON.stringify(fcArgs)}`)
             let toolResult: string
             try {
-              toolResult = await tool.run(fcArgs)
+              toolResult = await tool.run(fcArgs, this.context)
               if (typeof toolResult !== 'string') {
                 toolResult = JSON.stringify(toolResult)
               }

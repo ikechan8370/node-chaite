@@ -172,7 +172,7 @@ export const DefaultLogger = new class DefaultLogger implements ILogger {
 }()
 
 export class ChaiteContext {
-  constructor(logger: ILogger) {
+  constructor(logger?: ILogger) {
     this.logger = logger
   }
   logger?: ILogger

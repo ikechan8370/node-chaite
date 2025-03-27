@@ -1,6 +1,7 @@
 import { ArgumentValue } from './models'
 import { AbstractShareable } from './cloud'
 import { CHANNEL_STATUS_MAP } from '../const/index'
+import {ChaiteContext} from "./common";
 
 export interface Function {
     name: string
@@ -23,7 +24,7 @@ export interface Tool {
     name: Function['name']
     type: 'function'
     function: Function
-    run(args: Record<string, ArgumentValue | Record<string, ArgumentValue>>): Promise<string>
+    run(args: Record<string, ArgumentValue | Record<string, ArgumentValue>>, chaiteContext?: ChaiteContext): Promise<string>
 }
 
 
@@ -116,7 +117,13 @@ export class ToolsGroupDTO extends AbstractShareable<ToolsGroupDTO> implements T
 /**
  * js写的工具可以继承这个抽象类
  */
-export abstract class CustomTool {
+export abstract class CustomTool implements Tool {
+  constructor() {
+    if (!this.name) {
+      this.name = this.function.name
+    }
+  }
+
   type = 'function' as const
   function: Function = {
     name: '',
@@ -128,9 +135,11 @@ export abstract class CustomTool {
     },
   }
 
-  async run(_args: Record<string, ArgumentValue | Record<string, ArgumentValue>>): Promise<string> {
+  async run(_args: Record<string, ArgumentValue | Record<string, ArgumentValue>>, _context: ChaiteContext = new ChaiteContext()): Promise<string> {
     throw new Error('Not implemented')
   }
+
+  name: Function["name"];
 }
 
 
