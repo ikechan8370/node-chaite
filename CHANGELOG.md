@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.9](https://github.com/ikechan8370/node-chaite/compare/v1.3.8...v1.3.9) (2025-03-27)
+
+
+### Bug Fixes
+
+* add tool args ([f32cd7e](https://github.com/ikechan8370/node-chaite/commit/f32cd7e02fd5900bfe2c60126bd5fadde68c3c6f))
+* empty content with tool_call ([bdd9988](https://github.com/ikechan8370/node-chaite/commit/bdd9988e2d40173f4b38a33d85e23e28e90fcb7a))
+
 ## [1.3.8](https://github.com/ikechan8370/node-chaite/compare/v1.3.7...v1.3.8) (2025-03-25)
 
 
