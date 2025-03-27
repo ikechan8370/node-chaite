@@ -24,16 +24,14 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
   case 'assistant': {
     const msg = source as AssistantMessage
     // bym用的ephone不支持assistant是array类型的，索性全都转成字符串吧
-    const text = msg.content.map(t => t as unknown as OpenAI.ChatCompletionContentPartText).reduce((acc, cur) => {
-      if (acc) {
+    const text = msg.content
+      .map(t => t as unknown as OpenAI.ChatCompletionContentPartText)
+      .reduce((acc, cur) => {
         return {
           type: 'text',
           text: acc.text + cur.text,
         } as OpenAI.ChatCompletionContentPartText
-      } else {
-        return cur as OpenAI.ChatCompletionContentPartText
-      }
-    }).text
+      }, { type: 'text', text: '' } as OpenAI.ChatCompletionContentPartText).text;
     return {
       role: 'assistant',
       content: text,
