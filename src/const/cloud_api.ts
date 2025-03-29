@@ -1,6 +1,6 @@
 import { CloudAPIType } from '../types'
 
-const API_V1_PREFIX = '/api/v1'
+const API_V1_PREFIX = '/api/v2'
 export const CloudAPI: Record<'USER', string> & Record<'LIST' | 'ADD' | 'GET' | 'TEMP_SHARE' | 'DELETE', Record<CloudAPIType, string>> = {
   USER: API_V1_PREFIX + '/user',
   LIST: {
