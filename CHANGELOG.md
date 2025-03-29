@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.10](https://github.com/ikechan8370/node-chaite/compare/v1.3.9...v1.3.10) (2025-03-29)
+
+
+### Bug Fixes
+
+* update cloud api path ([9b2d9f0](https://github.com/ikechan8370/node-chaite/commit/9b2d9f0d44c4906e76deea31f03b36cebc0b61ed))
+
 ## [1.3.9](https://github.com/ikechan8370/node-chaite/compare/v1.3.8...v1.3.9) (2025-03-27)
 
 
