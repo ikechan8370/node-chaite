@@ -20,6 +20,8 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
 
   identifier!: string
 
+  apiKey: string
+
   constructor(private cloudApiBaseUrl: string, type: CloudAPIType) {
     this.client = createHttpClient({
       baseURL: this.cloudApiBaseUrl,
@@ -35,11 +37,21 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
   async authenticate(apiKey: string): Promise<User | null> {
     const response = await this.client.post<CloudAPIResponse<User>, unknown>(CloudAPI.USER, {
       apiKey,
+    }, {
+      headers: {
+        Authorization: 'ApiKey ' + apiKey
+      }
     })
+    this.apiKey = apiKey
     const user = response.data?.data
     if (user) {
       this.user = user
       this.identifier = user.user_id + ''
+      this.client.updateOptions({
+        headers: {
+          Authorization: 'ApiKey ' + apiKey
+        }
+      })
     }
     return user || null
   }

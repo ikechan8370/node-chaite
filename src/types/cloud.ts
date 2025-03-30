@@ -20,6 +20,8 @@ export type Filter = Record<string, FilterValue | Record<string, FilterValue>>
 
 export interface SearchOption {
   searchFields?: string[];
+  page?: number
+  pageSize?: number
   // todo
 }
 
