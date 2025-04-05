@@ -3,12 +3,13 @@ import {
   CloudAPIResponse,
   CloudAPIType,
   CloudSharingService,
-  Filter,
-  SearchOption,
+  Filter, PaginationResult, ProcessorDTO,
+  SearchOption, ToolDTO, ToolsGroupDTO,
   User,
 } from '../types/index'
 import { createHttpClient, HttpClient } from '../utils/index'
 import { CloudAPI } from '../const/index'
+import {Channel, ChatPreset} from "../channels";
 
 export class DefaultCloudService<T extends AbstractShareable<T>> implements CloudSharingService<T> {
 
@@ -32,6 +33,14 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
   setUser(user: User) {
     this.user = user
     this.identifier = user.user_id + ''
+    if (user.api_key) {
+      this.apiKey = user.api_key
+      this.client.updateOptions({
+        headers: {
+          Authorization: 'ApiKey ' + this.apiKey
+        }
+      })
+    }
   }
 
   async authenticate(apiKey: string): Promise<User | null> {
@@ -43,7 +52,7 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
       }
     })
     this.apiKey = apiKey
-    const user = response.data?.data
+    const user = response.data
     if (user) {
       this.user = user
       this.identifier = user.user_id + ''
@@ -56,27 +65,52 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
     return user || null
   }
 
-  async list(filter: Filter, query: string, searchOption: SearchOption): Promise<(T)[] | null> {
-    const response = await this.client.post<CloudAPIResponse<T[]>, unknown>(CloudAPI.LIST[this.type], {
+  async list(filter: Filter, query: string, searchOption: SearchOption): Promise<PaginationResult<T>> {
+    const response = await this.client.post<CloudAPIResponse<PaginationResult<T>>, unknown>(CloudAPI.LIST[this.type], {
       filter,
       query,
       searchOption,
     })
-    return response.data?.data || null
+    const tempInstance = this.createEmptyInstance();
+
+    if (response.data?.items?.length) {
+      response.data.items = response.data.items.map(item => {
+        return tempInstance.fromString(JSON.stringify(item));
+      });
+    }
+    return response.data
+  }
+
+  private createEmptyInstance(): T {
+    const EmptyClass = this.getClassForType();
+    return new EmptyClass({}) as T;
+  }
+
+  private getClassForType(): new ({}) => T {
+    switch (this.type) {
+      case 'tool':
+        return ToolDTO as any;
+      case 'chat-preset':
+        return ChatPreset as any;
+      case 'processor':
+        return ProcessorDTO as any;
+      case 'channel':
+        return Channel as any;
+      case 'tool-group':
+        return ToolsGroupDTO as any;
+      default:
+        throw new Error(`Unknown type: ${this.type}`);
+    }
   }
 
   async upload(model: T): Promise<T | null> {
     const response = await this.client.post<CloudAPIResponse<T>, T>(CloudAPI.ADD[this.type], model)
-    return response.data?.data || null
+    return response.data || null
   }
 
   async download(shareId: string): Promise<T | null> {
-    const response = await this.client.get<CloudAPIResponse<T>>(CloudAPI.GET[this.type], {
-      params: {
-        shareId,
-      },
-    })
-    return response.data?.data || null
+    const response = await this.client.get<CloudAPIResponse<T>>(CloudAPI.GET[this.type] + shareId)
+    return response.data || null
   }
 
   async initializeTransfer(model: T): Promise<string | null> {
@@ -86,14 +120,14 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
       permission: 'any',
       content: model,
     })
-    return response.data?.data || null
+    return response.data || null
   }
 
   async delete(shareId: string): Promise<boolean> {
     const response = await this.client.post<CloudAPIResponse<boolean>, unknown>(CloudAPI.DELETE[this.type], {
       shareId,
     })
-    return response.data?.data || false
+    return response.data || false
   }
 
   getUser(): User | null {

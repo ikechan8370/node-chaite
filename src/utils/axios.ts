@@ -171,36 +171,36 @@ export class HttpClient {
   /**
    * HTTP GET 请求
    */
-  public async get<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.get<T, AxiosResponse<T>>(url, config)
+  public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    return this.instance.get<T, T>(url, config)
   }
 
   /**
    * HTTP POST 请求
    */
-  public async post<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.post<T, AxiosResponse<T>, D>(url, data, config)
+  public async post<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
+    return this.instance.post<T, T, D>(url, data, config)
   }
 
   /**
    * HTTP PUT 请求
    */
-  public async put<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.put<T, AxiosResponse<T>, D>(url, data, config)
+  public async put<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
+    return this.instance.put<T, T, D>(url, data, config)
   }
 
   /**
    * HTTP DELETE 请求
    */
-  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.delete<T, AxiosResponse<T>>(url, config)
+  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    return this.instance.delete<T, T>(url, config)
   }
 
   /**
    * HTTP PATCH 请求
    */
-  public async patch<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.patch<T, AxiosResponse<T>, D>(url, data, config)
+  public async patch<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
+    return this.instance.patch<T, T, D>(url, data, config)
   }
 }
 

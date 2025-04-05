@@ -1,4 +1,4 @@
-import { AbstractShareable, SendMessageOption } from '../types/index'
+import { AbstractShareable, SendMessageOption } from '../types'
 
 /**
  * 对话模式预设，最终使用的

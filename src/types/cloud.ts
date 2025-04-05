@@ -1,17 +1,30 @@
 export interface CloudAPIResponse<T> {
   code: number
-  data?: T
+  data: T
   msg: string
 }
 
-export interface CloudSharingService<T> {
+export interface PaginationResult<T> {
+  items: T[],
+  pagination: {
+    currentPage: number,
+    pageSize: number,
+    totalItems: number,
+    totalPages: number,
+    hasNextPage: boolean,
+    hasPreviousPage: boolean
+  },
+  type: string
+}
+
+export interface CloudSharingService<T extends AbstractShareable<unknown>> {
   setUser(user: User): void,
   getUser(): User | null,
   authenticate(apiKey: string): Promise<User | null>,
-  upload(model: Serializable): Promise<T & { id: string } | null>; // 返回共享ID
+  upload(model: Serializable): Promise<T | null>; // 返回共享ID
   download(shareId: string): Promise<T | null>;
   initializeTransfer(model: Serializable): Promise<string | null>;
-  list(filter: Filter, query: string, searchOption: SearchOption): Promise<Array<T & { id: string }> | null>;
+  list(filter: Filter, query: string, searchOption: SearchOption): Promise<PaginationResult<T>>;
   delete(shareId: string): Promise<boolean>;
 }
 
@@ -52,11 +65,14 @@ export interface CloudModel {
   code?: string
   name: string
   id: string
+  cloudId?: string
   embedded: boolean
   description: string
   uploader: User
   updatedAt: string
   createdAt: string
+
+  md5: string
 
   toFormatedString(verbose?: boolean): string
 }
@@ -84,6 +100,9 @@ export abstract class AbstractShareable<T> implements Shareable<T> {
       if (params.updatedAt) {
         this.updatedAt = params.updatedAt
       }
+      if (params.cloudId) {
+        this.cloudId = params.cloudId
+      }
       if (params.description) {
         this.description = params.description
       }
@@ -93,6 +112,9 @@ export abstract class AbstractShareable<T> implements Shareable<T> {
       if (params.code) {
         this.code = params.code
       }
+      if (params.md5) {
+        this.md5 = params.md5
+      }
     }
   }
   modelType: 'settings' | 'executable'
@@ -101,6 +123,7 @@ export abstract class AbstractShareable<T> implements Shareable<T> {
   description: string
   embedded: boolean
   id: string
+  cloudId?: string
   name: string
   uploader: User
   updatedAt: string
@@ -116,6 +139,8 @@ export abstract class AbstractShareable<T> implements Shareable<T> {
   toFormatedString(verbose?: boolean): string {
     return JSON.stringify(this, null, 2)
   }
+
+  md5: string;
 }
 
 export interface Wait {

@@ -1,9 +1,9 @@
-import { promises as fsPromises } from 'fs'
+import {promises as fsPromises} from 'fs'
 import path from 'path'
-import chokidar, { FSWatcher } from 'chokidar'
-import { CloudSharingService, Filter, SearchOption, Shareable } from '../types'
-import { BasicStorage } from '../types'
-import { getLogger } from '../index'
+import chokidar, {FSWatcher} from 'chokidar'
+import {BasicStorage, CloudSharingService, Filter, PaginationResult, SearchOption, Shareable} from '../types'
+import {getLogger} from '../index'
+import {getMd5} from "../utils/hash";
 
 // todo
 export type ExecutableSShareableType = 'tool' | 'processor'
@@ -142,10 +142,15 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
    * 新增或更新
    * 有id就是更新，靠storage实现去控制，这里不管
    * @param instance
+   * @return id
    */
-  public async addInstance(instance: T): Promise<void> {
-    await this.storage.setItem(instance.id, instance)
+  public async addInstance(instance: T): Promise<string> {
+    const cleanObj = JSON.parse(JSON.stringify(instance))
+    cleanObj.md5 = ''
+    instance.md5 = getMd5(JSON.stringify(cleanObj))
+    const id = await this.storage.setItem(instance.id, instance)
     await this.addInstanceCode(instance.name, instance.code as string)
+    return id
   }
 
   public async addInstanceCode(name: string, code: string): Promise<void> {
@@ -156,19 +161,27 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     // 文件监听器会自动触发扫描
   }
 
-  public async updateInstance(name: string, code: string): Promise<void> {
-    const filename = this.instanceMap.get(name)
-
-    if (!filename) {
-      // 如果实例不存在，创建一个新的
-      return this.addInstance({
-        name, code,
-      } as T)
+  public async upsertInstanceT(t: T): Promise<string> {
+    const { name, code } = t
+    if (!name || !code) {
+      throw new Error('name and code are required')
     }
+    const existInstance = await this.storage.getItem(t.id)
+    if (existInstance) {
+      const existName = existInstance.name
+      if (existName !== name) {
+        const oldFilename = this.instanceMap.get(existName)
+        if (oldFilename) {
+          getLogger().debug(`Removing old file for instance '${existName}'`)
+          await fsPromises.unlink(path.join(this.codeDirectory, oldFilename))
+        }
+      }
+    }
+    return this.addInstance(t)
+  }
 
-    const filePath = path.join(this.codeDirectory, filename)
-    await fsPromises.writeFile(filePath, code)
-    // 文件监听器会自动触发扫描
+  public async getInstanceTByCloudId (cloudId: string): Promise<T[]> {
+    return this.storage.listItemsByEqFilter({ cloudId })
   }
 
   public async renameFile (id: string, oldName: string, newName: string) {
@@ -207,13 +220,6 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
    */
   abstract serializeInstance(name: string): Promise<T | null>
 
-  public async deserializeExecutableInstance(serialized: T): Promise<C> {
-    await this.addInstance(serialized)
-    const tool = await this.getInstance(serialized.name)
-    if (!tool) throw new Error(`Failed to deserialize ${this.type} '${serialized.name}'`)
-    return tool
-  }
-
   // Cloud sharing methods
 
   private checkCloudService(): CloudSharingService<T> {
@@ -223,23 +229,35 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     return this.cloudService as CloudSharingService<T>
   }
   
-  public async shareToCloud(name: string): Promise<string | undefined> {
+  public async shareToCloud(id: string): Promise<string | undefined> {
     const service = this.checkCloudService()
-    const serialized = await this.serializeInstance(name)
-    if (!serialized) throw new Error(`${this.type} not found`)
-    const instance = await service.upload(serialized)
+    const t = await this.getInstanceT(id)
+    if (!t) throw new Error(`${this.type} not found`)
+    const instance = await service.upload(t)
+    if (instance) {
+      instance.cloudId = instance.id
+      instance.id = t.id
+      await this.storage.setItem(id, instance)
+    }
     return instance?.id
   }
 
-  public async listFromCloud(filter: Filter, query: string, searchOption: SearchOption): Promise<T[] | null> {
+  public async listFromCloud(filter: Filter, query: string, searchOption: SearchOption): Promise<PaginationResult<T & { downloaded: string }>> {
     const service = this.checkCloudService()
-    return await service.list(filter, query, searchOption)
+    const result = await service.list(filter, query, searchOption) as PaginationResult<T & { downloaded: string }>
+    const downloaded = await this.storage.listItemsByInQuery([{ field: 'cloudId', values: result.items.map(item => item.id)}])
+    result.items.forEach(item => {
+      const local = downloaded.find(d => d.cloudId === item.id)
+      if (local) {
+        item.downloaded = local.id
+      }
+    })
+    return result
   }
 
-  public async getFromCloud(shareId: string): Promise<C | null> {
+  public async getFromCloud(shareId: string): Promise<T | null> {
     const service = this.checkCloudService()
-    const serialized = await service.download(shareId)
-    return serialized ? this.deserializeExecutableInstance(serialized) : null
+    return await service.download(shareId)
   }
 
   public async shareP2P(name: string): Promise<string | null> {
@@ -269,8 +287,8 @@ export abstract class NonExecutableShareableManager<T extends Shareable<T>> {
     this.cloudService = cloudService
   }
 
-  async addInstance(instance: T) {
-    await this.storage.setItem(instance.id, instance)
+  async addInstance(instance: T): Promise<string> {
+    return await this.storage.setItem(instance.id, instance)
   }
 
   async deleteInstance(key: string) {
@@ -283,6 +301,18 @@ export abstract class NonExecutableShareableManager<T extends Shareable<T>> {
 
   async getInstance(key: string): Promise<T | null> {
     return await this.storage.getItem(key)
+  }
+
+  public async upsertInstance(t: T): Promise<string> {
+    const { name } = t
+    if (!name ) {
+      throw new Error('name is required')
+    }
+    return this.addInstance(t)
+  }
+
+  async getInstanceByCloudId(cloudId: string): Promise<T[]> {
+    return this.storage.listItemsByEqFilter({ cloudId })
   }
 
   private checkCloudService(): CloudSharingService<T> {
@@ -312,7 +342,7 @@ export abstract class NonExecutableShareableManager<T extends Shareable<T>> {
     return await service.download(shareId)
   }
 
-  public async listFromCloud(filter: Filter, query: string, searchOption: SearchOption): Promise<T[] | null> {
+  public async listFromCloud(filter: Filter, query: string, searchOption: SearchOption): Promise<PaginationResult<T & { id: string }>> {
     const service = this.checkCloudService()
     return await service.list(filter, query, searchOption)
   }

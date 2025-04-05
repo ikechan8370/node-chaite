@@ -1,6 +1,7 @@
 import express, { Router } from 'express'
 import { Request, Response } from 'express'
 import { Chaite, ChaiteResponse, Filter, ProcessorDTO, SearchOption } from '../index'
+import {getMd5} from "../utils/hash";
 const router: Router = express.Router()
 
 interface ListProcessorDTO {
@@ -100,12 +101,36 @@ router.post('/upload', async (req: Request<object, object, UploadToolDTO>, res: 
   }
 })
 
-router.get('/download', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
+router.post('/download', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
   const chaite = Chaite.getInstance()
   try {
-    const channel = await chaite.getProcessorsManager().getFromCloud(req.body.id)
+    const manager = chaite.getProcessorsManager()
+    const processor = await manager.getFromCloud(req.body.id)
+    if (!processor) {
+      res.status(404)
+        .json(ChaiteResponse.fail(null, 'Processor not found'))
+      return
+    }
+    processor.cloudId = processor.id
+    const existProcessorsTools = await manager.getInstanceTByCloudId(processor.cloudId)
+    if (existProcessorsTools.length > 0) {
+      // 如果已经有了，则视为更新，先检查哈希
+      const existTool = existProcessorsTools[0]
+      if (existTool.code === processor.code) {
+        res.status(400)
+          .json(ChaiteResponse.fail(null, '处理器已存在且是最新版本'))
+        return
+      }
+      // 如果自己的更新日期更新但md5不一致可能是本地修改，会覆盖 再说吧 // todo
+      processor.id = existProcessorsTools[0].id
+    } else {
+      // 否则视为第一次下载
+      processor.id = ''
+    }
+    const channelId = await manager.upsertInstanceT(processor)
+    processor.id = channelId
     res.status(200)
-      .json(ChaiteResponse.ok(channel))
+      .json(ChaiteResponse.ok(processor))
   } catch (e) {
     chaite.getLogger().error(e as object)
     if (e instanceof Error) {

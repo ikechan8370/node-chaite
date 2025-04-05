@@ -41,7 +41,8 @@ export class ToolDTO extends AbstractShareable<ToolDTO> {
   public permission: 'public' | 'private' | 'onetime'
 
   toFormatedString(_verbose?: boolean): string {
-    let base = `工具名称：${this.name}`
+    let base = `ID: ${this.id}\n工具名称：${this.name}`
+
 
     if (this.description) {
       base += `\n工具描述：${this.description}`

@@ -1,6 +1,7 @@
 import express, { Router } from 'express'
 import { Request, Response } from 'express'
 import { Chaite, ChaiteResponse, ToolDTO, Filter, SearchOption } from '../index'
+import {getMd5} from "../utils/hash";
 const router: Router = express.Router()
 
 interface ListToolDTOs {
@@ -35,9 +36,10 @@ router.post('/', async (req: Request<object, object, ToolDTO>, res: Response) =>
         await chaite.getToolsManager().renameFile(body.id, old.name, body.name)
       }
     }
-    const channel = await chaite.getToolsManager().addInstance(body)
+    const channelId = await chaite.getToolsManager().addInstance(body)
+    body.id = channelId
     res.status(200)
-      .json(ChaiteResponse.ok(channel))
+      .json(ChaiteResponse.ok(body))
   } catch (e) {
     chaite.getLogger().error(e as object)
     if (e instanceof Error) {
@@ -108,12 +110,36 @@ router.post('/upload', async (req: Request<object, object, UploadToolDTO>, res: 
   }
 })
 
-router.get('/download', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
+router.post('/download', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
   const chaite = Chaite.getInstance()
   try {
-    const channel = await chaite.getToolsManager().getFromCloud(req.body.id)
+    const manager = chaite.getToolsManager()
+    const tool = await manager.getFromCloud(req.body.id)
+    if (!tool) {
+      res.status(404)
+        .json(ChaiteResponse.fail(null, 'Tool not found'))
+      return
+    }
+    tool.cloudId = tool.id
+    const existCloudTools = await manager.getInstanceTByCloudId(tool.cloudId)
+    if (existCloudTools.length > 0) {
+      // 如果已经有了，则视为更新，先检查哈希
+      const existTool = existCloudTools[0]
+      if (existTool.code === tool.code) {
+        res.status(400)
+          .json(ChaiteResponse.fail(null, '工具已存在且是最新版本'))
+        return
+      }
+      // 如果自己的更新日期更新但md5不一致可能是本地修改，会覆盖 再说吧 // todo
+      tool.id = existTool.id
+    } else {
+      // 否则视为第一次下载
+      tool.id = ''
+    }
+    const toolId = await manager.upsertInstanceT(tool)
+    tool.id = toolId
     res.status(200)
-      .json(ChaiteResponse.ok(channel))
+      .json(ChaiteResponse.ok(tool))
   } catch (e) {
     chaite.getLogger().error(e as object)
     if (e instanceof Error) {

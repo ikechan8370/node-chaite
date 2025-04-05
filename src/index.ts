@@ -241,6 +241,7 @@ export class Chaite extends EventEmitter {
     }
     const user = await this.toolsManager.cloudService.authenticate(apiKey)
     if (user) {
+      user.api_key = apiKey
       this.channelsManager.cloudService?.setUser(user)
       this.toolsManager.cloudService?.setUser(user)
       this.processorsManager.cloudService?.setUser(user)

@@ -8,14 +8,19 @@ export interface BasicStorage<T> {
   setItem(key: string, value: T): Promise<string>;
   removeItem(key: string): Promise<void>;
   listItems(): Promise<T[]>;
+  listItemsByEqFilter(filter: Record<string, unknown>): Promise<T[]>;
+  listItemsByInQuery(query: Array<{ field: string, values: unknown[] }>): Promise<T[]>;
   clear(): Promise<void>;
 }
 
 export abstract class ChaiteStorage<T> implements BasicStorage<T> {
   abstract getItem(key: string): Promise<T | null>;
+
   abstract setItem(key: string, value: T): Promise<string>;
   abstract removeItem(key: string): Promise<void>;
   abstract listItems(): Promise<T[]>;
+  abstract listItemsByEqFilter(filter: Record<string, unknown>): Promise<T[]>;
+  abstract listItemsByInQuery(query: Array<{ field: string; values: unknown[] }>): Promise<T[]>;
   abstract clear(): Promise<void>;
 }
 

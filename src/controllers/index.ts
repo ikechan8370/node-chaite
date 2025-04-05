@@ -8,6 +8,7 @@ import ConfigRouter from './config'
 import ProcessorsRouter from './processors'
 import OpenAIRouter from './openai'
 import ToolGroupsRouter from './toolsGroup'
+import SystemRouter from './basic'
 import cors from 'cors'
 import { authenticateToken } from './middlewares'
 import { getLogger } from '../utils'
@@ -22,6 +23,7 @@ export function runServer (host: string, port: number) {
   const app = express()
   app.use(express.json())
   app.use(cors())
+  app.use('/api/system', SystemRouter)
   app.use('/api/auth', AuthRouter)
   app.use('/api/channels', authenticateToken, ChannelsRouter)
   app.use('/api/tools', authenticateToken, ToolsRouter)
