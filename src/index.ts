@@ -1,4 +1,4 @@
-import { ChannelsManager, ChatPresetManager, DefaultCloudService, ProcessorsManager, ToolManager } from './share/index'
+import { ChannelsManager, ChatPresetManager, DefaultCloudService, ProcessorsManager, ToolManager } from './share'
 import {
   ChaiteContext,
   CustomConfig,
@@ -8,10 +8,10 @@ import {
   SendMessageOption,
   ToolDTO, ToolsGroupDTO,
   UserMessage,
-} from './types/index'
-import { EventMessage, UserModeSelector } from './types/external'
-import { createClient } from './adapters/index'
-import { BasicStorage, UserState } from './types/index'
+} from './types'
+import { EventMessage, UserModeSelector } from './types'
+import { createClient } from './adapters'
+import { BasicStorage, UserState } from './types'
 import {
   asyncLocalStorage,
   DEFAULT_HOST,
@@ -19,12 +19,12 @@ import {
   FrontEndAuthHandler,
   GlobalConfig,
   InMemoryHistoryManager,
-} from './utils/index'
-import { Channel, ChatPreset } from './channels/index'
-import { RAGManager } from './rag/index'
+} from './utils'
+import { Channel, ChatPreset } from './channels'
+import { RAGManager } from './rag'
 import EventEmitter from 'node:events'
-import { runServer } from './controllers/index'
-import { ToolsGroupManager } from './share/tools_group'
+import { runServer } from './controllers'
+import { ToolsGroupManager } from './share'
 
 export * from './types/index'
 export * from './utils/index'
@@ -33,6 +33,7 @@ export * from './rag/index'
 export * from './channels/index'
 export * from './const/index'
 export * from './share/index'
+export * from './version'
 
 
 /**

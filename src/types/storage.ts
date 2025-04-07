@@ -4,6 +4,7 @@ import { ToolChoice } from './adapter'
  * 基本存储接口
  */
 export interface BasicStorage<T> {
+  getName(): string
   getItem(key: string): Promise<T | null>;
   setItem(key: string, value: T): Promise<string>;
   removeItem(key: string): Promise<void>;
@@ -22,6 +23,10 @@ export abstract class ChaiteStorage<T> implements BasicStorage<T> {
   abstract listItemsByEqFilter(filter: Record<string, unknown>): Promise<T[]>;
   abstract listItemsByInQuery(query: Array<{ field: string; values: unknown[] }>): Promise<T[]>;
   abstract clear(): Promise<void>;
+
+  getName(): string {
+    return "unknown";
+  }
 }
 
 export interface UserState {
