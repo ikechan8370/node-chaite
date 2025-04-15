@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.12](https://github.com/ikechan8370/node-chaite/compare/v1.3.11...v1.3.12) (2025-04-15)
+
+
+### Bug Fixes
+
+* add multimodal output for converter ([0e02cc1](https://github.com/ikechan8370/node-chaite/commit/0e02cc12522ca352bec7f5e34a889e0775e1ca19))
+
 ## [1.3.11](https://github.com/ikechan8370/node-chaite/compare/v1.3.10...v1.3.11) (2025-04-07)
 
 
