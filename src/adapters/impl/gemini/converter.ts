@@ -3,7 +3,14 @@ import {
   registerFromChaiteToolConverter,
   registerIntoChaiteConverter,
 } from '../../../utils/converter'
-import { AssistantMessage, IMessage, ToolCallResultMessage, UserMessage } from '../../../types/index'
+import {
+  AssistantMessage,
+  ImageContent,
+  IMessage,
+  TextContent,
+  ToolCallResultMessage,
+  UserMessage
+} from '../../../types'
 import {
   Content,
   FunctionCall,
@@ -28,9 +35,25 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
     const msg = source as AssistantMessage
     const parts: Part[] = []
     msg.content.forEach(c => {
-      parts.push({
-        text: c.text,
-      } as TextPart)
+      switch (c.type) {
+        case 'text': {
+          parts.push({ text: (c as TextContent).text } as TextPart)
+          break
+        }
+        case 'image': {
+          let mimeType = (c as ImageContent).mimeType
+          parts.push({
+            inlineData: {
+              mimeType: mimeType || 'image/jpeg',
+              data: (c as ImageContent).image,
+            }
+          } as InlineDataPart)
+          break
+        }
+        default: {
+          break
+        }
+      }
     })
     msg.toolCalls?.forEach(tc => {
       parts.push({
@@ -99,10 +122,26 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
 // 将Gemini格式转为IMessage
 registerIntoChaiteConverter<GenerateContentResult>('gemini', msg => {
   const text = msg.response.text()
+  const content = []
+  if (text) {
+    content.push({ type: 'text', text } as TextContent)
+  }
+  const candidates = msg.response.candidates
+  candidates?.forEach(candidate => {
+    candidate.content.parts.forEach(part => {
+      if (part.inlineData) {
+        content.push({
+          type: 'image',
+          image: part.inlineData.data,
+          mimeType: part.inlineData.mimeType,
+        } as ImageContent)
+      }
+    })
+  })
   const toolCalls = msg.response.functionCalls()
   return {
     role: 'assistant',
-    content: text ? [{ type: 'text', text: text }] : [],
+    content,
     toolCalls: toolCalls?.map(toolCall => {
       const randomString = Math.random().toString(36).substring(2, 15)
       return {

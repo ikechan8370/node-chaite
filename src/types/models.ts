@@ -100,7 +100,7 @@ export interface DeveloperMessage extends IMessage {
  */
 export interface AssistantMessage extends IMessage {
   role: 'assistant'
-  content: Array<TextContent>
+  content: Array<MessageContent>
   toolCalls?: ToolCall[]
 }
 
