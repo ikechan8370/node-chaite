@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.13](https://github.com/ikechan8370/node-chaite/compare/v1.3.12...v1.3.13) (2025-04-16)
+
+
+### Bug Fixes
+
+* text content ([44d29a8](https://github.com/ikechan8370/node-chaite/commit/44d29a80e5e44be8972610f1b389ff144c1a515f))
+
 ## [1.3.12](https://github.com/ikechan8370/node-chaite/compare/v1.3.11...v1.3.12) (2025-04-15)
 
 
