@@ -81,10 +81,12 @@ export class OpenAIClient extends AbstractClient {
     }
     if (options.stream) {
       const stream = client.beta.chat.completions.stream({
+        temperature: options.temperature,
+        max_completion_tokens: options.maxToken,
         messages,
         model,
         stream: true,
-        tools,
+        tools: tools.length > 0 ? tools : undefined,
         reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
         tool_choice: tools.length > 0 ? toolChoice : undefined,
       })
@@ -141,9 +143,11 @@ export class OpenAIClient extends AbstractClient {
       chatCompletion = await stream.finalChatCompletion()
     } else {
       chatCompletion = await client.chat.completions.create({
+        temperature: options.temperature,
+        max_completion_tokens: options.maxToken,
         messages,
         model,
-        tools,
+        tools: tools.length > 0 ? tools : undefined,
         tool_choice: tools.length > 0 ? toolChoice : undefined,
         reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
       })
