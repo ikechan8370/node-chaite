@@ -19,10 +19,12 @@ registerFromChaiteConverter<Anthropic.MessageParam>('claude', (source: IMessage)
     const msg = source as AssistantMessage
     const blocks: Anthropic.ContentBlockParam[] = []
     msg.content.forEach(c => {
-      blocks.push({
-        text: c.text,
-        type: 'text',
-      })
+      if (c.type === 'text') {
+        blocks.push({
+          text: (c as TextContent).text,
+          type: 'text',
+        })
+      }
     })
     msg.toolCalls?.forEach(tc => {
       blocks.push({
