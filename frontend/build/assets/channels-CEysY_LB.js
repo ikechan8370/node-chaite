@@ -1,1 +1,0 @@
-import{at as a}from"./index-BjEaegUP.js";function t(n){return a.Get("/api/channels/list",{params:n})}function l(n){return a.Post("/api/channels/",n)}function s(n){return a.Delete(`/api/channels/${n}`)}function o(n){return a.Post("/api/channels/download",n)}function r(n){return a.Post("/api/channels/list-cloud",n)}export{s as a,l as c,o as d,t as f,r as l};

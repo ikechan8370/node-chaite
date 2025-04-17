@@ -1,1 +1,0 @@
-import{at as t}from"./index-BjEaegUP.js";function e(o){return t.Get("/api/toolGroups/list",{params:o})}function u(o){return t.Post("/api/toolGroups/",o)}function p(o){return t.Delete(`/api/toolGroups/${o}`)}export{u as c,p as d,e as f};
