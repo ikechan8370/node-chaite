@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.15](https://github.com/ikechan8370/node-chaite/compare/v1.3.14...v1.3.15) (2025-04-17)
+
+
+### Bug Fixes
+
+* dashboard optimization ([5267059](https://github.com/ikechan8370/node-chaite/commit/5267059067776ce315f5bd161451e12b7d2804d1))
+
 ## [1.3.14](https://github.com/ikechan8370/node-chaite/compare/v1.3.13...v1.3.14) (2025-04-16)
 
 
