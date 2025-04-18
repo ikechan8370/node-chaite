@@ -1,1 +1,0 @@
-import{U as t}from"./index-B99eYF-c.js";function s(e){return t.Get("/api/preset/list",{params:e})}function o(e){return t.Post("/api/preset/",e)}function a(e){return t.Delete(`/api/preset/${e}`)}function n(e){return t.Post("/api/preset/download",e)}function i(e){return t.Post("/api/preset/list-cloud",e)}export{a,o as c,n as d,s as f,i as l};

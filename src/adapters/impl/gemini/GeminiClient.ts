@@ -60,6 +60,12 @@ export class GeminiClient extends AbstractClient {
         allowedFunctionNames: options.toolChoice?.type === 'specified' ? options.toolChoice?.tools : undefined,
       } as FunctionCallingConfig,
     } as ToolConfig
+    // method parameter is not supported in Gemini API.
+    options.safetySettings?.forEach(ss => {
+      if (ss.method) {
+        ss.method = undefined
+      }
+    })
     const req = {
       model,
       contents: messages,
