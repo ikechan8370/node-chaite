@@ -15,7 +15,7 @@ import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConver
 import './converter.js'
 import { EmbeddingOption, SendMessageOption } from '../../../types/index'
 import * as crypto from 'node:crypto'
-import {Chaite} from "../../../index";
+import {Chaite, VERSION} from "../../../index";
 
 export type OpenAIClientOptions = BaseClientOptions
 
@@ -31,6 +31,9 @@ export class OpenAIClient extends AbstractClient {
     const client = new OpenAI({
       apiKey,
       baseURL: this.baseUrl,
+      defaultHeaders: {
+        'x-request-from': 'node-chaite/' + VERSION,
+      }
     })
     const messages: OpenAI.ChatCompletionMessageParam[] = []
     const model = options.model || 'gpt-4o-mini'

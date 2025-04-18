@@ -7,7 +7,7 @@ import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConver
 import './converter.js'
 import { SendMessageOption } from '../../../types/index'
 import * as crypto from 'node:crypto'
-import {Chaite} from "../../../index";
+import {Chaite, VERSION} from "../../../index";
 
 export class ClaudeClient extends AbstractClient {
   constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>, context?: ChaiteContext) {
@@ -29,6 +29,9 @@ export class ClaudeClient extends AbstractClient {
     const anthropic = new Anthropic({
       apiKey,
       baseURL: this.baseUrl,
+      defaultHeaders: {
+        'x-request-from': 'node-chaite/' + VERSION,
+      }
     })
 
     const tools = this.tools.map(toolConverter)
