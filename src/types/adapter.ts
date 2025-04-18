@@ -9,6 +9,7 @@ import { Tool } from './tools'
 import { ILogger, MultipleKeyStrategy } from './common'
 import { PostProcessor, PreProcessor } from './processors'
 import { DeSerializable, Serializable } from './cloud'
+import {SafetySetting} from "@google/genai";
 
 export class SendMessageOption implements Serializable, DeSerializable<SendMessageOption> {
   constructor(option: Partial<SendMessageOption>) {
@@ -28,6 +29,8 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.preProcessorIds = option.preProcessorIds
     this.postProcessorIds = option.postProcessorIds
     this.toolGroupId = option.toolGroupId
+    this.safetySettings = option.safetySettings
+    this.responseModalities = option.responseModalities
     this.onChunk = option.onChunk
     this.onMessageWithToolCall = option.onMessageWithToolCall
   }
@@ -79,6 +82,12 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
 
   toolGroupId?: string[]
 
+  // gemini专属的一堆
+
+  responseModalities?: string[]
+
+  safetySettings?: SafetySetting[]
+
   /**
    * 流模式的回调
    * @param chunk
@@ -113,6 +122,8 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       preProcessorIds: this.preProcessorIds,
       postProcessorIds: this.postProcessorIds,
       toolGroupId: this.toolGroupId,
+      responseModalities: this.responseModalities,
+      safetySettings: this.safetySettings,
     }
     return JSON.stringify(json)
   }

@@ -1,13 +1,13 @@
 import { ClientType, IMessage, ReasoningPart, Tool } from '../types'
-import { Content, GenerateContentResult } from '@google/generative-ai'
-import { Tool as GeminiTool } from '@google/generative-ai'
+import { Tool as GeminiTool, Content } from '@google/genai'
 // import type { Anthropic.MessageParam, ToolUnion } from '@anthropic-ai/sdk/src/resources'
 type IntoChaiteConverter<T> = (source: T) => IMessage;
 import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
+import {GenerateContentResponse} from "@google/genai";
 class IntoChaiteConverterEntry {
   openai: IntoChaiteConverter<OpenAI.ChatCompletionMessageParam & ReasoningPart>
-  gemini: IntoChaiteConverter<GenerateContentResult>
+  gemini: IntoChaiteConverter<GenerateContentResponse>
   claude: IntoChaiteConverter<Anthropic.MessageParam>
 }
 const converters = new IntoChaiteConverterEntry()
@@ -22,7 +22,7 @@ export function registerIntoChaiteConverter<T>(
     break
   }
   case 'gemini': {
-    converters.gemini = converter as unknown as IntoChaiteConverter<GenerateContentResult>
+    converters.gemini = converter as unknown as IntoChaiteConverter<GenerateContentResponse>
     break
   }
   case 'claude': {
@@ -33,10 +33,10 @@ export function registerIntoChaiteConverter<T>(
 }
 
 export function getIntoChaiteConverter(_clientType: 'openai'): IntoChaiteConverter<OpenAICompatibleMessageParam>;
-export function getIntoChaiteConverter(_clientType: 'gemini'): IntoChaiteConverter<GenerateContentResult>;
+export function getIntoChaiteConverter(_clientType: 'gemini'): IntoChaiteConverter<GenerateContentResponse>;
 
 export function getIntoChaiteConverter(_clientType: 'claude'): IntoChaiteConverter<Anthropic.MessageParam>;
-export function getIntoChaiteConverter(_clientType: ClientType): IntoChaiteConverter<OpenAICompatibleMessageParam> | IntoChaiteConverter<GenerateContentResult> | IntoChaiteConverter<Anthropic.MessageParam> {
+export function getIntoChaiteConverter(_clientType: ClientType): IntoChaiteConverter<OpenAICompatibleMessageParam> | IntoChaiteConverter<GenerateContentResponse> | IntoChaiteConverter<Anthropic.MessageParam> {
   switch (_clientType) {
   case 'openai': {
     return converters.openai

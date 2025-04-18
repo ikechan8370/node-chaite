@@ -14,19 +14,12 @@ import {
 import {
   Content,
   FunctionCall,
-  FunctionCallPart,
   FunctionDeclaration,
-  FunctionDeclarationSchema,
-  FunctionDeclarationsTool,
   FunctionResponse,
-  FunctionResponsePart,
-  GenerateContentResult,
-  InlineDataPart,
-  Part,
-  SchemaType,
-  TextPart,
-  Tool as GeminiTool,
-} from '@google/generative-ai'
+  GenerateContentResponse,
+  Part, Schema, Tool,
+  Tool as GeminiTool, Type,
+} from '@google/genai'
 
 // 将消息IMessage转换为Gemini格式
 registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
@@ -37,7 +30,7 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
     msg.content.forEach(c => {
       switch (c.type) {
         case 'text': {
-          parts.push({ text: (c as TextContent).text } as TextPart)
+          parts.push({ text: (c as TextContent).text } as Part)
           break
         }
         case 'image': {
@@ -47,7 +40,7 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
               mimeType: mimeType || 'image/jpeg',
               data: (c as ImageContent).image,
             }
-          } as InlineDataPart)
+          } as Part)
           break
         }
         default: {
@@ -61,7 +54,7 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
           name: tc.function.name,
           args: tc.function.arguments,
         } as FunctionCall,
-      } as FunctionCallPart)
+      } as Part)
     })
     return {
       role: 'model',
@@ -75,7 +68,7 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
       parts: msg.content.map(t => {
         switch (t.type) {
         case 'text': {
-          return { text: t.text } as TextPart
+          return { text: t.text } as Part
         }
         case 'audio': {
           return null
@@ -90,7 +83,7 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
           return { inlineData: {
             mimeType: t.mimeType || 'image/jpeg',
             data: t.image,
-          } } as InlineDataPart
+          } } as Part
         }
         }
       }),
@@ -109,7 +102,7 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
               content: tcr.content,
             },
           } as FunctionResponse,
-        } as FunctionResponsePart
+        } as Part
       }),
     } as Content
   }
@@ -120,15 +113,15 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
 })
 
 // 将Gemini格式转为IMessage
-registerIntoChaiteConverter<GenerateContentResult>('gemini', msg => {
-  const text = msg.response.text()
+registerIntoChaiteConverter<GenerateContentResponse>('gemini', msg => {
+  const text = msg.text
   const content = []
   if (text) {
     content.push({ type: 'text', text } as TextContent)
   }
-  const candidates = msg.response.candidates
+  const candidates = msg.candidates
   candidates?.forEach(candidate => {
-    candidate.content.parts.forEach(part => {
+    candidate.content?.parts?.forEach(part => {
       if (part.inlineData) {
         content.push({
           type: 'image',
@@ -138,7 +131,7 @@ registerIntoChaiteConverter<GenerateContentResult>('gemini', msg => {
       }
     })
   })
-  const toolCalls = msg.response.functionCalls()
+  const toolCalls = msg.functionCalls
   return {
     role: 'assistant',
     content,
@@ -163,12 +156,12 @@ registerFromChaiteToolConverter<GeminiTool>('gemini', tool => {
       name: tool.function.name,
       description: tool.function.description,
       parameters: {
-        type: SchemaType.OBJECT,
-        properties: tool.function.parameters.properties,
+        type: Type.OBJECT,
+        properties: tool.function.parameters.properties as unknown as Record<string, Schema>,
         required: tool.function.parameters.required,
-      } as FunctionDeclarationSchema,
+      } as Schema,
     } as FunctionDeclaration],
-  } as FunctionDeclarationsTool
+  } as Tool
 })
 
 export {}

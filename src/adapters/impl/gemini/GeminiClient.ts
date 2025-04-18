@@ -1,24 +1,24 @@
-import { BaseClientOptions, ChaiteContext } from '../../../types/common'
+import { BaseClientOptions, ChaiteContext } from '../../../types'
 import { AbstractClient } from '../../clients'
 import {
   EmbeddingOption,
   EmbeddingResult,
   HistoryMessage, IMessage,
   ModelUsage,
-} from '../../../types/index'
+} from '../../../types'
 import {
   Content,
-  FunctionCallingConfig, FunctionCallingMode,
-  GenerateContentRequest,
-  GoogleGenerativeAI,
-  ToolConfig,
-} from '@google/generative-ai'
+  FunctionCallingConfig,
+  FunctionCallingConfigMode,
+  GenerateContentParameters,
+  GoogleGenAI, ToolConfig
+} from "@google/genai";
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
 import './converter.js'
-import { asyncLocalStorage, getKey } from '../../../utils/index'
-import { SendMessageOption } from '../../../types/index'
+import { asyncLocalStorage, getKey } from '../../../utils'
+import { SendMessageOption } from '../../../types'
 import * as crypto from 'node:crypto'
-import {Chaite} from "../../../index";
+import {Chaite, VERSION} from "../../../index";
 
 export type GeminiClientOptions = BaseClientOptions
 export class GeminiClient extends AbstractClient {
@@ -37,20 +37,21 @@ export class GeminiClient extends AbstractClient {
       const geminiContent = converter(history)
       messages.push(geminiContent)
     }
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const geminiModel = genAI.getGenerativeModel({ model }, {
-      apiVersion: 'v1beta',
-      baseUrl: this.baseUrl,
-      customHeaders: {
-        'x-request-from': 'node-chaite/1.0.0',
-      },
-    })
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        baseUrl: this.baseUrl,
+        headers: {
+          'x-request-from': 'node-chaite/' + VERSION,
+        },
+      }
+    });
     const tools = this.tools.map(toolConverter)
     const modeMap = {
-      'none': FunctionCallingMode.NONE,
-      'any': FunctionCallingMode.ANY,
-      'auto': FunctionCallingMode.AUTO,
-      'specified': FunctionCallingMode.ANY,
+      'none': FunctionCallingConfigMode.NONE,
+      'any': FunctionCallingConfigMode.ANY,
+      'auto': FunctionCallingConfigMode.AUTO,
+      'specified': FunctionCallingConfigMode.ANY,
     }
     const toolConfig = {
       functionCallingConfig: {
@@ -59,16 +60,28 @@ export class GeminiClient extends AbstractClient {
         allowedFunctionNames: options.toolChoice?.type === 'specified' ? options.toolChoice?.tools : undefined,
       } as FunctionCallingConfig,
     } as ToolConfig
-    if (debug) {
-      this.logger.debug(`gemini request: ${JSON.stringify(messages)}`)
-      this.logger.debug(`gemini toolConfig: ${JSON.stringify(toolConfig)}`)
-    }
-    const result = await geminiModel.generateContent({
+    const req = {
+      model,
       contents: messages,
-      tools,
-      systemInstruction: options.systemOverride,
-      toolConfig,
-    } as GenerateContentRequest)
+      config: {
+        temperature: options.temperature,
+        maxOutputTokens: options.maxToken,
+        thinkingConfig: {
+          includeThoughts: true,
+          thinkingBudget: options.enableReasoning ? options.reasoningBudgetTokens : 0
+        },
+        tools,
+        toolConfig,
+        responseModalities: options.responseModalities,
+        safetySettings: options.safetySettings,
+        systemInstruction: options.systemOverride
+      }
+    } as GenerateContentParameters
+
+    if (debug) {
+      this.logger.debug(`gemini request: ${JSON.stringify(req)}`)
+    }
+    const result = await ai.models.generateContent(req)
     if (debug) {
       this.logger.info(`gemini response: ${JSON.stringify(result)}`)
     }
@@ -83,10 +96,10 @@ export class GeminiClient extends AbstractClient {
       toolCalls: iMessage.toolCalls,
     } as HistoryMessage
     const usage = {
-      promptTokens: result.response.usageMetadata?.promptTokenCount,
-      completionTokens: result.response.usageMetadata?.candidatesTokenCount,
-      totalTokens: result.response.usageMetadata?.totalTokenCount,
-      cachedTokens: result.response.usageMetadata?.cachedContentTokenCount,
+      promptTokens: result.usageMetadata?.promptTokenCount,
+      completionTokens: result.usageMetadata?.candidatesTokenCount,
+      totalTokens: result.usageMetadata?.totalTokenCount,
+      cachedTokens: result.usageMetadata?.cachedContentTokenCount,
       reasoningTokens: 0,
     }
     return {
@@ -99,30 +112,29 @@ export class GeminiClient extends AbstractClient {
     return asyncLocalStorage.run(this.context, async () => {
       const apiKey = await getKey(this.apiKey, this.multipleKeyStrategy)
       const model = options.model || 'text-embedding-004'
-      const genAI = new GoogleGenerativeAI(apiKey)
-      const geminiModel = genAI.getGenerativeModel({ model }, {
-        apiVersion: 'v1beta',
-        baseUrl: this.baseUrl,
-        customHeaders: {
-          'x-request-from': 'node-chaite/1.0.0',
-        },
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          baseUrl: this.baseUrl,
+          headers: {
+            'x-request-from': 'node-chaite/' + VERSION,
+          },
+        }
+      });
+      function textToRequest(_text: string): Content {
+        return { role: 'user', parts: [{ text: _text }] }
+      }
+      if (!Array.isArray(text)) {
+        text = [text]
+      }
+      const batchEmbedContentsResponse = await ai.models.embedContent({
+        model,
+        contents: text.map(textToRequest),
       })
-      function textToRequest(_text: string) {
-        return { content: { role: 'user', parts: [{ text: _text }] } }
-      }
-      if (Array.isArray(text)) {
-        const batchEmbedContentsResponse = await geminiModel.batchEmbedContents({
-          requests: text.map(textToRequest),
-        })
-        return {
-          embeddings: batchEmbedContentsResponse.embeddings.map(em => em.values),
-        } as EmbeddingResult
-      } else {
-        const embedContentResponse = await geminiModel.embedContent(text)
-        return {
-          embeddings: [embedContentResponse.embedding.values],
-        } as EmbeddingResult
-      }
+
+      return {
+        embeddings: batchEmbedContentsResponse.embeddings?.map(em => em.values),
+      } as EmbeddingResult
     })
   }
 }
