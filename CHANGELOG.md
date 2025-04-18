@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.18](https://github.com/ikechan8370/node-chaite/compare/v1.3.17...v1.3.18) (2025-04-18)
+
+
+### Bug Fixes
+
+* remove method for safety settings ([894faa1](https://github.com/ikechan8370/node-chaite/commit/894faa1973a3776c303e796beb69692fc1f91f4c))
+
 ## [1.3.17](https://github.com/ikechan8370/node-chaite/compare/v1.3.16...v1.3.17) (2025-04-18)
 
 
