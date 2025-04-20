@@ -9,6 +9,7 @@ export const CloudAPI: Record<'USER', string> & Record<'LIST' | 'ADD' | 'GET' | 
     channel: API_V1_PREFIX + '/channels',
     'chat-preset': API_V1_PREFIX + '/presets',
     'tool-group': API_V1_PREFIX + '/toolGroups',
+    'trigger': API_V1_PREFIX + '/triggers',
   },
   ADD: {
     tool: API_V1_PREFIX + '/tool',
@@ -16,6 +17,7 @@ export const CloudAPI: Record<'USER', string> & Record<'LIST' | 'ADD' | 'GET' | 
     channel: API_V1_PREFIX + '/channel',
     'chat-preset': API_V1_PREFIX + '/preset',
     'tool-group': API_V1_PREFIX + '/toolGroups',
+    'trigger': API_V1_PREFIX + '/trigger',
   },
   GET: {
     tool: API_V1_PREFIX + '/tool/',
@@ -23,6 +25,7 @@ export const CloudAPI: Record<'USER', string> & Record<'LIST' | 'ADD' | 'GET' | 
     channel: API_V1_PREFIX + '/channel/',
     'chat-preset': API_V1_PREFIX + '/preset/',
     'tool-group': API_V1_PREFIX + '/toolGroups/',
+    'trigger': API_V1_PREFIX + '/trigger/',
   },
   TEMP_SHARE: {
     tool: API_V1_PREFIX + '/tool',
@@ -30,6 +33,7 @@ export const CloudAPI: Record<'USER', string> & Record<'LIST' | 'ADD' | 'GET' | 
     channel: API_V1_PREFIX + '/channel',
     'chat-preset': API_V1_PREFIX + '/preset',
     'tool-group': API_V1_PREFIX + '/toolGroups',
+    'trigger': API_V1_PREFIX + '/trigger',
   },
   DELETE: {
     tool: API_V1_PREFIX + '/tool',
@@ -37,5 +41,6 @@ export const CloudAPI: Record<'USER', string> & Record<'LIST' | 'ADD' | 'GET' | 
     channel: API_V1_PREFIX + '/channel',
     'chat-preset': API_V1_PREFIX + '/preset',
     'tool-group': API_V1_PREFIX + '/toolGroups',
+    'trigger': API_V1_PREFIX + '/trigger',
   },
 }

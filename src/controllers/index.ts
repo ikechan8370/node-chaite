@@ -8,6 +8,7 @@ import ConfigRouter from './config'
 import ProcessorsRouter from './processors'
 import OpenAIRouter from './openai'
 import ToolGroupsRouter from './toolsGroup'
+import TriggerRouter from './trigger'
 import SystemRouter from './basic'
 import cors from 'cors'
 import { authenticateToken } from './middlewares'
@@ -31,6 +32,7 @@ export function runServer (host: string, port: number) {
   app.use('/api/state', authenticateToken, StateRouter)
   app.use('/api/config', authenticateToken, ConfigRouter)
   app.use('/api/processors', authenticateToken, ProcessorsRouter)
+  app.use('/api/triggers', authenticateToken, TriggerRouter)
   app.use('/api/toolGroups', authenticateToken, ToolGroupsRouter)
   app.use('/v1', authenticateToken, OpenAIRouter)
   app.use(express.static(path.join(__dirname, './frontend/build')))

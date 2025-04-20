@@ -215,7 +215,7 @@ export interface Vectorizer {
 }
 
 
-export type CloudAPIType = 'tool' | 'processor' | 'chat-preset' | 'channel' | 'tool-group'
+export type CloudAPIType = 'tool' | 'processor' | 'chat-preset' | 'channel' | 'tool-group' | 'trigger'
 
 export type CustomConfigValueType = string | number | boolean | object | undefined | null | CustomConfigValueType[]
 export type CustomConfig = Record<string, CustomConfigValueType | Record<string, CustomConfigValueType>>
