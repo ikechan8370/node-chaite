@@ -1,34 +1,33 @@
 import express, { Router } from 'express'
 import { Request, Response } from 'express'
-import { Chaite, ChaiteResponse, Filter, ProcessorDTO, SearchOption } from '../index'
-import {getMd5} from "../utils/hash";
+import { Chaite, ChaiteResponse, Filter, TriggerDTO, SearchOption } from '../index'
 const router: Router = express.Router()
 
-interface ListProcessorDTO {
+interface ListTriggerDTO {
   name?: string;
-  ptype: 'pre' | 'post'
+  status: 'enabled' | 'disabled'
 }
 
 // todo pageable
-router.get('/list', async (req: Request<object, object, ListProcessorDTO>, res: Response) => {
+router.get('/list', async (req: Request<object, object, ListTriggerDTO>, res: Response) => {
   const body = req.body
   const chaite = Chaite.getInstance()
-  let allProcessorDTO = await chaite.getProcessorsManager().listInstances()
+  let allTriggerDTOs = await chaite.getTriggerManager().listInstances()
   if (body.name) {
-    allProcessorDTO = allProcessorDTO.filter(tool => tool.name.includes(body.name as string))
+    allTriggerDTOs = allTriggerDTOs.filter(tool => tool.name.includes(body.name as string))
   }
-  if (body.ptype) {
-    allProcessorDTO = allProcessorDTO.filter(tool => tool.type === body.ptype)
+  if (body.status) {
+    allTriggerDTOs = allTriggerDTOs.filter(tool => tool.status === body.status)
   }
   res.status(200)
-    .json(ChaiteResponse.ok(allProcessorDTO))
+    .json(ChaiteResponse.ok(allTriggerDTOs))
 })
 
-router.post('/', async (req: Request<object, object, ProcessorDTO>, res: Response) => {
+router.post('/', async (req: Request<object, object, TriggerDTO>, res: Response) => {
   const body = req.body
   const chaite = Chaite.getInstance()
   try {
-    const channel = await chaite.getProcessorsManager().addInstance(body)
+    const channel = await chaite.getTriggerManager().addInstance(body)
     res.status(200)
       .json(ChaiteResponse.ok(channel))
   } catch (e) {
@@ -46,9 +45,9 @@ router.post('/', async (req: Request<object, object, ProcessorDTO>, res: Respons
 router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
   const chaite = Chaite.getInstance()
   try {
-    const channel = await chaite.getProcessorsManager().getInstanceT(req.params.id)
+    const trigger = await chaite.getTriggerManager().getInstanceT(req.params.id)
     res.status(200)
-      .json(ChaiteResponse.ok(channel))
+      .json(ChaiteResponse.ok(trigger))
   } catch (e) {
     chaite.getLogger().error(e as object)
     if (e instanceof Error) {
@@ -64,7 +63,7 @@ router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
 router.delete('/:id', async (req: Request<{ id: string }>, res: Response) => {
   const chaite = Chaite.getInstance()
   try {
-    await chaite.getProcessorsManager().deleteInstance(req.params.id)
+    await chaite.getTriggerManager().deleteInstance(req.params.id)
     res.status(200)
       .json(ChaiteResponse.ok(null))
   } catch (e) {
@@ -86,9 +85,9 @@ interface UploadToolDTO {
 router.post('/upload', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
   const chaite = Chaite.getInstance()
   try {
-    const channel = await chaite.getProcessorsManager().shareToCloud(req.body.id)
+    const trigger = await chaite.getTriggerManager().shareToCloud(req.body.id)
     res.status(200)
-      .json(ChaiteResponse.ok(channel))
+      .json(ChaiteResponse.ok(trigger))
   } catch (e) {
     chaite.getLogger().error(e as object)
     if (e instanceof Error) {
@@ -104,33 +103,33 @@ router.post('/upload', async (req: Request<object, object, UploadToolDTO>, res: 
 router.post('/download', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
   const chaite = Chaite.getInstance()
   try {
-    const manager = chaite.getProcessorsManager()
-    const processor = await manager.getFromCloud(req.body.id)
-    if (!processor) {
+    const manager = chaite.getTriggerManager()
+    const trigger = await manager.getFromCloud(req.body.id)
+    if (!trigger) {
       res.status(404)
-        .json(ChaiteResponse.fail(null, 'Processor not found'))
+        .json(ChaiteResponse.fail(null, 'Trigger not found'))
       return
     }
-    processor.cloudId = processor.id
-    const existProcessorsTools = await manager.getInstanceTByCloudId(processor.cloudId)
-    if (existProcessorsTools.length > 0) {
+    trigger.cloudId = trigger.id
+    const existTriggers = await manager.getInstanceTByCloudId(trigger.cloudId)
+    if (existTriggers.length > 0) {
       // 如果已经有了，则视为更新，先检查哈希
-      const existTool = existProcessorsTools[0]
-      if (existTool.code === processor.code) {
+      const existTool = existTriggers[0]
+      if (existTool.code === trigger.code) {
         res.status(400)
-          .json(ChaiteResponse.fail(null, '处理器已存在且是最新版本'))
+          .json(ChaiteResponse.fail(null, '触发器已存在且是最新版本'))
         return
       }
       // 如果自己的更新日期更新但md5不一致可能是本地修改，会覆盖 再说吧 // todo
-      processor.id = existProcessorsTools[0].id
+      trigger.id = existTriggers[0].id
     } else {
       // 否则视为第一次下载
-      processor.id = ''
+      trigger.id = ''
     }
-    const channelId = await manager.upsertInstanceT(processor)
-    processor.id = channelId
+    const channelId = await manager.upsertInstanceT(trigger)
+    trigger.id = channelId
     res.status(200)
-      .json(ChaiteResponse.ok(processor))
+      .json(ChaiteResponse.ok(trigger))
   } catch (e) {
     chaite.getLogger().error(e as object)
     if (e instanceof Error) {
@@ -153,9 +152,9 @@ interface ListCloudToolDTORequest {
 router.post('/list-cloud', async (req: Request<object, object, ListCloudToolDTORequest>, res: Response) => {
   const chaite = Chaite.getInstance()
   try {
-    const channels = await chaite.getProcessorsManager().listFromCloud(req.body.filter || {}, req.body.query, req.body.options || {})
+    const triggers = await chaite.getTriggerManager().listFromCloud(req.body.filter || {}, req.body.query, req.body.options || {})
     res.status(200)
-      .json(ChaiteResponse.ok(channels))
+      .json(ChaiteResponse.ok(triggers))
   } catch (e) {
     chaite.getLogger().error(e as object)
     if (e instanceof Error) {
