@@ -72,10 +72,10 @@ export class GeminiClient extends AbstractClient {
       config: {
         temperature: options.temperature,
         maxOutputTokens: options.maxToken,
-        thinkingConfig: {
+        thinkingConfig: options.enableReasoning ? {
           includeThoughts: true,
           thinkingBudget: options.enableReasoning ? options.reasoningBudgetTokens : 0
-        },
+        } : undefined,
         tools,
         toolConfig,
         responseModalities: options.responseModalities,
