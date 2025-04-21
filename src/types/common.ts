@@ -177,11 +177,18 @@ export class ChaiteContext {
   }
   logger?: ILogger
   private event?: EventMessage
+  private data?: Record<string, any>
   setEvent(event: EventMessage) {
     this.event = event
   }
   getEvent(): EventMessage | undefined {
     return this.event
+  }
+  setData(data: Record<string, any>) {
+    this.data = data
+  }
+  getData(): Record<string, any> | undefined {
+    return this.data
   }
 }
 
