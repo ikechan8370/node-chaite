@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0](https://github.com/ikechan8370/node-chaite/compare/v1.3.18...v1.4.0) (2025-04-28)
+
+
+### Features
+
+* trigger ([ad0c19d](https://github.com/ikechan8370/node-chaite/commit/ad0c19da577b13a0f1b414539e093c542d19d01b))
+
+
+### Bug Fixes
+
+* gemini thinking ([3d42c6b](https://github.com/ikechan8370/node-chaite/commit/3d42c6b2afcc4a0ccff89326e771e2bcef056e86))
+* trigger load ([46e91ac](https://github.com/ikechan8370/node-chaite/commit/46e91acd99d9fea21a1b6429952ad41d38599e7b))
+* trigger refactor ([3c50adc](https://github.com/ikechan8370/node-chaite/commit/3c50adc01392827fb7d352545d72e551e291906c))
+
 ## [1.3.18](https://github.com/ikechan8370/node-chaite/compare/v1.3.17...v1.3.18) (2025-04-18)
 
 
