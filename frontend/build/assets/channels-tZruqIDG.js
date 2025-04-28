@@ -1,1 +1,0 @@
-import{U as e}from"./index-C3QmH4Bd.js";function t(n){return e.Get("/api/channels/list",{params:n})}function l(n){return e.Post("/api/channels/",n)}function s(n){return e.Delete(`/api/channels/${n}`)}function o(n){return e.Post("/api/channels/download",n)}function r(n){return e.Post("/api/channels/list-cloud",n)}export{s as a,l as c,o as d,t as f,r as l};

@@ -1,16 +1,22 @@
-import {promises as fsPromises} from 'fs'
+import { promises as fsPromises } from 'fs'
 import path from 'path'
-import chokidar, {FSWatcher} from 'chokidar'
-import {BasicStorage, ChaiteContext, CloudSharingService, Filter, PaginationResult, SearchOption, Shareable} from '../types'
-import {getLogger} from '../index'
-import {getMd5} from "../utils/hash";
-import {Trigger, TriggerDTO} from "../types/trigger";
+import chokidar, { FSWatcher } from 'chokidar'
+import { BasicStorage, ChaiteContext, CloudSharingService, Filter, PaginationResult, SearchOption, Shareable } from '../types'
+import { getLogger } from '../index'
+import { getMd5 } from "../utils/hash";
+import { Trigger, TriggerDTO } from "../types/trigger";
 
 /**
  * 专门用于管理触发器的管理器
  * 由于触发器需要注册并保持状态运行，因此管理方式不同于普通的可执行代码
  */
 export class TriggerManager<T extends TriggerDTO> {
+  /**
+   * 存储触发器名称到 DTO ID 的映射
+   * 这样通过实例的 name 就可以找到对应的 DTO id
+   */
+  protected nameToIdMap: Map<string, string> = new Map()
+
   private watcher: FSWatcher | null = null
   /**
    * 存储示例名称和文件名的映射
@@ -74,7 +80,7 @@ export class TriggerManager<T extends TriggerDTO> {
       if (path.extname(filepath) !== '.js') return
 
       const filename = path.basename(filepath)
-      
+
       // 如果是删除文件，需要停止相关触发器
       if (event === 'unlink') {
         for (const [name, file] of this.instanceMap.entries()) {
@@ -87,18 +93,18 @@ export class TriggerManager<T extends TriggerDTO> {
 
       // Re-scan instances when files change
       await this.scanInstances()
-      
+
       // 如果是新增或修改文件，可能需要重新注册触发器
       if (['add', 'change'].includes(event)) {
         try {
           const filePath = path.join(this.codeDirectory, filename)
           const fileURL = `file://${path.resolve(filePath).replace(/\\/g, '/')}`
           const module = await import(fileURL + `?t=${Date.now()}`)
-          
+
           if (module.default && typeof module.default === 'object' && module.default.name) {
             const name = module.default.name
             const trigger = await this.getInstanceT(name)
-            
+
             // 如果触发器存在且启用状态，重新注册
             if (trigger && trigger.status === 'enabled') {
               await this.unregisterTrigger(name)
@@ -111,7 +117,7 @@ export class TriggerManager<T extends TriggerDTO> {
           }
         }
       }
-      
+
       getLogger().debug(`File ${filepath} ${event}, rescanned trigger instances`)
     })
 
@@ -126,6 +132,16 @@ export class TriggerManager<T extends TriggerDTO> {
       const files = await fsPromises.readdir(this.codeDirectory)
       const newInstanceMap = new Map<string, string>()
 
+      this.nameToIdMap.clear()
+
+      // 构建文件名到DTO映射的临时表
+      const filenameToDtoMap = new Map<string, T>()
+      const triggers = await this.storage.listItems()
+      for (const trigger of triggers) {
+        const filename = `${trigger.name.replace(/[^a-zA-Z0-9_]/g, '_')}.js`
+        filenameToDtoMap.set(filename, trigger)
+      }
+
       for (const file of files) {
         if (path.extname(file) === '.js') {
           try {
@@ -134,9 +150,17 @@ export class TriggerManager<T extends TriggerDTO> {
             // 清除模块缓存以确保获取最新版本
             const module = await import(fileURL + `?t=${Date.now()}`)
             if (module.default && typeof module.default === 'object' && module.default.name) {
-              // 使用示例自己的name作为键，文件名作为值
-              getLogger().debug(`Loaded trigger '${module.default.name}' from file '${file}'`)
-              newInstanceMap.set(module.default.name, file)
+              // 实例 name 到文件名映射
+              const instanceName = module.default.name
+              newInstanceMap.set(instanceName, file)
+
+              // 从文件名找到对应的 DTO
+              const dto = filenameToDtoMap.get(file)
+              if (dto) {
+                // 建立实例 name 到 DTO id 的映射
+                this.nameToIdMap.set(instanceName, dto.id)
+                getLogger().debug(`建立映射: 实例 '${instanceName}' -> DTO id '${dto.id}'`)
+              }
             }
           } catch (error) {
             if (error instanceof Error) {
@@ -172,28 +196,87 @@ export class TriggerManager<T extends TriggerDTO> {
   /**
    * 注册单个触发器
    */
-  public async registerTrigger(name: string): Promise<void> {
-    // 如果触发器已注册，先取消注册
-    if (this.activeInstances.has(name)) {
-      await this.unregisterTrigger(name)
-    }
-
-    const trigger = await this.getInstance(name)
-    if (!trigger) {
-      getLogger().warn(`Cannot register trigger '${name}': instance not found`)
+  public async registerTrigger(dtoName: string): Promise<void> {
+    // 获取 DTO
+    const triggerDTO = await this.getInstanceTByName(dtoName)
+    if (!triggerDTO) {
+      getLogger().warn(`Cannot register trigger '${dtoName}': DTO not found`)
       return
     }
 
+    // 添加代码文件（如果需要）
+    if (triggerDTO.code && !this.instanceMap.has(dtoName)) {
+      await this.addInstanceCode(dtoName, triggerDTO.code)
+      await this.scanInstances() // 重新扫描以更新instanceMap
+    }
+
+    // 尝试加载实例
+    const filename = `${dtoName.replace(/[^a-zA-Z0-9_]/g, '_')}.js`
+    const filePath = path.join(this.codeDirectory, filename)
+    const fileURL = `file://${path.resolve(filePath).replace(/\\/g, '/')}`
+
     try {
-      await trigger.register(this.context)
-      this.activeInstances.set(name, trigger)
-      getLogger().info(`Trigger '${name}' registered successfully`)
+      // 导入模块
+      const module = await import(fileURL + `?t=${Date.now()}`)
+      const instance = module.default as Trigger
+
+      // 获取实例的实际 name
+      const instanceName = instance.name
+
+      // 如果实例已注册，先取消注册
+      if (this.activeInstances.has(instanceName)) {
+        await this.unregisterTrigger(instanceName)
+      }
+
+      // 注册触发器并添加到活跃实例
+      await instance.register(this.context)
+      this.activeInstances.set(instanceName, instance)
+
+      // 更新实例名到 DTO ID 的映射
+      this.nameToIdMap.set(instanceName, triggerDTO.id)
+
+      getLogger().info(`Trigger '${instanceName}' registered successfully (from DTO '${dtoName}')`)
     } catch (error) {
       if (error instanceof Error) {
-        getLogger().error(`Error registering trigger '${name}':`, error.message as never)
+        getLogger().error(`Error registering trigger '${dtoName}':`, error.message as never)
       } else {
-        getLogger().error(`Error registering trigger '${name}':`, error as never)
+        getLogger().error(`Error registering trigger '${dtoName}':`, error as never)
       }
+    }
+  }
+
+  /**
+ * 通过触发器实例的 name 删除触发器
+ * 注意：这里的 name 是触发器实例的 name，而不是 DTO 中的 name
+ */
+  public async deleteInstanceByName(triggerName: string): Promise<void> {
+    // 先从已激活的实例中查找
+    if (this.activeInstances.has(triggerName)) {
+      await this.unregisterTrigger(triggerName);
+    }
+
+    // 从映射表中找到对应的 DTO id
+    const dtoId = this.nameToIdMap.get(triggerName);
+    if (dtoId) {
+      // 如果找到了 id，直接删除
+      await this.deleteInstance(dtoId);
+      getLogger().info(`已删除触发器实例 '${triggerName}' 及其 DTO (id: ${dtoId})`);
+      return;
+    }
+
+    // 如果没找到 id 但有文件，只删除文件
+    const filename = this.instanceMap.get(triggerName);
+    if (filename) {
+      const filePath = path.join(this.codeDirectory, filename);
+      try {
+        await fsPromises.unlink(filePath);
+        this.instanceMap.delete(triggerName);
+        getLogger().info(`已删除触发器实例文件 '${triggerName}'，但未找到对应的 DTO`);
+      } catch (error) {
+        getLogger().error(`删除触发器实例文件 '${triggerName}' 失败:`, error as never);
+      }
+    } else {
+      getLogger().warn(`找不到名为 '${triggerName}' 的触发器实例`);
     }
   }
 
@@ -239,9 +322,23 @@ export class TriggerManager<T extends TriggerDTO> {
   }
 
   /**
+   * 通过名称获取触发器DTO
+   */
+  public async getInstanceTByName(name: string): Promise<T | null> {
+    const items = await this.storage.listItemsByEqFilter({ name });
+    return items.length > 0 ? items[0] : null;
+  }
+
+  /**
    * 获取触发器实例对象
    */
   public async getInstance(name: string): Promise<Trigger | undefined> {
+    // 首先检查是否已经有激活的实例
+    if (this.activeInstances.has(name)) {
+      return this.activeInstances.get(name);
+    }
+
+    // 如果没有激活的实例，则从文件中加载
     const filename = this.instanceMap.get(name)
 
     if (!filename) return undefined
@@ -249,9 +346,16 @@ export class TriggerManager<T extends TriggerDTO> {
     const filePath = path.join(this.codeDirectory, filename)
     const fileURL = `file://${path.resolve(filePath).replace(/\\/g, '/')}`
     try {
-      // 清除模块缓存，确保获取最新版本
+      // 导入模块
       const module = await import(fileURL + `?t=${Date.now()}`)
-      return module.default as Trigger
+      const instance = module.default as Trigger;
+
+      // 记录未注册的实例（因为在registerTrigger时会再次加入activeInstances）
+      if (!this.activeInstances.has(name)) {
+        this.activeInstances.set(name, instance);
+      }
+
+      return instance;
     } catch (error) {
       console.error(`Error loading trigger '${name}':`, error)
       return undefined
@@ -289,14 +393,14 @@ export class TriggerManager<T extends TriggerDTO> {
     if (!name || !code) {
       throw new Error('name and code are required')
     }
-    
+
     const existInstance = await this.storage.getItem(t.id)
-    
+
     // 如果存在且之前已注册，需要先取消注册
     if (existInstance && existInstance.status === 'enabled') {
       await this.unregisterTrigger(existInstance.name)
     }
-    
+
     if (existInstance) {
       const existName = existInstance.name
       if (existName !== name) {
@@ -307,14 +411,14 @@ export class TriggerManager<T extends TriggerDTO> {
         }
       }
     }
-    
+
     const id = await this.addInstance(t)
-    
+
     // 如果新状态是启用，注册触发器
     if (t.status === 'enabled') {
       await this.registerTrigger(t.name)
     }
-    
+
     return id
   }
 
@@ -331,7 +435,7 @@ export class TriggerManager<T extends TriggerDTO> {
   public async renameFile(id: string, oldName: string, newName: string) {
     // 先取消注册旧触发器
     await this.unregisterTrigger(oldName)
-    
+
     const filename = `${oldName.replace(/[^a-zA-Z0-9_]/g, '_')}.js`
     if (filename) {
       const filePath = path.join(this.codeDirectory, filename)
@@ -340,7 +444,7 @@ export class TriggerManager<T extends TriggerDTO> {
       await fsPromises.rename(filePath, newFilePath)
       // 文件监听器会自动触发扫描
     }
-    
+
     // 获取触发器DTO，如果状态是启用，重新注册
     const trigger = await this.storage.getItem(id)
     if (trigger && trigger.status === 'enabled') {
@@ -370,7 +474,7 @@ export class TriggerManager<T extends TriggerDTO> {
 
     await this.storage.removeItem(id)
   }
-  
+
   /**
    * 更新上下文
    */
@@ -384,10 +488,10 @@ export class TriggerManager<T extends TriggerDTO> {
   public async serializeInstance(name: string): Promise<T | null> {
     const t = await this.getInstance(name)
     if (!t) return null
-    
+
     const dto = (await this.storage.listItemsByEqFilter({ name }))[0]
     if (!dto) return null
-    
+
     return dto
   }
 
@@ -399,7 +503,7 @@ export class TriggerManager<T extends TriggerDTO> {
     }
     return this.cloudService as CloudSharingService<T>
   }
-  
+
   public async shareToCloud(id: string): Promise<string | undefined> {
     const service = this.checkCloudService()
     const t = await this.getInstanceT(id)
@@ -416,7 +520,7 @@ export class TriggerManager<T extends TriggerDTO> {
   public async listFromCloud(filter: Filter, query: string, searchOption: SearchOption): Promise<PaginationResult<T & { downloaded: string }>> {
     const service = this.checkCloudService()
     const result = await service.list(filter, query, searchOption) as PaginationResult<T & { downloaded: string }>
-    const downloaded = await this.storage.listItemsByInQuery([{ field: 'cloudId', values: result.items.map(item => item.id)}])
+    const downloaded = await this.storage.listItemsByInQuery([{ field: 'cloudId', values: result.items.map(item => item.id) }])
     result.items.forEach(item => {
       const local = downloaded.find(d => d.cloudId === item.id)
       if (local) {
@@ -446,51 +550,51 @@ export class TriggerManager<T extends TriggerDTO> {
     for (const [name] of this.activeInstances) {
       await this.unregisterTrigger(name)
     }
-    
+
     // 关闭文件监听器
     if (this.watcher) {
       await this.watcher.close()
       this.watcher = null
     }
-    
+
     getLogger().info('TriggerManager disposed successfully')
   }
-  
+
   /**
    * 启用触发器
    */
   public async enableTrigger(id: string): Promise<void> {
     const trigger = await this.getInstanceT(id)
     if (!trigger) throw new Error(`Trigger not found`)
-    
+
     trigger.status = 'enabled'
     await this.storage.setItem(id, trigger)
     await this.registerTrigger(trigger.name)
-    
+
     getLogger().info(`Trigger '${trigger.name}' has been enabled`)
   }
-  
+
   /**
    * 禁用触发器
    */
   public async disableTrigger(id: string): Promise<void> {
     const trigger = await this.getInstanceT(id)
     if (!trigger) throw new Error(`Trigger not found`)
-    
+
     trigger.status = 'disabled'
     await this.storage.setItem(id, trigger)
     await this.unregisterTrigger(trigger.name)
-    
+
     getLogger().info(`Trigger '${trigger.name}' has been disabled`)
   }
-  
+
   /**
    * 检查触发器是否正在运行
    */
   public isRunning(name: string): boolean {
     return this.activeInstances.has(name)
   }
-  
+
   /**
    * 获取当前运行中的所有触发器
    */

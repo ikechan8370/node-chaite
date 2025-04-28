@@ -27,9 +27,12 @@ router.post('/', async (req: Request<object, object, TriggerDTO>, res: Response)
   const body = req.body
   const chaite = Chaite.getInstance()
   try {
-    const channel = await chaite.getTriggerManager().addInstance(body)
+    const triggerId = await chaite.getTriggerManager().addInstance(body)
+    if (body.status === 'enabled') {
+      chaite.getTriggerManager().registerTrigger(body.name)
+    }
     res.status(200)
-      .json(ChaiteResponse.ok(channel))
+      .json(ChaiteResponse.ok(triggerId))
   } catch (e) {
     chaite.getLogger().error(e as object)
     if (e instanceof Error) {

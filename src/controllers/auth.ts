@@ -1,6 +1,6 @@
 import express, { Router } from 'express'
 import { Request, Response } from 'express'
-import { Chaite, ChaiteResponse, FrontEndAuthHandler, GlobalConfig } from '../index'
+import { Chaite, ChaiteResponse, FrontEndAuthHandler, getLogger, GlobalConfig } from '../index'
 const router: Router = express.Router()
 
 interface LoginRequest {
@@ -16,6 +16,7 @@ router.post('/login', async (req: Request<object, object, LoginRequest>, res: Re
     }
     const config = Chaite.getInstance().getGlobalConfig() as GlobalConfig
     const key = config.getAuthKey() || Chaite.getInstance().getFrontendAuthHandler().generateToken(0, true)
+    getLogger().info('Login success, generating token' + key)
     config.setAuthKey(key)
     const token = FrontEndAuthHandler.generateJWT(key)
     res.status(200)
