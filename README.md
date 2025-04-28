@@ -1,6 +1,8 @@
 # node-chaite
 
-用于chatgpt-plugin v3和karin-plugin-chaite的公用依赖。
+用于[chatgpt-plugin v3](https://github.com/ikechan8370/chatgpt-plugin/tree/v3)和[karin-plugin-chaite](https://github.com/ikechan8370/karin-plugin-chaite)的公用依赖。
+
+
 
 只包含核心功能，尽可能轻量，不包含数据库和其他存储。
 
