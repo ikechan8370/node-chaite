@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/ikechan8370/node-chaite/compare/v1.4.0...v1.5.0) (2025-04-29)
+
+
+### Features
+
+* individual context per preset ([7fb29aa](https://github.com/ikechan8370/node-chaite/commit/7fb29aa65481bc0ab5d66da8e8a826ec4ac776be))
+
+
+### Bug Fixes
+
+* update Readme ([1d2b8b1](https://github.com/ikechan8370/node-chaite/commit/1d2b8b18b0ac8022fcc575498c2fbe1bbf838b42))
+
 ## [1.4.0](https://github.com/ikechan8370/node-chaite/compare/v1.3.18...v1.4.0) (2025-04-28)
 
 
