@@ -80,7 +80,7 @@ export class GeminiClient extends AbstractClient {
         toolConfig,
         responseModalities: options.responseModalities,
         safetySettings: options.safetySettings,
-        systemInstruction: options.systemOverride
+        systemInstruction: options.systemOverride ?? undefined
       }
     } as GenerateContentParameters
 

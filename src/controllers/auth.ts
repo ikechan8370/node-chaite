@@ -22,7 +22,7 @@ router.post('/login', async (req: Request<object, object, LoginRequest>, res: Re
     res.status(200)
       .json(ChaiteResponse.ok({
         token: token,
-        expiresIn: 24 * 60 * 60,
+        expiresIn: 7 * 24 * 60 * 60,
       }))
   } else {
     res.status(401)

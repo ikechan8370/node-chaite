@@ -1,5 +1,4 @@
 import Anthropic from '@anthropic-ai/sdk'
-// import type { MessageParam, ToolChoice, ToolChoiceTool } from '@anthropic-ai/sdk/src/resources/messages/messages'
 import { AbstractClient } from '../../clients'
 import { GeminiClientOptions } from '../gemini/GeminiClient'
 import { ChaiteContext, HistoryMessage, IMessage, ModelUsage } from '../../../types/index'
@@ -63,7 +62,7 @@ export class ClaudeClient extends AbstractClient {
       model,
       max_tokens: options.maxToken || 1024,
       temperature: options.temperature,
-      system: options.systemOverride,
+      system: options.systemOverride ?? undefined,
       messages,
       tools,
       thinking: options.enableReasoning ? {

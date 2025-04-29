@@ -13,6 +13,8 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       }
       this.local = params.local || false
       this.namespace = params.namespace
+      this.groupContext = params.groupContext
+      this.disableSystemInstructions = params.disableSystemInstructions
     }
   }
 
@@ -21,6 +23,15 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
   local: boolean
   namespace?: string
   sendMessageOption: SendMessageOption
+
+  /**
+   * 禁止携带群聊上下文
+   */
+  groupContext?: 'disable' | 'enabled' | 'use_system'
+  /**
+   * 禁止系统prompt
+   */
+  disableSystemInstructions?: boolean
 
   toString(): string {
     return JSON.stringify({
@@ -37,6 +48,8 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       namespace: this.namespace,
       description: this.description,
       sendMessageOption: this.sendMessageOption?.toString(), // 嵌套序列化
+      groupContext: this.groupContext,
+      disableSystemInstructions: this.disableSystemInstructions,
     })
   }
 
@@ -56,6 +69,8 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     preset.embedded = raw.embedded
     preset.uploader = raw.uploader
     preset.modelType = raw.modelType
+    preset.groupContext = raw.groupContext
+    preset.disableSystemInstructions = raw.disableSystemInstructions
 
     if (raw.sendMessageOption) {
       preset.sendMessageOption = typeof raw.sendMessageOption === 'string'
@@ -96,6 +111,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     if (this.uploader?.username) {
       base += `\n上传者：@${this.uploader.username}`
     }
+    
 
     if (this.sendMessageOption) {
       if (this.sendMessageOption.model) {
@@ -114,6 +130,18 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       } else {
         base += '\n预设内容仅主人可查看'
       }
+    }
+
+    if (this.groupContext === 'disable') {
+      base += `\n禁止携带群聊上下文`
+    } else if (this.groupContext === 'enabled') {
+      base += `\n携带群聊上下文`
+    } else if (this.groupContext === 'use_system') {
+      base += `\n群聊上下文使用系统预设`
+    }
+
+    if (this.disableSystemInstructions) {
+      base += `\n禁止系统提示词`
     }
 
     return base.trimEnd()

@@ -4,10 +4,26 @@ export const DEFAULT_HOST = '127.0.0.1'
 export const DEFAULT_PORT = 48370
 
 export class GlobalConfig extends EventEmitter {
+  /**
+   * jwt密钥
+   */
   private authKey: string
+  /**
+   * 监听地址
+   */
   private host: string
+  /**
+   * 监听端口
+   */
   private port: number
+  /**
+   * 是否开启调试模式
+   */
   private debug: boolean
+  /**
+   * 登录有效期，单位秒
+   */
+  private loginValidTime: number
 
   setAuthKey (key: string) {
     if (key === this.authKey) {
@@ -57,6 +73,18 @@ export class GlobalConfig extends EventEmitter {
     this.debug = debug
   }
 
+  setLoginValidTime (time: number) {
+    if (time === this.loginValidTime) {
+      return
+    }
+    this.emit('change', {
+      key: 'loginValidTime',
+      newVal: time,
+      oldVal: this.loginValidTime,
+    })
+    this.loginValidTime = time
+  }
+
   getAuthKey () {
     return this.authKey
   }
@@ -71,5 +99,9 @@ export class GlobalConfig extends EventEmitter {
 
   getDebug () {
     return this.debug
+  }
+
+  getLoginValidTime () {
+    return this.loginValidTime || 24 * 60 *60
   }
 }
