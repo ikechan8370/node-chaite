@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.1](https://github.com/ikechan8370/node-chaite/compare/v1.5.0...v1.5.1) (2025-05-27)
+
+
+### Bug Fixes
+
+* claude empty content ([f4c70be](https://github.com/ikechan8370/node-chaite/commit/f4c70be78f70b6139b6229815ec902a409e8ef44))
+* femini empty text ([58d21d3](https://github.com/ikechan8370/node-chaite/commit/58d21d39cad2eaa6c0f92fad2b807b38eb86155a))
+* openai empty text ([1a8a993](https://github.com/ikechan8370/node-chaite/commit/1a8a9934eaa236fe0379903212924504171015e4))
+
 ## [1.5.0](https://github.com/ikechan8370/node-chaite/compare/v1.4.0...v1.5.0) (2025-04-29)
 
 
