@@ -25,7 +25,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
   sendMessageOption: SendMessageOption
 
   /**
-   * 禁止携带群聊上下文
+   * 携带群聊上下文
    */
   groupContext?: 'disable' | 'enabled' | 'use_system'
   /**
