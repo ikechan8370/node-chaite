@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.2](https://github.com/ikechan8370/node-chaite/compare/v1.5.1...v1.5.2) (2025-05-27)
+
+
+### Bug Fixes
+
+* add crypto import for some node version ([77a6bd5](https://github.com/ikechan8370/node-chaite/commit/77a6bd5e6cf86b83dda9478f1d64742415f32792))
+
 ## [1.5.1](https://github.com/ikechan8370/node-chaite/compare/v1.5.0...v1.5.1) (2025-05-27)
 
 
