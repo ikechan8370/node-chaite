@@ -2,6 +2,7 @@ import { getLogger } from "src/utils";
 import { AbstractShareable } from "./cloud";
 import { ChaiteContext } from "./common";
 import schedule, { Job } from '@karinjs/node-schedule';
+import * as crypto from "node:crypto";
 import { Chaite, ChatPreset, createClient, ModelResponse, SendMessageOption, UserMessage } from "src";
 
 export class TriggerDTO extends AbstractShareable<TriggerDTO> {
