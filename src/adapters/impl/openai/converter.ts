@@ -26,6 +26,7 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
     // bym用的ephone不支持assistant是array类型的，索性全都转成字符串吧
     const text = msg.content
       .map(t => t as unknown as OpenAI.ChatCompletionContentPartText)
+      .filter(t => t.text)
       .reduce((acc, cur) => {
         return {
           type: 'text',
@@ -97,7 +98,7 @@ registerIntoChaiteConverter<OpenAICompatibleMessageParam>('openai', msg => {
       type: 'text',
       text: msg.content,
     } as OpenAI.ChatCompletionContentPartText] : null
-    
+
     const contents: MessageContent[] | undefined = content?.map(t => {
       return { type: 'text', text: t.type === 'text' ? t.text : t.refusal } as TextContent
     })
