@@ -30,7 +30,9 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
     msg.content.forEach(c => {
       switch (c.type) {
         case 'text': {
-          parts.push({ text: (c as TextContent).text } as Part)
+          if ((c as TextContent).text) {
+            parts.push({ text: (c as TextContent).text } as Part)
+          }
           break
         }
         case 'image': {
