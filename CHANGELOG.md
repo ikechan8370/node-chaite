@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/ikechan8370/node-chaite/compare/v1.5.2...v1.5.3) (2025-05-29)
+
+
+### Bug Fixes
+
+* openai empty content ([6dc07c6](https://github.com/ikechan8370/node-chaite/commit/6dc07c617f1ecbe3b45dd5b8a1b5ea0faad23a66))
+
 ## [1.5.2](https://github.com/ikechan8370/node-chaite/compare/v1.5.1...v1.5.2) (2025-05-27)
 
 
