@@ -35,7 +35,7 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
       }, { type: 'text', text: '' } as OpenAI.ChatCompletionContentPartText).text;
     return {
       role: 'assistant',
-      content: text,
+      content: text ? text : undefined,
       tool_calls: (msg.toolCalls && msg.toolCalls?.length > 0) ? msg.toolCalls?.map(t => {
         return {
           id: t.id,
