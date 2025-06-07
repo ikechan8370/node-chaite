@@ -26,7 +26,7 @@ export class FrontEndAuthHandler {
   }
 
   static generateJWT (key: string) {
-    return jwt.sign({ key }, key, { expiresIn: '24h' })
+    return jwt.sign({ key }, key, { expiresIn: '30d' })
   }
 
   static validateJWT (key: string, token: string): boolean {
