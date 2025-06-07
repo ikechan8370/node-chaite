@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.4](https://github.com/ikechan8370/node-chaite/compare/v1.5.3...v1.5.4) (2025-06-07)
+
+
+### Bug Fixes
+
+* longer login state valid duration ([ab191c7](https://github.com/ikechan8370/node-chaite/commit/ab191c7b5229087eada6a64c1e3d9307d4c15504))
+
 ## [1.5.3](https://github.com/ikechan8370/node-chaite/compare/v1.5.2...v1.5.3) (2025-05-29)
 
 
