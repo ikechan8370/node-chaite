@@ -26,7 +26,7 @@ import { RAGManager } from './rag'
 import EventEmitter from 'node:events'
 import { runServer } from './controllers'
 import { ToolsGroupManager } from './share'
-import { TriggerManager } from './share/trigger'
+import { TriggerManager } from './share'
 
 export * from './types/index'
 export * from './utils/index'

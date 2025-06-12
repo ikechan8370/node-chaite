@@ -40,6 +40,7 @@ export class AbstractClient implements IClient {
     this.options = options as BaseClientOptions
     if (context) {
       this.context = context
+      this.context.setClient(this)
     }
   }
   
@@ -146,11 +147,13 @@ export class AbstractClient implements IClient {
     const debug = Chaite.getInstance().getGlobalConfig()?.getDebug()
     options = SendMessageOption.create(options)
     const logicFn = async () => {
+      this.context.setOptions(options as SendMessageOption)
       await this.options.ready()
       this.preProcessors = this.options.getPreProcessors()
       this.postProcessors = this.options.getPostProcessors()
       const apiKey = await getKey(this.apiKey, this.multipleKeyStrategy)
       const histories = options.disableHistoryRead ? [] : await this.historyManager.getHistory(options.parentMessageId, options.conversationId)
+      this.context.setHistoryMessages(histories)
       if (!options.conversationId) {
         options.conversationId = crypto.randomUUID()
       }
@@ -285,7 +288,7 @@ export class AbstractClient implements IClient {
         usage: modelResponse.usage,
       } as ModelResponse
     }
-    if (!asyncLocalStorage.getStore()) {
+    if (asyncLocalStorage.getStore()) {
       return asyncLocalStorage.run(this.context, async () => {
         return logicFn()
       })

@@ -1,9 +1,10 @@
-import { Feature } from './models'
+import { Feature, HistoryMessage } from './models'
 import { Tool } from './tools'
-import { HistoryManager } from './adapter'
+import { HistoryManager, SendMessageOption } from './adapter'
 import { PostProcessor, PreProcessor } from './processors'
 import { DeSerializable, Serializable, Wait } from './cloud'
 import { EventMessage } from './external'
+import { AbstractClient } from '../adapters'
 
 export const MultipleKeyStrategyChoice = {
   RANDOM: 'random' as MultipleKeyStrategy,
@@ -176,8 +177,23 @@ export class ChaiteContext {
     this.logger = logger
   }
   logger?: ILogger
+  private options?: SendMessageOption
+  private historyMessages?: HistoryMessage[]
   private event?: EventMessage
   private data?: Record<string, any>
+  private client?: AbstractClient
+  setHistoryMessages(histories: HistoryMessage[]) {
+    this.historyMessages = histories
+  }
+  getHistoryMessages(): HistoryMessage[] | undefined {
+    return this.historyMessages
+  }
+  setOptions (options: SendMessageOption) {
+    this.options = options
+  }
+  getOptions(): SendMessageOption | undefined {
+    return this.options
+  }
   setEvent(event: EventMessage) {
     this.event = event
   }
@@ -189,6 +205,12 @@ export class ChaiteContext {
   }
   getData(): Record<string, any> | undefined {
     return this.data
+  }
+  setClient(client: AbstractClient) {
+    this.client = client
+  }
+  getClient(): AbstractClient | undefined {
+    return this.client
   }
 }
 
