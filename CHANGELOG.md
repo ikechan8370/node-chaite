@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/ikechan8370/node-chaite/compare/v1.5.4...v1.6.0) (2025-06-12)
+
+
+### Features
+
+* add more things to context ([e05c461](https://github.com/ikechan8370/node-chaite/commit/e05c4616b3fd5bf57a75535f268ce94c9557b94b))
+
 ## [1.5.4](https://github.com/ikechan8370/node-chaite/compare/v1.5.3...v1.5.4) (2025-06-07)
 
 
