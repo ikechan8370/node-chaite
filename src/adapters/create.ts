@@ -6,13 +6,13 @@ import { BaseClientOptions, ChaiteContext, ClientType, IClient } from '../types'
 export function createClient(name: ClientType, options: BaseClientOptions | Partial<BaseClientOptions>, context?: ChaiteContext): IClient {
   switch (name) {
   case 'openai': {
-    return new OpenAIClient(options)
+    return new OpenAIClient(options, context)
   }
   case 'claude': {
-    return new ClaudeClient(options)
+    return new ClaudeClient(options, context)
   }
   case 'gemini': {
-    return new GeminiClient(options)
+    return new GeminiClient(options, context)
   }
   }
 }

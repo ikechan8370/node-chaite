@@ -37,7 +37,7 @@ export class OpenAIClient extends AbstractClient {
     })
     const messages: OpenAI.ChatCompletionMessageParam[] = []
     const model = options.model || 'gpt-4o-mini'
-    const isThinkingModel = model.includes('o1') || model.includes('o3')
+    const isThinkingModel = model.includes('o1') || model.includes('o3') || model.includes('o4')
     if (options.systemOverride) {
       if (isThinkingModel) {
         messages.push({ role: 'developer', content: options.systemOverride })
