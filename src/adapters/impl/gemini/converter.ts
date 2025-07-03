@@ -6,7 +6,7 @@ import {
 import {
   AssistantMessage,
   ImageContent,
-  IMessage,
+  IMessage, ReasoningContent,
   TextContent,
   ToolCallResultMessage,
   UserMessage,
@@ -121,6 +121,13 @@ registerIntoChaiteConverter<GenerateContentResponse>('gemini', msg => {
   if (text) {
     content.push({ type: 'text', text } as TextContent)
   }
+  msg.candidates?.forEach(candidate => {
+    candidate.content?.parts?.forEach(part => {
+      if (part.thought && part.text) {
+        content.push({ type: 'reasoning', text: part.text } as ReasoningContent)
+      }
+    })
+  })
   const candidates = msg.candidates
   candidates?.forEach(candidate => {
     candidate.content?.parts?.forEach(part => {
