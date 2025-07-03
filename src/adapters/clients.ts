@@ -219,6 +219,7 @@ export class AbstractClient implements IClient {
       if (thisRequestMsg) {
         await this.historyManager.saveHistory(thisRequestMsg, options.conversationId)
         options.parentMessageId = thisRequestMsg.id
+        modelResponse.parentId = thisRequestMsg.id
       }
       // save model response
       // this.logger.info(JSON.stringify(rspToSave))
