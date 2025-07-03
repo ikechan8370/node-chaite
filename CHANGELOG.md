@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.4](https://github.com/ikechan8370/node-chaite/compare/v1.6.3...v1.6.4) (2025-07-03)
+
+
+### Bug Fixes
+
+* context constructor ([dc1ea78](https://github.com/ikechan8370/node-chaite/commit/dc1ea78cc1b7b263c3fce7a0649a9a5cac61426e))
+
 ## [1.6.3](https://github.com/ikechan8370/node-chaite/compare/v1.6.2...v1.6.3) (2025-07-03)
 
 
