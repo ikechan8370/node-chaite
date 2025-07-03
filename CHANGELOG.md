@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/ikechan8370/node-chaite/compare/v1.6.0...v1.6.1) (2025-07-03)
+
+
+### Bug Fixes
+
+* empty context ([63dacfb](https://github.com/ikechan8370/node-chaite/commit/63dacfbc680a63ce7364491bb149904f3ad3d5d4))
+
 ## [1.6.0](https://github.com/ikechan8370/node-chaite/compare/v1.5.4...v1.6.0) (2025-06-12)
 
 
