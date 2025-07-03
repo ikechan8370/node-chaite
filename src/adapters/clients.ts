@@ -144,7 +144,7 @@ export class AbstractClient implements IClient {
   }
 
   sendMessage(message: UserMessage | undefined, options: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse> {
-    const debug = this.context.chaite.getGlobalConfig()?.getDebug()
+    const debug = this.context.chaite?.getGlobalConfig()?.getDebug()
     options = SendMessageOption.create(options)
     const logicFn = async () => {
       this.context.setOptions(options as SendMessageOption)

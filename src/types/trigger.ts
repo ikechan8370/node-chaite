@@ -1,13 +1,13 @@
-import { getLogger } from '../utils'
-import { AbstractShareable } from './cloud'
-import { ChaiteContext } from './common'
-import schedule, { Job } from '@karinjs/node-schedule'
+import {asyncLocalStorage, getLogger} from '../utils'
+import {AbstractShareable} from './cloud'
+import {ChaiteContext} from './common'
+import schedule, {Job} from '@karinjs/node-schedule'
 import * as crypto from 'node:crypto'
-import { ModelResponse, UserMessage } from './models'
-import { SendMessageOption } from './adapter'
-import { ChatPreset } from '../channels'
-import { Chaite } from '../core'
-import { createClient } from '../adapters'
+import {ModelResponse, UserMessage} from './models'
+import {SendMessageOption} from './adapter'
+import {ChatPreset} from '../channels'
+import {Chaite} from '../core'
+import {createClient} from '../adapters'
 import EventEmitter from 'node:events'
 
 export class TriggerDTO extends AbstractShareable<TriggerDTO> {
@@ -141,17 +141,25 @@ export abstract class BaseTrigger implements Trigger {
       if (preset) {
         options = preset.sendMessageOption
       }
-      const channels = await Chaite.getInstance().getChannelsManager().getChannelByModel(options.model || '')
-      if (channels.length > 0) {
-        const channel = channels[0]
-        await channel.options.ready()
-        const client = createClient(channel.adapterType, channel.options)
-        options.conversationId = crypto.randomUUID()
-        options.parentMessageId = crypto.randomUUID()
-        const response = await client.sendMessage(message, options)
-        return response
+      // todo remove Chaite import
+      const context = new ChaiteContext()
+      context.setChaite(Chaite.getInstance())
+      // context.setEvent({})
+      const res =  await asyncLocalStorage.run(context, async () => {
+        const channels = await Chaite.getInstance().getChannelsManager().getChannelByModel(options.model || '')
+        if (channels.length > 0) {
+          const channel = channels[0]
+          await channel.options.ready()
+          const client = createClient(channel.adapterType, channel.options)
+          options.conversationId = crypto.randomUUID()
+          options.parentMessageId = crypto.randomUUID()
+          return await client.sendMessage(message, options)
+        }
+      })
+      if (!res) {
+        throw new Error('No channel found')
       }
-      throw new Error('No channel found')
+      return res
     }
 
 }
