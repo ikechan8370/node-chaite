@@ -115,6 +115,7 @@ export class Chaite extends EventEmitter {
   async sendMessage(message: UserMessage, e: EventMessage, options: SendMessageOption & { chatPreset?: ChatPreset }): Promise<ModelResponse> {
     const context = new ChaiteContext(this.logger)
     context.setEvent(e)
+    context.setChaite(this)
     return asyncLocalStorage.run(context, async () => {
       if (!options.chatPreset) {
         options.chatPreset = await this.userModeSelector.getChatPreset(e)

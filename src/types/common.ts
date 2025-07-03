@@ -199,6 +199,9 @@ export class ChaiteContext {
   setEvent(event: EventMessage) {
     this.event = event
   }
+  setChaite(chaite: Chaite) {
+    this.chaite = chaite
+  }
   getEvent(): EventMessage | undefined {
     return this.event
   }
@@ -213,6 +216,9 @@ export class ChaiteContext {
   }
   getClient(): AbstractClient | undefined {
     return this.client
+  }
+  getChaite(): Chaite {
+    return this.chaite
   }
 }
 
