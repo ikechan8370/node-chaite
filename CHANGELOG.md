@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/ikechan8370/node-chaite/compare/v1.7.1...v1.7.2) (2025-07-03)
+
+
+### Bug Fixes
+
+* 触发器的context ([34622d8](https://github.com/ikechan8370/node-chaite/commit/34622d8101e0a9a3a6a55baefe650cb38d844d28))
+
 ## [1.7.1](https://github.com/ikechan8370/node-chaite/compare/v1.7.0...v1.7.1) (2025-07-03)
 
 
