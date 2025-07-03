@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/ikechan8370/node-chaite/compare/v1.7.0...v1.7.1) (2025-07-03)
+
+
+### Bug Fixes
+
+* update user msg id ([5242ee1](https://github.com/ikechan8370/node-chaite/commit/5242ee176a959df3428e68ee1a55d43f8c47ee42))
+
 ## [1.7.0](https://github.com/ikechan8370/node-chaite/compare/v1.6.4...v1.7.0) (2025-07-03)
 
 
