@@ -105,10 +105,10 @@ export abstract class BaseTrigger implements Trigger {
           try {
             await this.unregister()
             // 这里需要通过 name 而不是 id 来删除
-            const triggerManager = Chaite.getInstance().getTriggerManager()
+            const triggerManager = asyncLocalStorage.getStore()?.getChaite().getTriggerManager()
             // 注意：这里需要修改 TriggerManager 中的 deleteInstance 方法
             // 使其支持通过触发器名称删除
-            await triggerManager.deleteInstanceByName(this.name)
+            await triggerManager?.deleteInstanceByName(this.name)
             getLogger().info(`一次性触发器 ${this.name} 已执行完毕并自动删除`)
           } catch (err) {
             getLogger().error(`一次性触发器 ${this.name} 清理出错:`, err as never)
@@ -123,10 +123,13 @@ export abstract class BaseTrigger implements Trigger {
     protected async triggerAction(action: () => Promise<void>): Promise<void> {
       try {
         // 先执行实际动作
-        await action()
-
-        // 如果是一次性触发器，则执行清理
-        await this.checkOneTimeAndCleanup()
+        const context = new ChaiteContext()
+        context.setChaite(Chaite.getInstance())
+        await asyncLocalStorage.run(context, async () => {
+          await action()
+          // 如果是一次性触发器，则执行清理
+          await this.checkOneTimeAndCleanup()
+        })
       } catch (err) {
         getLogger().error(`触发器 ${this.name} 执行出错:`, err as never)
         // 即使出错也要执行清理
