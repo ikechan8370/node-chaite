@@ -288,7 +288,7 @@ export class AbstractClient implements IClient {
         usage: modelResponse.usage,
       } as ModelResponse
     }
-    if (asyncLocalStorage.getStore()) {
+    if (!asyncLocalStorage.getStore()) {
       return asyncLocalStorage.run(this.context, async () => {
         return logicFn()
       })
