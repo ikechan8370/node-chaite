@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/ikechan8370/node-chaite/compare/v1.6.4...v1.7.0) (2025-07-03)
+
+
+### Features
+
+* support gemini reasoning ([f96da30](https://github.com/ikechan8370/node-chaite/commit/f96da30afec69f47bcaee65384421239ab67a0e3))
+
+
+### Bug Fixes
+
+* triggers context ([0ecfbe5](https://github.com/ikechan8370/node-chaite/commit/0ecfbe583d5623dbe22d7a2172acd52aa19a70d9))
+
 ## [1.6.4](https://github.com/ikechan8370/node-chaite/compare/v1.6.3...v1.6.4) (2025-07-03)
 
 
