@@ -46,7 +46,15 @@ export class GeminiClient extends AbstractClient {
         },
       }
     });
-    const tools = this.tools.map(toolConverter)
+    
+    const functionDeclarations = this.tools.flatMap(tool => {
+      const geminiTool = toolConverter(tool)
+      return geminiTool.functionDeclarations ?? []
+    })
+    const tools = functionDeclarations.length > 0 ? [{
+      functionDeclarations
+    }] : []
+    
     const modeMap = {
       'none': FunctionCallingConfigMode.NONE,
       'any': FunctionCallingConfigMode.ANY,
