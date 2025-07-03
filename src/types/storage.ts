@@ -25,7 +25,7 @@ export abstract class ChaiteStorage<T> implements BasicStorage<T> {
   abstract clear(): Promise<void>;
 
   getName(): string {
-    return "unknown";
+    return 'unknown'
   }
 }
 

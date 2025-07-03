@@ -1,9 +1,10 @@
-import {promises as fsPromises} from 'fs'
+import { promises as fsPromises } from 'fs'
 import path from 'path'
-import chokidar, {FSWatcher} from 'chokidar'
-import {BasicStorage, CloudSharingService, Filter, PaginationResult, SearchOption, Shareable} from '../types'
-import {getLogger} from '../index'
-import {getMd5} from "../utils/hash";
+import chokidar, { FSWatcher } from 'chokidar'
+import { BasicStorage, CloudSharingService, Filter, PaginationResult, SearchOption, Shareable } from '../types'
+import { getLogger } from '../utils'
+
+import { getMd5 } from '../utils/hash'
 
 // todo
 export type ExecutableSShareableType = 'tool' | 'processor'
@@ -133,7 +134,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
       const module = await import(fileURL + `?t=${Date.now()}`)
       return module.default as C
     } catch (error) {
-      console.error(`Error loading tool '${name}':`, error)
+      getLogger().error(`Error loading tool '${name}':`, error as never)
       return undefined
     }
   }
@@ -212,7 +213,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     await this.storage.removeItem(id)
     // todo transactional?
   }
-  
+
   // Sharing methods
   /**
    * 序列化实例，返回DTO
@@ -228,7 +229,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     }
     return this.cloudService as CloudSharingService<T>
   }
-  
+
   public async shareToCloud(id: string): Promise<string | undefined> {
     const service = this.checkCloudService()
     const t = await this.getInstanceT(id)
@@ -245,7 +246,7 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
   public async listFromCloud(filter: Filter, query: string, searchOption: SearchOption): Promise<PaginationResult<T & { downloaded: string }>> {
     const service = this.checkCloudService()
     const result = await service.list(filter, query, searchOption) as PaginationResult<T & { downloaded: string }>
-    const downloaded = await this.storage.listItemsByInQuery([{ field: 'cloudId', values: result.items.map(item => item.id)}])
+    const downloaded = await this.storage.listItemsByInQuery([{ field: 'cloudId', values: result.items.map(item => item.id) }])
     result.items.forEach(item => {
       const local = downloaded.find(d => d.cloudId === item.id)
       if (local) {

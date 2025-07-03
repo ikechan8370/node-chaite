@@ -1,10 +1,10 @@
 import { promises as fsPromises } from 'fs'
 import path from 'path'
 import chokidar, { FSWatcher } from 'chokidar'
-import { BasicStorage, ChaiteContext, CloudSharingService, Filter, PaginationResult, SearchOption, Shareable } from '../types'
-import { getLogger } from '../index'
-import { getMd5 } from "../utils/hash";
-import { Trigger, TriggerDTO } from "../types/trigger";
+import { BasicStorage, ChaiteContext, CloudSharingService, Filter, PaginationResult, SearchOption } from '../types'
+import { getLogger } from '../utils'
+import { getMd5 } from '../utils/hash'
+import { Trigger, TriggerDTO } from '../types'
 
 /**
  * 专门用于管理触发器的管理器
@@ -174,9 +174,9 @@ export class TriggerManager<T extends TriggerDTO> {
     } catch (error) {
       // 处理错误
       if (error instanceof Error) {
-        getLogger().error(`Error scanning trigger directory:`, error.message as never)
+        getLogger().error('Error scanning trigger directory:', error.message as never)
       } else {
-        getLogger().error(`Error scanning trigger directory:`, error as never)
+        getLogger().error('Error scanning trigger directory:', error as never)
       }
     }
   }
@@ -252,31 +252,31 @@ export class TriggerManager<T extends TriggerDTO> {
   public async deleteInstanceByName(triggerName: string): Promise<void> {
     // 先从已激活的实例中查找
     if (this.activeInstances.has(triggerName)) {
-      await this.unregisterTrigger(triggerName);
+      await this.unregisterTrigger(triggerName)
     }
 
     // 从映射表中找到对应的 DTO id
-    const dtoId = this.nameToIdMap.get(triggerName);
+    const dtoId = this.nameToIdMap.get(triggerName)
     if (dtoId) {
       // 如果找到了 id，直接删除
-      await this.deleteInstance(dtoId);
-      getLogger().info(`已删除触发器实例 '${triggerName}' 及其 DTO (id: ${dtoId})`);
-      return;
+      await this.deleteInstance(dtoId)
+      getLogger().info(`已删除触发器实例 '${triggerName}' 及其 DTO (id: ${dtoId})`)
+      return
     }
 
     // 如果没找到 id 但有文件，只删除文件
-    const filename = this.instanceMap.get(triggerName);
+    const filename = this.instanceMap.get(triggerName)
     if (filename) {
-      const filePath = path.join(this.codeDirectory, filename);
+      const filePath = path.join(this.codeDirectory, filename)
       try {
-        await fsPromises.unlink(filePath);
-        this.instanceMap.delete(triggerName);
-        getLogger().info(`已删除触发器实例文件 '${triggerName}'，但未找到对应的 DTO`);
+        await fsPromises.unlink(filePath)
+        this.instanceMap.delete(triggerName)
+        getLogger().info(`已删除触发器实例文件 '${triggerName}'，但未找到对应的 DTO`)
       } catch (error) {
-        getLogger().error(`删除触发器实例文件 '${triggerName}' 失败:`, error as never);
+        getLogger().error(`删除触发器实例文件 '${triggerName}' 失败:`, error as never)
       }
     } else {
-      getLogger().warn(`找不到名为 '${triggerName}' 的触发器实例`);
+      getLogger().warn(`找不到名为 '${triggerName}' 的触发器实例`)
     }
   }
 
@@ -325,8 +325,8 @@ export class TriggerManager<T extends TriggerDTO> {
    * 通过名称获取触发器DTO
    */
   public async getInstanceTByName(name: string): Promise<T | null> {
-    const items = await this.storage.listItemsByEqFilter({ name });
-    return items.length > 0 ? items[0] : null;
+    const items = await this.storage.listItemsByEqFilter({ name })
+    return items.length > 0 ? items[0] : null
   }
 
   /**
@@ -335,7 +335,7 @@ export class TriggerManager<T extends TriggerDTO> {
   public async getInstance(name: string): Promise<Trigger | undefined> {
     // 首先检查是否已经有激活的实例
     if (this.activeInstances.has(name)) {
-      return this.activeInstances.get(name);
+      return this.activeInstances.get(name)
     }
 
     // 如果没有激活的实例，则从文件中加载
@@ -348,14 +348,14 @@ export class TriggerManager<T extends TriggerDTO> {
     try {
       // 导入模块
       const module = await import(fileURL + `?t=${Date.now()}`)
-      const instance = module.default as Trigger;
+      const instance = module.default as Trigger
 
       // 记录未注册的实例（因为在registerTrigger时会再次加入activeInstances）
       if (!this.activeInstances.has(name)) {
-        this.activeInstances.set(name, instance);
+        this.activeInstances.set(name, instance)
       }
 
-      return instance;
+      return instance
     } catch (error) {
       console.error(`Error loading trigger '${name}':`, error)
       return undefined
@@ -507,7 +507,7 @@ export class TriggerManager<T extends TriggerDTO> {
   public async shareToCloud(id: string): Promise<string | undefined> {
     const service = this.checkCloudService()
     const t = await this.getInstanceT(id)
-    if (!t) throw new Error(`Trigger not found`)
+    if (!t) throw new Error('Trigger not found')
     const instance = await service.upload(t)
     if (instance) {
       instance.cloudId = instance.id
@@ -538,7 +538,7 @@ export class TriggerManager<T extends TriggerDTO> {
   public async shareP2P(name: string): Promise<string | null> {
     const service = this.checkCloudService()
     const serialized = await this.serializeInstance(name)
-    if (!serialized) throw new Error(`Trigger not found`)
+    if (!serialized) throw new Error('Trigger not found')
     return service.initializeTransfer(serialized)
   }
 
@@ -565,7 +565,7 @@ export class TriggerManager<T extends TriggerDTO> {
    */
   public async enableTrigger(id: string): Promise<void> {
     const trigger = await this.getInstanceT(id)
-    if (!trigger) throw new Error(`Trigger not found`)
+    if (!trigger) throw new Error('Trigger not found')
 
     trigger.status = 'enabled'
     await this.storage.setItem(id, trigger)
@@ -579,7 +579,7 @@ export class TriggerManager<T extends TriggerDTO> {
    */
   public async disableTrigger(id: string): Promise<void> {
     const trigger = await this.getInstanceT(id)
-    if (!trigger) throw new Error(`Trigger not found`)
+    if (!trigger) throw new Error('Trigger not found')
 
     trigger.status = 'disabled'
     await this.storage.setItem(id, trigger)

@@ -16,7 +16,7 @@ router.post('/login', async (req: Request<object, object, LoginRequest>, res: Re
     }
     const config = Chaite.getInstance().getGlobalConfig() as GlobalConfig
     const key = config.getAuthKey() || Chaite.getInstance().getFrontendAuthHandler().generateToken(0, true)
-    getLogger().info('Login success, generating token' + key)
+    Chaite.getInstance().getLogger().info('Login success, generating token' + key)
     config.setAuthKey(key)
     const token = FrontEndAuthHandler.generateJWT(key)
     res.status(200)

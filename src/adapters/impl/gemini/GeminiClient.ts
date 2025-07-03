@@ -11,14 +11,14 @@ import {
   FunctionCallingConfig,
   FunctionCallingConfigMode,
   GenerateContentParameters,
-  GoogleGenAI, ToolConfig
-} from "@google/genai";
+  GoogleGenAI, Tool, ToolConfig,
+} from '@google/genai'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
-import './converter.js'
+import './converter'
 import { asyncLocalStorage, getKey } from '../../../utils'
 import { SendMessageOption } from '../../../types'
 import * as crypto from 'node:crypto'
-import {Chaite, VERSION} from "../../../index";
+import { VERSION } from '../../../index'
 
 export type GeminiClientOptions = BaseClientOptions
 export class GeminiClient extends AbstractClient {
@@ -28,7 +28,7 @@ export class GeminiClient extends AbstractClient {
   }
 
   async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
-    const debug = Chaite.getInstance().getGlobalConfig()?.getDebug()
+    const debug = this.context.chaite.getGlobalConfig()?.getDebug()
     const messages: Content[] = []
     const model = options.model || 'gemini-2.0-flash-001'
     const converter = getFromChaiteConverter('gemini')
@@ -44,17 +44,14 @@ export class GeminiClient extends AbstractClient {
         headers: {
           'x-request-from': 'node-chaite/' + VERSION,
         },
-      }
-    });
-    
-    const functionDeclarations = this.tools.flatMap(tool => {
-      const geminiTool = toolConverter(tool)
-      return geminiTool.functionDeclarations ?? []
+      },
     })
-    const tools = functionDeclarations.length > 0 ? [{
-      functionDeclarations
+
+    const functionDeclarations = this.tools.map(toolConverter)
+    const tools: Tool[] = functionDeclarations.length > 0 ? [{
+      functionDeclarations,
     }] : []
-    
+
     const modeMap = {
       'none': FunctionCallingConfigMode.NONE,
       'any': FunctionCallingConfigMode.ANY,
@@ -82,14 +79,14 @@ export class GeminiClient extends AbstractClient {
         maxOutputTokens: options.maxToken,
         thinkingConfig: options.enableReasoning ? {
           includeThoughts: true,
-          thinkingBudget: options.enableReasoning ? options.reasoningBudgetTokens : 0
+          thinkingBudget: options.enableReasoning ? options.reasoningBudgetTokens : 0,
         } : undefined,
         tools,
         toolConfig,
         responseModalities: options.responseModalities,
         safetySettings: options.safetySettings,
-        systemInstruction: options.systemOverride ?? undefined
-      }
+        systemInstruction: options.systemOverride ?? undefined,
+      },
     } as GenerateContentParameters
 
     if (debug) {
@@ -133,8 +130,8 @@ export class GeminiClient extends AbstractClient {
           headers: {
             'x-request-from': 'node-chaite/' + VERSION,
           },
-        }
-      });
+        },
+      })
       function textToRequest(_text: string): Content {
         return { role: 'user', parts: [{ text: _text }] }
       }

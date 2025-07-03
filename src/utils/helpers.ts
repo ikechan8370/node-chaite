@@ -3,11 +3,10 @@ import {
   ILogger,
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
-} from '../types/index'
+} from '../types'
 import { AsyncLocalStorage } from 'async_hooks'
 import fs from 'fs/promises'
 import path from 'path'
-import { Chaite } from '../index'
 
 export async function getKey(apiKeys: string[] | string, strategy: MultipleKeyStrategy): Promise<string> {
   const logger = asyncLocalStorage.getStore()?.logger as ILogger
@@ -98,10 +97,6 @@ export async function saveAndLoadModule<T>(
     console.error(`导入模块 ${fileName} 时出错:`, error)
     return null
   }
-}
-
-export function getLogger (): ILogger {
-  return Chaite.getInstance()?.getLogger() || DefaultLogger
 }
 
 /**

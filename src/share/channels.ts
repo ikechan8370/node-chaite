@@ -1,8 +1,7 @@
 import { NonExecutableShareableManager } from './shareable'
-import { Channel, DefaultChannelLoadBalancer } from '../channels/index'
-import { BasicStorage, ChannelsLoadBalancer } from '../types/index'
-import {Chaite, getLogger} from "../index";
-
+import { Channel, DefaultChannelLoadBalancer } from '../channels'
+import { BasicStorage, ChannelsLoadBalancer } from '../types'
+import { asyncLocalStorage, getLogger } from '../utils'
 export class ChannelsManager extends NonExecutableShareableManager<Channel> {
   private static instance: ChannelsManager
   private constructor(protected storage: BasicStorage<Channel>, private loadBalancer: ChannelsLoadBalancer = new DefaultChannelLoadBalancer()) {
@@ -46,16 +45,17 @@ export class ChannelsManager extends NonExecutableShareableManager<Channel> {
   async getChannelByModel(model: string): Promise<Channel[]> {
     let channels = await this.getAllChannels()
     channels = channels.filter(channel => channel.models.includes(model))
-    if (Chaite.getInstance().getGlobalConfig()?.getDebug()) {
+    const chaite = asyncLocalStorage.getStore()?.chaite
+    if (chaite?.getGlobalConfig()?.getDebug()) {
       getLogger().debug(`查询所有渠道: ${model} -> ${channels.map(channel => channel.name).join(', ')}`)
     }
     const channel = await this.loadBalancer.getChannel(model, channels)
-    if (Chaite.getInstance().getGlobalConfig()?.getDebug()) {
+    if (chaite?.getGlobalConfig()?.getDebug()) {
       getLogger().debug(`选中了渠道: ${model} -> ${channel?.name}`)
     }
     return channel ? [channel] : []
   }
-  
+
   async getChannelsByModel(model: string, totalQuantity: number): Promise<{ channel: Channel; quantity: number }[]> {
     const channels = await this.getAllChannels(model)
     return await this.loadBalancer.getChannels(model, channels, totalQuantity)

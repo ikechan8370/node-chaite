@@ -8,7 +8,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
-    "types": ["@types/node"],
+    "types": ["@types/node", "@types/jest"],
     "rootDir": "./src",
     "declaration": true,
     "noImplicitAny": true,

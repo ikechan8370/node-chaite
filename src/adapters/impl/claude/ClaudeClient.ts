@@ -1,21 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { AbstractClient } from '../../clients'
 import { GeminiClientOptions } from '../gemini/GeminiClient'
-import { ChaiteContext, HistoryMessage, IMessage, ModelUsage } from '../../../types/index'
+import { ChaiteContext, HistoryMessage, IMessage, ModelUsage } from '../../../types'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
-import './converter.js'
-import { SendMessageOption } from '../../../types/index'
+import './converter'
+import { SendMessageOption } from '../../../types'
 import * as crypto from 'node:crypto'
-import {Chaite, VERSION} from "../../../index";
+import { VERSION } from '../../../index'
 
 export class ClaudeClient extends AbstractClient {
   constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>, context?: ChaiteContext) {
     super(options, context)
     this.name = 'claude'
   }
-  
+
   async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
-    const debug = Chaite.getInstance().getGlobalConfig()?.getDebug()
+    const debug = this.context.chaite.getGlobalConfig()?.getDebug()
     const messages: Anthropic.MessageParam[] = []
     const model = options.model || 'claude-3-7-sonnet-20250219'
     const converter = getFromChaiteConverter('claude')
@@ -30,7 +30,7 @@ export class ClaudeClient extends AbstractClient {
       baseURL: this.baseUrl,
       defaultHeaders: {
         'x-request-from': 'node-chaite/' + VERSION,
-      }
+      },
     })
 
     const tools = this.tools.map(toolConverter)
@@ -98,5 +98,5 @@ export class ClaudeClient extends AbstractClient {
       usage,
     }
   }
-  
+
 }

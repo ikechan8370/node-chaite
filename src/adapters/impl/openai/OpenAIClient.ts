@@ -6,16 +6,16 @@ import {
   ModelResponseChunk, ModelUsage,
   TextContent,
   ToolCall,
-} from '../../../types/index'
+} from '../../../types'
 import { AbstractClient } from '../../clients'
-import { BaseClientOptions, ChaiteContext } from '../../../types/common'
+import { BaseClientOptions, ChaiteContext } from '../../../types'
 import OpenAI from 'openai'
-import { asyncLocalStorage, getKey } from '../../../utils/index'
+import { asyncLocalStorage, getKey } from '../../../utils'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
-import './converter.js'
-import { EmbeddingOption, SendMessageOption } from '../../../types/index'
+import './converter'
+import { EmbeddingOption, SendMessageOption } from '../../../types'
 import * as crypto from 'node:crypto'
-import {Chaite, VERSION} from "../../../index";
+import { Chaite, VERSION } from '../../../index'
 
 export type OpenAIClientOptions = BaseClientOptions
 
@@ -33,7 +33,7 @@ export class OpenAIClient extends AbstractClient {
       baseURL: this.baseUrl,
       defaultHeaders: {
         'x-request-from': 'node-chaite/' + VERSION,
-      }
+      },
     })
     const messages: OpenAI.ChatCompletionMessageParam[] = []
     const model = options.model || 'gpt-4o-mini'

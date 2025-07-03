@@ -5,6 +5,7 @@ import { PostProcessor, PreProcessor } from './processors'
 import { DeSerializable, Serializable, Wait } from './cloud'
 import { EventMessage } from './external'
 import { AbstractClient } from '../adapters'
+import type { Chaite } from '../core'
 
 export const MultipleKeyStrategyChoice = {
   RANDOM: 'random' as MultipleKeyStrategy,
@@ -81,7 +82,7 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
     this.initPromise = (async (): Promise<void> => {
     })()
   }
-  
+
   toString(): string {
     const json = {
       features: this.features,
@@ -97,7 +98,7 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
     }
     return JSON.stringify(json)
   }
-  
+
   fromString(str: string): BaseClientOptions {
     const json = JSON.parse(str)
     return new BaseClientOptions(json)
@@ -154,7 +155,7 @@ export const DefaultLogger = new class DefaultLogger implements ILogger {
 
     return `${prefix} ${formattedMsg}`
   }
-  
+
   debug(msg: object | string, ...args: never[]): void {
     console.log(this.formatMessage('DEBUG', msg, args), ...args)
   }
@@ -177,6 +178,7 @@ export class ChaiteContext {
     this.logger = logger
   }
   logger?: ILogger
+  chaite: Chaite
   private options?: SendMessageOption
   private historyMessages?: HistoryMessage[]
   private event?: EventMessage

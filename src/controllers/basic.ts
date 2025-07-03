@@ -1,6 +1,6 @@
-import express, {Router} from "express";
-import {Chaite, ChaiteResponse} from "../index";
-import { VERSION } from '../version';
+import express, { Router } from 'express'
+import { Chaite, ChaiteResponse } from '../index'
+import { VERSION } from '../version'
 
 const router: Router = express.Router()
 
@@ -12,7 +12,7 @@ router.get('/info', (req, res) => {
   }
   const body = {
     user,
-    version: VERSION
+    version: VERSION,
   }
   res.status(200)
     .json(ChaiteResponse.ok(body))

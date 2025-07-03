@@ -4,12 +4,12 @@ import {
   CloudAPIType,
   CloudSharingService,
   Filter, PaginationResult, ProcessorDTO,
-  SearchOption, ToolDTO, ToolsGroupDTO,
+  SearchOption, ToolDTO, ToolsGroupDTO, TriggerDTO,
   User,
-} from '../types/index'
+} from '../types'
 import { createHttpClient, HttpClient } from '../utils/index'
-import { CloudAPI } from '../const/index'
-import {Channel, ChatPreset} from "../channels";
+import { CloudAPI } from '../const'
+import { Channel, ChatPreset } from '../channels'
 
 export class DefaultCloudService<T extends AbstractShareable<T>> implements CloudSharingService<T> {
 
@@ -37,8 +37,8 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
       this.apiKey = user.api_key
       this.client.updateOptions({
         headers: {
-          Authorization: 'ApiKey ' + this.apiKey
-        }
+          Authorization: 'ApiKey ' + this.apiKey,
+        },
       })
     }
   }
@@ -48,8 +48,8 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
       apiKey,
     }, {
       headers: {
-        Authorization: 'ApiKey ' + apiKey
-      }
+        Authorization: 'ApiKey ' + apiKey,
+      },
     })
     this.apiKey = apiKey
     const user = response.data
@@ -58,8 +58,8 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
       this.identifier = user.user_id + ''
       this.client.updateOptions({
         headers: {
-          Authorization: 'ApiKey ' + apiKey
-        }
+          Authorization: 'ApiKey ' + apiKey,
+        },
       })
     }
     return user || null
@@ -71,35 +71,37 @@ export class DefaultCloudService<T extends AbstractShareable<T>> implements Clou
       query,
       searchOption,
     })
-    const tempInstance = this.createEmptyInstance();
+    const tempInstance = this.createEmptyInstance()
 
     if (response.data?.items?.length) {
       response.data.items = response.data.items.map(item => {
-        return tempInstance.fromString(JSON.stringify(item));
-      });
+        return tempInstance.fromString(JSON.stringify(item))
+      })
     }
     return response.data
   }
 
   private createEmptyInstance(): T {
-    const EmptyClass = this.getClassForType();
-    return new EmptyClass({}) as T;
+    const EmptyClass = this.getClassForType()
+    return new EmptyClass({}) as T
   }
 
   private getClassForType(): new ({}) => T {
     switch (this.type) {
-      case 'tool':
-        return ToolDTO as any;
-      case 'chat-preset':
-        return ChatPreset as any;
-      case 'processor':
-        return ProcessorDTO as any;
-      case 'channel':
-        return Channel as any;
-      case 'tool-group':
-        return ToolsGroupDTO as any;
-      default:
-        throw new Error(`Unknown type: ${this.type}`);
+    case 'tool':
+      return ToolDTO as any
+    case 'chat-preset':
+      return ChatPreset as any
+    case 'processor':
+      return ProcessorDTO as any
+    case 'channel':
+      return Channel as any
+    case 'tool-group':
+      return ToolsGroupDTO as any
+    case 'trigger':
+      return TriggerDTO as any
+    default:
+      throw new Error(`Unknown type: ${this.type}`)
     }
   }
 

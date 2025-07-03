@@ -1,7 +1,7 @@
 import express, { Router } from 'express'
 import { Request, Response } from 'express'
 import { Chaite, ChaiteResponse, Filter, ProcessorDTO, SearchOption } from '../index'
-import {getMd5} from "../utils/hash";
+import { getMd5 } from '../utils/hash'
 const router: Router = express.Router()
 
 interface ListProcessorDTO {

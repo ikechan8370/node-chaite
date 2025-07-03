@@ -1,7 +1,7 @@
 import express, { Router } from 'express'
 import { Request, Response } from 'express'
 import { ModelResponseChunk, SendMessageOption } from '../types/index'
-import { Chaite } from '../index'
+import { Chaite } from '../core'
 import { createClient } from '../adapters/index'
 import { getFromChaiteConverter, getIntoChaiteConverter } from '../utils/converter'
 import OpenAI from 'openai'
@@ -45,7 +45,7 @@ router.post('/chat/completions', async (req: Request<object, object, OpenAI.Chat
 
   if (!model || !messages) {
     res.status(400).json({ error: 'Missing required fields: model and messages' })
-    return 
+    return
   }
 
   try {

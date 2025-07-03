@@ -1,5 +1,5 @@
-import * as crypto from "node:crypto";
+import * as crypto from 'node:crypto'
 
 export function getMd5(str: string): string {
-  return crypto.createHash("md5").update(str).digest("hex");
+  return crypto.createHash('md5').update(str).digest('hex')
 }

@@ -1,4 +1,4 @@
-import { HistoryMessage, AbstractHistoryManager } from '../types/index'
+import { HistoryMessage, AbstractHistoryManager } from '../types'
 
 type HistoryCache = Map<string, Map<string, HistoryMessage>>
 
@@ -44,7 +44,7 @@ export class InMemoryHistoryManager extends AbstractHistoryManager {
   }
 
   name: string
-  
+
 }
 
 export default new InMemoryHistoryManager()

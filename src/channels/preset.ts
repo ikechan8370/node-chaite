@@ -133,15 +133,15 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     }
 
     if (this.groupContext === 'disable') {
-      base += `\n禁止携带群聊上下文`
+      base += '\n禁止携带群聊上下文'
     } else if (this.groupContext === 'enabled') {
-      base += `\n携带群聊上下文`
+      base += '\n携带群聊上下文'
     } else if (this.groupContext === 'use_system') {
-      base += `\n群聊上下文使用系统预设`
+      base += '\n群聊上下文使用系统预设'
     }
 
     if (this.disableSystemInstructions) {
-      base += `\n禁止系统提示词`
+      base += '\n禁止系统提示词'
     }
 
     return base.trimEnd()

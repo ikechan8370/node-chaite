@@ -32,7 +32,7 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
           type: 'text',
           text: acc.text + cur.text,
         } as OpenAI.ChatCompletionContentPartText
-      }, { type: 'text', text: '' } as OpenAI.ChatCompletionContentPartText).text;
+      }, { type: 'text', text: '' } as OpenAI.ChatCompletionContentPartText).text
     return {
       role: 'assistant',
       content: text ? text : undefined,

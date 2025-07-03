@@ -1,7 +1,7 @@
 import { ArgumentValue } from './models'
 import { AbstractShareable } from './cloud'
 import { CHANNEL_STATUS_MAP } from '../const/index'
-import {ChaiteContext} from "./common";
+import { ChaiteContext } from './common'
 
 export interface Function {
     name: string
@@ -140,7 +140,7 @@ export abstract class CustomTool implements Tool {
     throw new Error('Not implemented')
   }
 
-  name: Function["name"];
+  name: Function['name']
 }
 
 

@@ -9,7 +9,7 @@ import {
   IMessage,
   TextContent,
   ToolCallResultMessage,
-  UserMessage
+  UserMessage,
 } from '../../../types'
 import {
   Content,
@@ -29,25 +29,25 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
     const parts: Part[] = []
     msg.content.forEach(c => {
       switch (c.type) {
-        case 'text': {
-          if ((c as TextContent).text) {
-            parts.push({ text: (c as TextContent).text } as Part)
-          }
-          break
+      case 'text': {
+        if ((c as TextContent).text) {
+          parts.push({ text: (c as TextContent).text } as Part)
         }
-        case 'image': {
-          let mimeType = (c as ImageContent).mimeType
-          parts.push({
-            inlineData: {
-              mimeType: mimeType || 'image/jpeg',
-              data: (c as ImageContent).image,
-            }
-          } as Part)
-          break
-        }
-        default: {
-          break
-        }
+        break
+      }
+      case 'image': {
+        const mimeType = (c as ImageContent).mimeType
+        parts.push({
+          inlineData: {
+            mimeType: mimeType || 'image/jpeg',
+            data: (c as ImageContent).image,
+          },
+        } as Part)
+        break
+      }
+      default: {
+        break
+      }
       }
     })
     msg.toolCalls?.forEach(tc => {
@@ -152,18 +152,16 @@ registerIntoChaiteConverter<GenerateContentResponse>('gemini', msg => {
 })
 
 // 将Tool转换为Gemini格式
-registerFromChaiteToolConverter<GeminiTool>('gemini', tool => {
+registerFromChaiteToolConverter<FunctionDeclaration>('gemini', tool => {
   return {
-    functionDeclarations: [{
-      name: tool.function.name,
-      description: tool.function.description,
-      parameters: {
-        type: Type.OBJECT,
-        properties: tool.function.parameters.properties as unknown as Record<string, Schema>,
-        required: tool.function.parameters.required,
-      } as Schema,
-    } as FunctionDeclaration],
-  } as Tool
+    name: tool.function.name,
+    description: tool.function.description,
+    parameters: {
+      type: Type.OBJECT,
+      properties: tool.function.parameters.properties as unknown as Record<string, Schema>,
+      required: tool.function.parameters.required,
+    } as Schema,
+  } as FunctionDeclaration
 })
 
 export {}

@@ -140,7 +140,7 @@ export abstract class AbstractShareable<T> implements Shareable<T> {
     return JSON.stringify(this, null, 2)
   }
 
-  md5: string;
+  md5: string
 }
 
 export interface Wait {

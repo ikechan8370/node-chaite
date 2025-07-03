@@ -21,7 +21,7 @@ import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption
 import { PostProcessor, PreProcessor } from '../types'
 import { ProcessorsManager } from '../share'
 import * as crypto from 'node:crypto'
-import { Chaite } from '../index'
+
 
 
 export class AbstractClient implements IClient {
@@ -43,7 +43,7 @@ export class AbstractClient implements IClient {
       this.context.setClient(this)
     }
   }
-  
+
   async fullfillProcessors (preIds?: string[], postIds?: string[]): Promise<{ pre: PreProcessor[], post: PostProcessor[] }> {
     const processorsManager = await ProcessorsManager.getInstance()
     if (!this.preProcessors) {
@@ -107,8 +107,8 @@ export class AbstractClient implements IClient {
     if (!this.tools) {
       this.tools = []
     }
-    const toolsGroupManager = Chaite.getInstance().getToolsGroupManager()
-    const toolManager = Chaite.getInstance().getToolsManager()
+    const toolsGroupManager = this.context.chaite.getToolsGroupManager()
+    const toolManager = this.context.chaite.getToolsManager()
     if (toolGroupIds?.includes('default_local')) {
       const toolDTOS = await toolManager.listInstances()
       for (const toolDTO of toolDTOS) {
@@ -144,7 +144,7 @@ export class AbstractClient implements IClient {
   }
 
   sendMessage(message: UserMessage | undefined, options: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse> {
-    const debug = Chaite.getInstance().getGlobalConfig()?.getDebug()
+    const debug = this.context.chaite.getGlobalConfig()?.getDebug()
     options = SendMessageOption.create(options)
     const logicFn = async () => {
       this.context.setOptions(options as SendMessageOption)
@@ -296,7 +296,7 @@ export class AbstractClient implements IClient {
       return logicFn()
     }
   }
-  
+
   _sendMessage(_histories: IMessage[], _apiKey: string, _options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
     throw new Error('Abstract class not implemented')
   }
@@ -323,3 +323,5 @@ export class AbstractClient implements IClient {
     throw new Error('Method not implemented.')
   }
 }
+
+
