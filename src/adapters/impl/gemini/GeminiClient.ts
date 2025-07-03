@@ -47,10 +47,10 @@ export class GeminiClient extends AbstractClient {
       }
     });
     
-    const functionDeclarations = this.tools.map(tool => {
+    const functionDeclarations = this.tools.flatMap(tool => {
       const geminiTool = toolConverter(tool)
-      return geminiTool.functionDeclarations?.[0] 
-    }).filter(Boolean)
+      return geminiTool.functionDeclarations ?? []
+    })
     const tools = functionDeclarations.length > 0 ? [{
       functionDeclarations
     }] : []
