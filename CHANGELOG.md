@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.2](https://github.com/ikechan8370/node-chaite/compare/v1.6.1...v1.6.2) (2025-07-03)
+
+
+### Bug Fixes
+
+* gemini functionDeclarations ([28e1a38](https://github.com/ikechan8370/node-chaite/commit/28e1a38f049e10492b7863472fe1dee0325122d4))
+* https://github.com/ikechan8370/chatgpt-plugin/issues/787 ([2a061f7](https://github.com/ikechan8370/node-chaite/commit/2a061f753c24867ba8be4e8b9c53635efadc4405))
+
 ## [1.6.1](https://github.com/ikechan8370/node-chaite/compare/v1.6.0...v1.6.1) (2025-07-03)
 
 
