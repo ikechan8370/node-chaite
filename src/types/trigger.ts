@@ -153,7 +153,7 @@ export abstract class BaseTrigger implements Trigger {
         if (channels.length > 0) {
           const channel = channels[0]
           await channel.options.ready()
-          const client = createClient(channel.adapterType, channel.options)
+          const client = createClient(channel.adapterType, channel.options, context)
           options.conversationId = crypto.randomUUID()
           options.parentMessageId = crypto.randomUUID()
           return await client.sendMessage(message, options)
