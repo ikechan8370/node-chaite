@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.4](https://github.com/ikechan8370/node-chaite/compare/v1.7.3...v1.7.4) (2025-07-04)
+
+
+### Bug Fixes
+
+* gemini reasoning token count ([00626ea](https://github.com/ikechan8370/node-chaite/commit/00626eac4880fb386cf63ab43276e461ab3f101a))
+* merge ([8b355c5](https://github.com/ikechan8370/node-chaite/commit/8b355c57f77204c3e61c5bd9a37bc45a5fba4e73))
+
 ## [1.7.3](https://github.com/ikechan8370/node-chaite/compare/v1.7.2...v1.7.3) (2025-07-04)
 
 
