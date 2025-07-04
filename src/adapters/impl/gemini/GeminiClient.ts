@@ -111,7 +111,7 @@ export class GeminiClient extends AbstractClient {
       completionTokens: result.usageMetadata?.candidatesTokenCount,
       totalTokens: result.usageMetadata?.totalTokenCount,
       cachedTokens: result.usageMetadata?.cachedContentTokenCount,
-      reasoningTokens: 0,
+      reasoningTokens: result.usageMetadata?.thoughtsTokenCount,
     }
     return {
       ...rspToSave,
