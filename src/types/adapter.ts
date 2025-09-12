@@ -22,6 +22,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.conversationId = option.conversationId
     this.parentMessageId = option.parentMessageId
     this.stream = option.stream
+    this.isThinkingModel = option.isThinkingModel
     this.enableReasoning = option.enableReasoning
     this.reasoningEffort = option.reasoningEffort
     this.reasoningBudgetTokens = option.reasoningBudgetTokens
@@ -40,36 +41,40 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       ? options
       : new SendMessageOption(options || {})
   }
-  
+
   model?: string
   temperature?: number
   maxToken?: number
   /**
-   * 将系统提示词覆盖
-   */
+     * 将系统提示词覆盖
+     */
   systemOverride?: string
   /**
-   * 本轮对话禁用历史
-   */
+     * 本轮对话禁用历史
+     */
   disableHistoryRead?: boolean
   /**
-   * 禁用本轮对话存储到历史
-   */
+     * 禁用本轮对话存储到历史
+     */
   disableHistorySave?: boolean
   /**
-   * 对话ID。如果不传则默认为第一次对话
-   */
+     * 对话ID。如果不传则默认为第一次对话
+     */
   conversationId?: string
   /**
-   * 上一条消息的ID，如果不传则默认为第一次对话
-   */
+     * 上一条消息的ID，如果不传则默认为第一次对话
+     */
   parentMessageId?: string
 
   /**
-   * 流模式
-   */
+     * 流模式
+     */
   stream?: boolean
 
+  /**
+     * 是否是思考模型
+     */
+  isThinkingModel?: boolean
   enableReasoning?: boolean
   reasoningEffort?: 'high' | 'medium' | 'low'
   reasoningBudgetTokens?: number
@@ -88,16 +93,17 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
 
   safetySettings?: SafetySetting[]
 
+
   /**
-   * 流模式的回调
-   * @param chunk
-   */
+     * 流模式的回调
+     * @param chunk
+     */
   onChunk?(chunk: ModelResponseChunk): Promise<void>
 
   /**
-   * 工具调用轮次，如果有其他非tool_call类消息会被丢弃最后不会返回，但是可以通过onMessageWithToolCall来处理
-   * @param message
-   */
+     * 工具调用轮次，如果有其他非tool_call类消息会被丢弃最后不会返回，但是可以通过onMessageWithToolCall来处理
+     * @param message
+     */
   onMessageWithToolCall?(message: MessageContent): Promise<void>
 
   fromString(str: string): SendMessageOption {
@@ -115,6 +121,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       conversationId: this.conversationId,
       parentMessageId: this.parentMessageId,
       stream: this.stream,
+      isThinkingModel: this.isThinkingModel,
       enableReasoning: this.enableReasoning,
       reasoningEffort: this.reasoningEffort,
       reasoningBudgetTokens: this.reasoningBudgetTokens,
@@ -130,47 +137,61 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
 }
 
 export interface ToolChoice {
-  type: 'none' | 'any' | 'auto' | 'specified',
-  tools?: string[]
+    type: 'none' | 'any' | 'auto' | 'specified',
+    tools?: string[]
 }
 
 
 export interface EmbeddingOption {
-  model: string
-  dimensions?: number
+    model: string
+    dimensions?: number
 }
 
 export type ClientType = 'openai' | 'gemini' | 'claude'
 
 export interface IClient {
-  name: ClientType
-  features: Feature[]
-  tools: Tool[]
-  baseUrl: string
-  apiKey: string | string[]
-  multipleKeyStrategy: MultipleKeyStrategy
+    name: ClientType
+    features: Feature[]
+    tools: Tool[]
+    baseUrl: string
+    apiKey: string | string[]
+    multipleKeyStrategy: MultipleKeyStrategy
 
-  historyManager: HistoryManager
-  postProcessors?: PostProcessor[]
-  preProcessors?: PreProcessor[]
-  sendMessage(message: UserMessage | undefined, options?: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse>
-  sendMessageWithHistory(history: IMessage[], options?: SendMessageOption | Partial<SendMessageOption>): Promise<IMessage & { usage: ModelUsage }>
-  getEmbedding(text: string | string[], options: EmbeddingOption): Promise<EmbeddingResult>
-  logger: ILogger
+    historyManager: HistoryManager
+    postProcessors?: PostProcessor[]
+    preProcessors?: PreProcessor[]
+
+    sendMessage(message: UserMessage | undefined, options?: SendMessageOption | Partial<SendMessageOption>): Promise<ModelResponse>
+
+    sendMessageWithHistory(history: IMessage[], options?: SendMessageOption | Partial<SendMessageOption>): Promise<IMessage & {
+        usage: ModelUsage
+    }>
+
+    getEmbedding(text: string | string[], options: EmbeddingOption): Promise<EmbeddingResult>
+
+    logger: ILogger
 }
 
 export interface HistoryManager {
-  name: string,
-  saveHistory(message: HistoryMessage, conversationId: string): Promise<void>
-  getHistory(messageId?: string, conversationId?: string): Promise<HistoryMessage[]>
-  deleteConversation(conversationId: string): Promise<void>
-  getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined>
+    name: string,
+
+    saveHistory(message: HistoryMessage, conversationId: string): Promise<void>
+
+    getHistory(messageId?: string, conversationId?: string): Promise<HistoryMessage[]>
+
+    deleteConversation(conversationId: string): Promise<void>
+
+    getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined>
 }
 
 export abstract class AbstractHistoryManager implements HistoryManager {
   name: string
-  abstract saveHistory(message: HistoryMessage, conversationId: string): Promise<void>
-  abstract getHistory(messageId?: string, conversationId?: string): Promise<HistoryMessage[]>
-  abstract deleteConversation(conversationId: string): Promise<void>
-  abstract getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined>
+
+    abstract saveHistory(message: HistoryMessage, conversationId: string): Promise<void>
+
+    abstract getHistory(messageId?: string, conversationId?: string): Promise<HistoryMessage[]>
+
+    abstract deleteConversation(conversationId: string): Promise<void>
+
+    abstract getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined>
 }
