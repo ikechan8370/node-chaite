@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.5](https://github.com/ikechan8370/node-chaite/compare/v1.7.4...v1.7.5) (2025-09-12)
+
+
+### Bug Fixes
+
+* add reasoning switch to better support future models ([8fc3b44](https://github.com/ikechan8370/node-chaite/commit/8fc3b44073eefe66073926ec1744e46ef3815bb9))
+
 ## [1.7.4](https://github.com/ikechan8370/node-chaite/compare/v1.7.3...v1.7.4) (2025-07-04)
 
 
