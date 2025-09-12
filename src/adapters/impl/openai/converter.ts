@@ -16,7 +16,8 @@ import {
 } from '../../../types'
 import OpenAI from 'openai'
 import FunctionDefinition = OpenAI.FunctionDefinition;
-import { FunctionParameters } from 'openai/src/resources/shared.js'
+import { ChatCompletionMessageFunctionToolCall } from 'openai/resources'
+import { FunctionParameters } from 'openai/resources/shared'
 
 // 将消息IMessage转换为OpenAI格式
 registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompletionMessageParam[]>('openai', (source: IMessage) => {
@@ -43,7 +44,7 @@ registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompl
           function: {
             arguments: JSON.stringify(t.function.arguments),
             name: t.function.name,
-          } as OpenAI.ChatCompletionMessageToolCall.Function,
+          },
         }
       }) : undefined,
     } as OpenAI.ChatCompletionAssistantMessageParam
@@ -113,12 +114,13 @@ registerIntoChaiteConverter<OpenAICompatibleMessageParam>('openai', msg => {
       role: 'assistant',
       content: contents,
       toolCalls: msg.tool_calls?.map(t => {
+        const { name, arguments: arg } = (t as ChatCompletionMessageFunctionToolCall).function
         return {
           id: t.id,
           type: 'function',
           function: {
-            name: t.function.name,
-            arguments: JSON.parse(t.function.arguments),
+            name: name,
+            arguments: JSON.parse(arg),
           },
         } as ToolCall
       }),

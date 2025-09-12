@@ -83,7 +83,7 @@ export class OpenAIClient extends AbstractClient {
       this.logger.debug(`openai request messages: ${JSON.stringify(messages)}`)
     }
     if (options.stream) {
-      const stream = client.beta.chat.completions.stream({
+      const stream = client.chat.completions.stream({
         temperature: options.temperature,
         max_completion_tokens: options.maxToken,
         messages,

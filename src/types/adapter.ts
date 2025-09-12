@@ -76,7 +76,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
      */
   isThinkingModel?: boolean
   enableReasoning?: boolean
-  reasoningEffort?: 'high' | 'medium' | 'low'
+  reasoningEffort?: 'high' | 'medium' | 'low' | 'minimal'
   reasoningBudgetTokens?: number
 
   toolChoice?: ToolChoice
