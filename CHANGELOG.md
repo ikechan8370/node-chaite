@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.6](https://github.com/ikechan8370/node-chaite/compare/v1.7.5...v1.7.6) (2025-09-12)
+
+
+### Bug Fixes
+
+* bump openai version to support minimal reasoning effort ([a8f989b](https://github.com/ikechan8370/node-chaite/commit/a8f989b9ea4a6b62d881272af0f3ef9ad72f7a95))
+
 ## [1.7.5](https://github.com/ikechan8370/node-chaite/compare/v1.7.4...v1.7.5) (2025-09-12)
 
 
