@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.7](https://github.com/ikechan8370/node-chaite/compare/v1.7.6...v1.7.7) (2025-09-12)
+
+
+### Bug Fixes
+
+* frontend add reasoning effort minimal ([91717e2](https://github.com/ikechan8370/node-chaite/commit/91717e2ca0f431f818231e704872684bd39b4540))
+* remove ugly auto import ([61c2dd8](https://github.com/ikechan8370/node-chaite/commit/61c2dd835097e47a79eec4a2d1a9b943dec527a9))
+
 ## [1.7.6](https://github.com/ikechan8370/node-chaite/compare/v1.7.5...v1.7.6) (2025-09-12)
 
 
