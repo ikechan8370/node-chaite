@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.0](https://github.com/ikechan8370/node-chaite/compare/v1.7.7...v1.8.0) (2025-11-02)
+
+
+### Features
+
+* export express server ([574db64](https://github.com/ikechan8370/node-chaite/commit/574db6404a56129bbe6a3cc00b4fca18281590a0))
+
+
+### Bug Fixes
+
+* gemini adapter bugs by codex ([4c105cf](https://github.com/ikechan8370/node-chaite/commit/4c105cfb60a2e9cccea10a1bd5b259e173fd29f0))
+
 ## [1.7.7](https://github.com/ikechan8370/node-chaite/compare/v1.7.6...v1.7.7) (2025-09-12)
 
 
