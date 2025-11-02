@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/ikechan8370/node-chaite/compare/v1.8.0...v1.8.1) (2025-11-02)
+
+
+### Bug Fixes
+
+* compatible with node-schedule ([561aa24](https://github.com/ikechan8370/node-chaite/commit/561aa24ce08ad058f57ff21caf0519e880c6ccc8))
+
 ## [1.8.0](https://github.com/ikechan8370/node-chaite/compare/v1.7.7...v1.8.0) (2025-11-02)
 
 
