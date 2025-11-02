@@ -1,4 +1,4 @@
-import { BaseClientOptions, ChaiteContext } from '../../../types'
+import { BaseClientOptions, ChaiteContext, ToolCallLimitConfig } from '../../../types'
 import { AbstractClient } from '../../clients'
 import {
   EmbeddingOption,
@@ -20,11 +20,24 @@ import { SendMessageOption } from '../../../types'
 import * as crypto from 'node:crypto'
 import { VERSION } from '../../../index'
 
-export type GeminiClientOptions = BaseClientOptions
+const DEFAULT_TOOL_CALL_LIMIT: ToolCallLimitConfig = {
+  maxConsecutiveCalls: 8,
+  maxConsecutiveIdenticalCalls: 2,
+}
+
+export type GeminiClientOptions = BaseClientOptions & {
+  toolCallLimit?: ToolCallLimitConfig
+}
 export class GeminiClient extends AbstractClient {
   constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>, context?: ChaiteContext) {
     super(options, context)
     this.name = 'gemini'
+    const providedLimit = (options as Partial<GeminiClientOptions>)?.toolCallLimit
+    const effectiveLimit = {
+      ...DEFAULT_TOOL_CALL_LIMIT,
+      ...(providedLimit || {}),
+    }
+    this.setToolCallLimitConfig(effectiveLimit)
   }
 
   async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
@@ -34,7 +47,13 @@ export class GeminiClient extends AbstractClient {
     const converter = getFromChaiteConverter('gemini')
     const toolConverter = getFromChaiteToolConverter('gemini')
     for (const history of histories) {
+      if (this.isEffectivelyEmptyMessage(history)) {
+        continue
+      }
       const geminiContent = converter(history)
+      if (Array.isArray(geminiContent.parts) && geminiContent.parts.length === 0) {
+        continue
+      }
       messages.push(geminiContent)
     }
     const ai = new GoogleGenAI({
@@ -48,9 +67,9 @@ export class GeminiClient extends AbstractClient {
     })
 
     const functionDeclarations = this.tools.map(toolConverter)
-    const tools: Tool[] = functionDeclarations.length > 0 ? [{
+    const tools: Tool[] | undefined = functionDeclarations.length > 0 ? [{
       functionDeclarations,
-    }] : []
+    }] : undefined
 
     const modeMap = {
       'none': FunctionCallingConfigMode.NONE,
@@ -58,13 +77,13 @@ export class GeminiClient extends AbstractClient {
       'auto': FunctionCallingConfigMode.AUTO,
       'specified': FunctionCallingConfigMode.ANY,
     }
-    const toolConfig = {
+    const toolConfig = functionDeclarations.length > 0 ? {
       functionCallingConfig: {
         mode: modeMap[options.toolChoice?.type || 'auto'],
         // 只有specified才有这个
         allowedFunctionNames: options.toolChoice?.type === 'specified' ? options.toolChoice?.tools : undefined,
       } as FunctionCallingConfig,
-    } as ToolConfig
+    } as ToolConfig : undefined
     // method parameter is not supported in Gemini API.
     options.safetySettings?.forEach(ss => {
       if (ss.method) {
@@ -82,7 +101,7 @@ export class GeminiClient extends AbstractClient {
           thinkingBudget: options.enableReasoning ? options.reasoningBudgetTokens : 0,
         } : undefined,
         tools,
-        toolConfig,
+        ...(toolConfig ? { toolConfig } : {}),
         responseModalities: options.responseModalities,
         safetySettings: options.safetySettings,
         systemInstruction: options.systemOverride ?? undefined,

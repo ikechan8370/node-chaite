@@ -11,6 +11,11 @@ import { PostProcessor, PreProcessor } from './processors'
 import { DeSerializable, Serializable } from './cloud'
 import { SafetySetting } from '@google/genai'
 
+export interface ToolCallLimitConfig {
+  maxConsecutiveCalls?: number
+  maxConsecutiveIdenticalCalls?: number
+}
+
 export class SendMessageOption implements Serializable, DeSerializable<SendMessageOption> {
   constructor(option: Partial<SendMessageOption>) {
     this.model = option.model
@@ -34,6 +39,10 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.responseModalities = option.responseModalities
     this.onChunk = option.onChunk
     this.onMessageWithToolCall = option.onMessageWithToolCall
+    this.toolCallLimit = option.toolCallLimit
+    this._consecutiveToolCallCount = option._consecutiveToolCallCount
+    this._consecutiveIdenticalToolCallCount = option._consecutiveIdenticalToolCallCount
+    this._lastToolCallSignature = option._lastToolCallSignature
   }
 
   static create(options?: SendMessageOption | Partial<SendMessageOption>): SendMessageOption {
@@ -93,6 +102,11 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
 
   safetySettings?: SafetySetting[]
 
+  toolCallLimit?: ToolCallLimitConfig
+  _consecutiveToolCallCount?: number
+  _consecutiveIdenticalToolCallCount?: number
+  _lastToolCallSignature?: string
+
 
   /**
      * 流模式的回调
@@ -131,6 +145,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       toolGroupId: this.toolGroupId,
       responseModalities: this.responseModalities,
       safetySettings: this.safetySettings,
+      toolCallLimit: this.toolCallLimit,
     }
     return JSON.stringify(json)
   }

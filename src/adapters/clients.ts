@@ -1,11 +1,22 @@
 import {
   AssistantMessage,
+  AudioContent,
   EmbeddingResult,
-  Feature, History,
-  HistoryMessage, IMessage, ModelResponse,
+  Feature,
+  History,
+  HistoryMessage,
+  ImageContent,
+  IMessage,
+  MessageContent,
+  ModelResponse,
   ModelUsage,
-  Tool, ToolCallResult,
+  ReasoningContent,
+  TextContent,
+  Tool,
+  ToolCall,
+  ToolCallResult,
   ToolCallResultMessage,
+  ToolCallLimitConfig,
   UserMessage,
 } from '../types'
 import {
@@ -53,9 +64,9 @@ export class AbstractClient implements IClient {
       this.postProcessors = []
     }
     if (processorsManager) {
-      if (preIds) {
+      if (preIds !== undefined) {
         const preProcessors = []
-        for (const preProcessorId of preIds) {
+        for (const preProcessorId of preIds || []) {
           const existProcessor = this.preProcessors.find(p => p.id === preProcessorId)
           if (!existProcessor) {
             const preProcessor = await processorsManager.getInstanceT(preProcessorId)
@@ -73,10 +84,12 @@ export class AbstractClient implements IClient {
           }
         }
         this.preProcessors = preProcessors
+      } else {
+        this.preProcessors = this.options.getPreProcessors() || []
       }
-      if (postIds) {
+      if (postIds !== undefined) {
         const postProcessors = []
-        for (const postProcessorId of postIds) {
+        for (const postProcessorId of postIds || []) {
           const existProcessor = this.postProcessors.find(p => p.id === postProcessorId)
           if (!existProcessor) {
             const postProcessor = await processorsManager.getInstanceT(postProcessorId)
@@ -94,6 +107,8 @@ export class AbstractClient implements IClient {
           }
         }
         this.postProcessors = postProcessors
+      } else {
+        this.postProcessors = this.options.getPostProcessors() || []
       }
     }
 
@@ -104,42 +119,47 @@ export class AbstractClient implements IClient {
   }
 
   async fullfillTools (toolGroupIds?: string[]): Promise<Tool[]> {
-    if (!this.tools) {
-      this.tools = []
+    const resolvedTools: Tool[] = []
+    const pushUnique = (tool?: Tool) => {
+      if (tool && !resolvedTools.find(t => t.name === tool.name)) {
+        resolvedTools.push(tool)
+      }
     }
+    ;(this.options.tools || []).forEach(pushUnique)
     const toolsGroupManager = this.context.chaite.getToolsGroupManager()
     const toolManager = this.context.chaite.getToolsManager()
-    if (toolGroupIds?.includes('default_local')) {
+    const groupIds = toolGroupIds ? [...toolGroupIds] : []
+    if (groupIds.includes('default_local')) {
       const toolDTOS = await toolManager.listInstances()
       for (const toolDTO of toolDTOS) {
         const toolName = extractClassName(toolDTO.code as string) || toolDTO.name
         const toolC = await toolManager.getInstance(toolName)
-        if (toolC && !this.tools.find(t => t.name === toolC.name)) {
-          this.tools.push(toolC)
-        }
-      }
-      return this.tools
-    }
-    if (toolGroupIds) {
-      for (const toolGroupId of toolGroupIds) {
-        const toolGroup = await toolsGroupManager.getInstance(toolGroupId)
-        if (toolGroup) {
-          const toolIds = toolGroup.toolIds || []
-          for (const toolId of toolIds) {
-            const tool = await toolManager.getInstanceT(toolId)
-            if (tool) {
-              const toolName = extractClassName(tool.code as string) || tool.name
-              const toolC = await toolManager.getInstance(toolName)
-              if (toolC && !this.tools.find(t => t.name === toolC.name)) {
-                this.tools.push(toolC)
-              } else {
-                this.logger.warn(`tool ${toolId} not found`)
-              }
-            }
-          }
-        }
+        pushUnique(toolC)
       }
     }
+    for (const toolGroupId of groupIds.filter(id => id !== 'default_local')) {
+      const toolGroup = await toolsGroupManager.getInstance(toolGroupId)
+      if (!toolGroup) {
+        this.logger.warn(`tool group ${toolGroupId} not found`)
+        continue
+      }
+      const toolIds = toolGroup.toolIds || []
+      for (const toolId of toolIds) {
+        const tool = await toolManager.getInstanceT(toolId)
+        if (!tool) {
+          this.logger.warn(`tool ${toolId} not found`)
+          continue
+        }
+        const toolName = extractClassName(tool.code as string) || tool.name
+        const toolC = await toolManager.getInstance(toolName)
+        if (!toolC) {
+          this.logger.warn(`tool ${toolId} can not be instantiated`)
+          continue
+        }
+        pushUnique(toolC)
+      }
+    }
+    this.tools = resolvedTools
     return this.tools
   }
 
@@ -188,7 +208,11 @@ export class AbstractClient implements IClient {
           parentId: options.parentMessageId,
           ...message,
         } as HistoryMessage
-        histories.push(thisRequestMsg)
+        if (!this.isEffectivelyEmptyMessage(thisRequestMsg)) {
+          histories.push(thisRequestMsg)
+        } else if (debug) {
+          this.logger.debug('skip sending empty user message to model')
+        }
       }
       const modelResponse = await this._sendMessage(histories, apiKey, options as SendMessageOption)
 
@@ -215,15 +239,38 @@ export class AbstractClient implements IClient {
         }
         modelResponse.content = tempResponse.content
       }
+      const toolCallLimitConfig = this.getEffectiveToolCallLimit(options as SendMessageOption)
+      if (modelResponse.toolCalls?.length) {
+        const limitReason = this.updateToolCallTracking(options as SendMessageOption, modelResponse.toolCalls, toolCallLimitConfig)
+        if (limitReason) {
+          this.logger.warn(limitReason)
+          modelResponse.toolCalls = undefined
+          if (this.isEffectivelyEmptyMessage(modelResponse)) {
+            modelResponse.content = [{
+              type: 'text',
+              text: limitReason,
+            } as TextContent]
+          }
+          this.resetToolCallTracking(options as SendMessageOption)
+        }
+      } else {
+        this.resetToolCallTracking(options as SendMessageOption)
+      }
       // save user request
-      if (thisRequestMsg) {
+      if (thisRequestMsg && this.shouldPersistHistory(thisRequestMsg)) {
         await this.historyManager.saveHistory(thisRequestMsg, options.conversationId)
         options.parentMessageId = thisRequestMsg.id
         modelResponse.parentId = thisRequestMsg.id
+      } else if (thisRequestMsg && debug) {
+        this.logger.debug('skip saving empty user message to history')
       }
       // save model response
       // this.logger.info(JSON.stringify(rspToSave))
-      await this.historyManager.saveHistory(modelResponse, options.conversationId)
+      if (this.shouldPersistHistory(modelResponse)) {
+        await this.historyManager.saveHistory(modelResponse, options.conversationId)
+      } else if (debug) {
+        this.logger.debug('skip saving empty assistant message to history')
+      }
       options.parentMessageId = modelResponse.id
       if (modelResponse.toolCalls && modelResponse.toolCalls?.length > 0) {
         if (options.onMessageWithToolCall) {
@@ -298,6 +345,106 @@ export class AbstractClient implements IClient {
     }
   }
 
+  protected shouldPersistHistory(message?: HistoryMessage): boolean {
+    if (!message) {
+      return false
+    }
+    if (message.role === 'tool') {
+      return this.hasMeaningfulContent(message)
+    }
+    if (message.role === 'assistant' || message.role === 'user') {
+      return this.hasMeaningfulContent(message) || (message.toolCalls?.length ?? 0) > 0
+    }
+    return true
+  }
+
+  protected isEffectivelyEmptyMessage(message?: IMessage): boolean {
+    if (!message) {
+      return true
+    }
+    const hasContent = this.hasMeaningfulContent(message)
+    const hasToolCall = (message.toolCalls?.length ?? 0) > 0
+    return !hasContent && !hasToolCall
+  }
+
+  private hasMeaningfulContent(message?: IMessage): boolean {
+    if (!message || !Array.isArray(message.content) || message.content.length === 0) {
+      return false
+    }
+    return message.content.some(part => this.isMessagePartMeaningful(part))
+  }
+
+  private isMessagePartMeaningful(part?: MessageContent): boolean {
+    if (!part) {
+      return false
+    }
+    switch (part.type) {
+    case 'text': {
+      const text = (part as TextContent).text
+      return typeof text === 'string' && text.trim().length > 0
+    }
+    case 'reasoning': {
+      const text = (part as ReasoningContent).text
+      return typeof text === 'string' && text.trim().length > 0
+    }
+    case 'image':
+      return Boolean((part as ImageContent).image)
+    case 'audio':
+      return Boolean((part as AudioContent).data)
+    case 'tool':
+      return Boolean((part as ToolCallResult).content)
+    default:
+      return true
+    }
+  }
+
+  protected setToolCallLimitConfig(config?: ToolCallLimitConfig): void {
+    this.toolCallLimitConfig = config
+  }
+
+  private getEffectiveToolCallLimit(options: SendMessageOption): ToolCallLimitConfig | undefined {
+    if (!options.toolCallLimit && this.toolCallLimitConfig) {
+      options.toolCallLimit = { ...this.toolCallLimitConfig }
+    }
+    return options.toolCallLimit
+  }
+
+  private updateToolCallTracking(options: SendMessageOption, toolCalls: ToolCall[], limitConfig?: ToolCallLimitConfig): string | undefined {
+    if (!limitConfig) {
+      return undefined
+    }
+    const consecutiveTotal = (options._consecutiveToolCallCount ?? 0) + 1
+    options._consecutiveToolCallCount = consecutiveTotal
+    const signature = this.buildToolCallSignature(toolCalls)
+    if (options._lastToolCallSignature === signature) {
+      options._consecutiveIdenticalToolCallCount = (options._consecutiveIdenticalToolCallCount ?? 0) + 1
+    } else {
+      options._lastToolCallSignature = signature
+      options._consecutiveIdenticalToolCallCount = 1
+    }
+    if (limitConfig.maxConsecutiveCalls && limitConfig.maxConsecutiveCalls > 0 && consecutiveTotal > limitConfig.maxConsecutiveCalls) {
+      return 'Maximum consecutive tool call limit reached, stop invoking tools.'
+    }
+    const identicalCount = options._consecutiveIdenticalToolCallCount ?? 0
+    if (limitConfig.maxConsecutiveIdenticalCalls && limitConfig.maxConsecutiveIdenticalCalls > 0 && identicalCount > limitConfig.maxConsecutiveIdenticalCalls) {
+      return 'Maximum identical tool call limit reached, stop invoking tools.'
+    }
+    return undefined
+  }
+
+  private resetToolCallTracking(options: SendMessageOption): void {
+    options._consecutiveToolCallCount = 0
+    options._consecutiveIdenticalToolCallCount = 0
+    options._lastToolCallSignature = undefined
+  }
+
+  private buildToolCallSignature(toolCalls: ToolCall[]): string {
+    return JSON.stringify(toolCalls.map(tc => ({
+      name: tc.function?.name,
+      arguments: tc.function?.arguments,
+    })))
+  }
+
   _sendMessage(_histories: IMessage[], _apiKey: string, _options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
     throw new Error('Abstract class not implemented')
   }
@@ -319,10 +466,9 @@ export class AbstractClient implements IClient {
   context: ChaiteContext
   postProcessors?: PostProcessor[]
   preProcessors?: PreProcessor[]
+  protected toolCallLimitConfig?: ToolCallLimitConfig
 
   getEmbedding(_text: string | string[], _options: EmbeddingOption): Promise<EmbeddingResult> {
     throw new Error('Method not implemented.')
   }
 }
-
-

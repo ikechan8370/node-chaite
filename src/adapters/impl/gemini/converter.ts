@@ -30,8 +30,9 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
     msg.content.forEach(c => {
       switch (c.type) {
       case 'text': {
-        if ((c as TextContent).text) {
-          parts.push({ text: (c as TextContent).text } as Part)
+        const text = (c as TextContent).text
+        if (typeof text === 'string' && text.trim().length > 0) {
+          parts.push({ text } as Part)
         }
         break
       }
@@ -58,37 +59,48 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
         } as FunctionCall,
       } as Part)
     })
+    const filteredParts = parts.filter((part): part is Part => Boolean(part))
     return {
       role: 'model',
-      parts,
+      parts: filteredParts,
     } as Content
   }
   case 'user': {
     const msg = source as UserMessage
-    return {
-      role: 'user',
-      parts: msg.content.map(t => {
-        switch (t.type) {
-        case 'text': {
+    const parts = msg.content.map(t => {
+      switch (t.type) {
+      case 'text': {
+        if (typeof t.text === 'string' && t.text.trim().length > 0) {
           return { text: t.text } as Part
         }
-        case 'audio': {
+        return null
+      }
+      case 'audio': {
+        return null
+      }
+      case 'image': {
+        let mimeType = t.mimeType
+        // @see https://ai.google.dev/gemini-api/docs/vision?lang=rest#technical-details-image
+        const allowMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif']
+        if (mimeType && !allowMimeTypes.includes(mimeType)) {
+          mimeType = 'image/jpeg'
+        }
+        if (!t.image) {
           return null
         }
-        case 'image': {
-          let mimeType = t.mimeType
-          // @see https://ai.google.dev/gemini-api/docs/vision?lang=rest#technical-details-image
-          const allowMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif']
-          if (mimeType && !allowMimeTypes.includes(mimeType)) {
-            mimeType = 'image/jpeg'
-          }
-          return { inlineData: {
-            mimeType: t.mimeType || 'image/jpeg',
-            data: t.image,
-          } } as Part
-        }
-        }
-      }),
+        return { inlineData: {
+          mimeType: mimeType || 'image/jpeg',
+          data: t.image,
+        } } as Part
+      }
+      default: {
+        return null
+      }
+      }
+    }).filter((part): part is Part => Boolean(part))
+    return {
+      role: 'user',
+      parts,
     } as Content
   }
   case 'tool': {
@@ -116,22 +128,23 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
 
 // 将Gemini格式转为IMessage
 registerIntoChaiteConverter<GenerateContentResponse>('gemini', msg => {
-  const text = msg.text
+  const text = msg.text?.trim()
   const content = []
-  if (text) {
+  if (text && text.length > 0) {
     content.push({ type: 'text', text } as TextContent)
   }
   msg.candidates?.forEach(candidate => {
     candidate.content?.parts?.forEach(part => {
-      if (part.thought && part.text) {
-        content.push({ type: 'reasoning', text: part.text } as ReasoningContent)
+      const reasoningText = part.text?.trim()
+      if (part.thought && reasoningText) {
+        content.push({ type: 'reasoning', text: reasoningText } as ReasoningContent)
       }
     })
   })
   const candidates = msg.candidates
   candidates?.forEach(candidate => {
     candidate.content?.parts?.forEach(part => {
-      if (part.inlineData) {
+      if (part.inlineData?.data) {
         content.push({
           type: 'image',
           image: part.inlineData.data,
