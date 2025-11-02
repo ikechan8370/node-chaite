@@ -33,7 +33,7 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@eslint/js": "^9.21.0",
     "@google/genai": "^1.8.0",
-    "@karinjs/node-schedule": "^1.0.1",
+    "@karinjs/node-schedule": "^1.1.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",

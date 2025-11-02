@@ -185,7 +185,7 @@ export abstract class CronTrigger extends BaseTrigger {
       this.cronJob = schedule.scheduleJob(date, () => {
         getLogger().debug(`开始执行一次性触发器 '${this.name}'`)
         this.triggerAction(() => this.execute(context))
-      })
+      }) ?? undefined
 
       if (this.cronJob) {
         getLogger().debug(`一次性触发器 '${this.name}' 注册成功，将在 ${date.toLocaleString()} 执行`)
@@ -201,11 +201,11 @@ export abstract class CronTrigger extends BaseTrigger {
         this.execute(context).catch(err => {
           getLogger().error(`触发器 ${this.name} 执行出错:`, err as never)
         })
-      })
+      }) ?? undefined
 
       if (this.cronJob) {
         const nextRun = this.cronJob.nextInvocation()
-        getLogger().debug(`定时触发器 '${this.name}' 注册成功，Cron表达式: ${this.cronExpression}，下次执行时间: ${nextRun.toLocaleString()}`)
+        getLogger().debug(`定时触发器 '${this.name}' 注册成功，Cron表达式: ${this.cronExpression}，下次执行时间: ${nextRun?.toLocaleString()}`)
       } else {
         getLogger().error(`定时触发器 '${this.name}' 注册失败，Cron表达式可能无效: ${this.cronExpression}`)
       }
