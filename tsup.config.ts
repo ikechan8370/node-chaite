@@ -13,7 +13,7 @@ export const options: Options = {
   sourcemap: false, // 是否生成 sourcemap
   clean: false, // 是否清理输出目录
   dts: {
-    resolve: true,
+    resolve: false,
     compilerOptions: {
       removeComments: false, // 是否删除注释
       noUnusedLocals: false, // 是否删除未使用的局部变量
