@@ -7,4 +7,4 @@ export * from './const/index'
 export * from './share/index'
 export * from './version'
 export * from './core'
-
+export * from './controllers'

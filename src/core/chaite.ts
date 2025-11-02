@@ -27,6 +27,7 @@ import EventEmitter from 'node:events'
 import { runServer } from '../controllers'
 import { ToolsGroupManager } from '../share'
 import { TriggerManager } from '../share'
+import type { Application } from 'express'
 
 /**
  * 入口
@@ -39,6 +40,8 @@ export class Chaite extends EventEmitter {
   private frontendAuthHandler!: FrontEndAuthHandler
 
   private globalConfig?: GlobalConfig
+
+  private expressApp?: Application
 
   private constructor(private channelsManager: ChannelsManager, private toolsManager: ToolManager,
                         private processorsManager: ProcessorsManager, private chatPresetManager: ChatPresetManager, private toolsGroupManager: ToolsGroupManager, private triggerManager: TriggerManager<TriggerDTO>,
@@ -253,8 +256,18 @@ export class Chaite extends EventEmitter {
     }
   }
 
-  runApiServer() {
-    runServer(this.globalConfig?.getHost() || DEFAULT_HOST, this.globalConfig?.getPort() || DEFAULT_PORT)
+  getExpressApp(): Application | undefined {
+    return this.expressApp
+  }
+
+  runApiServer(configureApp?: (app: Application) => void): Application {
+    const { app } = runServer(
+      this.globalConfig?.getHost() || DEFAULT_HOST,
+      this.globalConfig?.getPort() || DEFAULT_PORT,
+      configureApp,
+    )
+    this.expressApp = app
+    return app
   }
 
 }
