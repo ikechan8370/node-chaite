@@ -26,7 +26,7 @@ export class ChannelsManager extends NonExecutableShareableManager<Channel> {
   async getAllChannels(name?: string): Promise<Channel[]> {
     const allChannels = await this.storage.listItems()
     if (name) {
-      return allChannels.filter(channel => channel.name.includes(name))
+      return allChannels.filter(channel => channel.models.includes(name))
     } else {
       return allChannels
     }
