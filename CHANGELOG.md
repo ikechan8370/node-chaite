@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.2](https://github.com/ikechan8370/node-chaite/compare/v1.8.1...v1.8.2) (2025-11-03)
+
+
+### Bug Fixes
+
+* typo ([a853abe](https://github.com/ikechan8370/node-chaite/commit/a853abeb62758c1383cf85393e4b4d9ac090af43))
+
 ## [1.8.1](https://github.com/ikechan8370/node-chaite/compare/v1.8.0...v1.8.1) (2025-11-02)
 
 
