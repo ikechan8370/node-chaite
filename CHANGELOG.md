@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.3](https://github.com/ikechan8370/node-chaite/compare/v1.8.2...v1.8.3) (2025-11-04)
+
+
+### Bug Fixes
+
+* frontend ([e746b61](https://github.com/ikechan8370/node-chaite/commit/e746b61881371297631bf1a6fe9b7b7c2e0b6f0c))
+
 ## [1.8.2](https://github.com/ikechan8370/node-chaite/compare/v1.8.1...v1.8.2) (2025-11-03)
 
 
