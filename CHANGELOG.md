@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/ikechan8370/node-chaite/compare/v1.8.4...v1.9.0) (2025-11-07)
+
+
+### Features
+
+* tsdown 打包为esm ([#67](https://github.com/ikechan8370/node-chaite/issues/67)) ([8719e9d](https://github.com/ikechan8370/node-chaite/commit/8719e9d5178a99fab14389f2f751be8ceea3048d))
+
 ## [1.8.4](https://github.com/ikechan8370/node-chaite/compare/v1.8.3...v1.8.4) (2025-11-05)
 
 
