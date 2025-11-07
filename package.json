@@ -22,7 +22,6 @@
   ],
   "scripts": {
     "build": "tsc --noEmit && tsdown",
-    "copy-frontend": "copyfiles -u 1 \"frontend/build/**/*\" dist/frontend",
     "dev": "nodemon --exec ts-node src/index.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -55,6 +54,7 @@
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.9.0",
     "openai": "^5.20.1",
+    "pdf-parse": "^2.4.5",
     "prettier": "^3.5.2",
     "reflect-metadata": "^0.2.2",
     "ts-jest": "^29.2.6",
