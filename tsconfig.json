@@ -8,14 +8,25 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
-    "types": ["@types/node", "@types/jest"],
+    "types": [
+      "node",
+      "jest"
+    ],
     "rootDir": "./src",
     "declaration": true,
     "noImplicitAny": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "tsup.config.ts"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "tsdown.config.ts"
+  ]
 }
