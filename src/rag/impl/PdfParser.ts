@@ -2,7 +2,7 @@ import { DocumentFileParser, DocumentPathParser, ParserType } from '../../types/
 import * as fs from 'node:fs'
 
 export class PdfFileParser extends DocumentPathParser {
-  constructor() {
+  constructor () {
     super()
     this.type = 'pdf'
     this.supportedExtensions = ['.pdf']
@@ -15,32 +15,31 @@ export class PdfFileParser extends DocumentPathParser {
   type: ParserType
   supportedExtensions: string[]
 
-  private async initializePdfParse() {
-    try {
-      await import('pdf-parse')
-      this.valid = true
-    } catch {
-      this.valid = false
-    }
+  private async initializePdfParse () {
+    this.valid = await import('pdf-parse')
+      .then(() => true)
+      .catch(() => false)
   }
 
-  async ready(): Promise<void> {
+  async ready (): Promise<void> {
     await this.initPromise
   }
 
-  async parse(documentPath: string): Promise<string> {
+  async parse (documentPath: string): Promise<string> {
     if (this.valid) {
       const buffer = fs.readFileSync(documentPath)
-      const pdf = await import('pdf-parse')
-      const res = await pdf.default(buffer)
-      return res.text
+      const { PDFParse } = await import('pdf-parse')
+      const parser = new PDFParse({ data: buffer })
+      const result = await parser.getText()
+      await parser.destroy()
+      return result.text
     }
     throw new Error('PDF parsing is not available. To enable this feature, please install pdf-parse: npm install pdf-parse')
   }
 }
 
 export class PdfBufferParser extends DocumentFileParser {
-  constructor() {
+  constructor () {
     super()
     this.type = 'pdf'
     this.supportedExtensions = ['.pdf']
@@ -49,7 +48,7 @@ export class PdfBufferParser extends DocumentFileParser {
 
   private initPromise: Promise<void>
 
-  private async initializePdfParse() {
+  private async initializePdfParse () {
     try {
       await import('pdf-parse')
       this.valid = true
@@ -62,15 +61,17 @@ export class PdfBufferParser extends DocumentFileParser {
   type: ParserType
   supportedExtensions: string[]
 
-  async ready(): Promise<void> {
+  async ready (): Promise<void> {
     await this.initPromise
   }
 
-  async parse(buffer: Buffer): Promise<string> {
+  async parse (buffer: Buffer): Promise<string> {
     if (this.valid) {
-      const pdf = await import('pdf-parse')
-      const res = await pdf.default(buffer)
-      return res.text
+      const { PDFParse } = await import('pdf-parse')
+      const parser = new PDFParse({ data: buffer })
+      const result = await parser.getText()
+      await parser.destroy()
+      return result.text
     }
     throw new Error('PDF parsing is not available. To enable this feature, please install pdf-parse: npm install pdf-parse')
   }

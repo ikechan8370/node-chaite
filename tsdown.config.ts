@@ -40,7 +40,7 @@ export default defineConfig({
   dts: true,
   format: ['esm'],
   shims: true,
-  target: 'node18',
+  target: 'node20',
   platform: 'node',
   sourcemap: false,
   clean: true,

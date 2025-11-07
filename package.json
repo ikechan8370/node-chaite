@@ -40,8 +40,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.9",
-    "@types/node": "20",
-    "@types/pdf-parse": "^1.1.4",
+    "@types/node": "^20.17.24",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "axios": "^1.8.1",
@@ -56,12 +55,19 @@
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.9.0",
     "openai": "^5.20.1",
-    "pdf-parse": "^1.1.1",
     "prettier": "^3.5.2",
     "reflect-metadata": "^0.2.2",
     "ts-jest": "^29.2.6",
     "tsdown": "^0.16.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.25.0"
+  },
+  "peerDependencies": {
+    "pdf-parse": "^2.4.5"
+  },
+  "peerDependenciesMeta": {
+    "pdf-parse": {
+      "optional": true
+    }
   }
 }
