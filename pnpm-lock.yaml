@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      pdf-parse:
-        specifier: ^2.4.5
-        version: 2.4.5
     devDependencies:
       '@anthropic-ai/sdk':
         specifier: ^0.39.0
@@ -81,6 +77,9 @@ importers:
       openai:
         specifier: ^5.20.1
         version: 5.23.2(ws@8.18.3)
+      pdf-parse:
+        specifier: ^2.4.5
+        version: 2.4.5
       prettier:
         specifier: ^3.5.2
         version: 3.5.3
