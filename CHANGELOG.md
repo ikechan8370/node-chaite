@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/ikechan8370/node-chaite/compare/v1.9.0...v1.9.1) (2025-11-07)
+
+
+### Bug Fixes
+
+* pdf-parse devDependencies ([#69](https://github.com/ikechan8370/node-chaite/issues/69)) ([9fbb4d0](https://github.com/ikechan8370/node-chaite/commit/9fbb4d0ddbf9fba3d6825da208e823d9ecf9fcb0))
+
 ## [1.9.0](https://github.com/ikechan8370/node-chaite/compare/v1.8.4...v1.9.0) (2025-11-07)
 
 
