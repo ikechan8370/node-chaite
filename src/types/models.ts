@@ -9,6 +9,7 @@ export type Role = 'system' | 'user' | 'assistant' | 'tool' | 'developer'
 
 export interface MessageContent {
   type: 'text' | 'image' | 'audio' | 'video' | 'tool' | 'reasoning'
+  thoughtSignature?: string
 }
 
 export interface TextContent extends MessageContent {
@@ -55,7 +56,7 @@ export type History = {
 export interface IMessage {
   role: Role
   content: MessageContent[]
-  toolCalls?: ToolCall[]
+  toolCalls?: ToolCall[],
 }
 
 /**
@@ -65,6 +66,7 @@ export interface ToolCall {
   id: string
   type: 'function'
   function: FunctionCall
+  thoughtSignature?: string
 }
 
 export type ArgumentValue = string | number | boolean | ArgumentValue[]

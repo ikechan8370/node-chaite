@@ -6,8 +6,11 @@ import {
 import {
   AssistantMessage,
   ImageContent,
-  IMessage, ReasoningContent,
+  IMessage,
+  MessageContent,
+  ReasoningContent,
   TextContent,
+  ToolCall,
   ToolCallResultMessage,
   UserMessage,
 } from '../../../types'
@@ -32,18 +35,26 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
       case 'text': {
         const text = (c as TextContent).text
         if (typeof text === 'string' && text.trim().length > 0) {
-          parts.push({ text } as Part)
+          const part: Part = { text }
+          if (c.thoughtSignature) {
+            part.thoughtSignature = c.thoughtSignature
+          }
+          parts.push(part)
         }
         break
       }
       case 'image': {
         const mimeType = (c as ImageContent).mimeType
-        parts.push({
+        const part: Part = {
           inlineData: {
             mimeType: mimeType || 'image/jpeg',
             data: (c as ImageContent).image,
           },
-        } as Part)
+        }
+        if (c.thoughtSignature) {
+          part.thoughtSignature = c.thoughtSignature
+        }
+        parts.push(part)
         break
       }
       default: {
@@ -52,14 +63,19 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
       }
     })
     msg.toolCalls?.forEach(tc => {
-      parts.push({
+      const part: Part = {
         functionCall: {
           name: tc.function.name,
           args: tc.function.arguments,
         } as FunctionCall,
-      } as Part)
+      }
+      if (tc.thoughtSignature) {
+        part.thoughtSignature = tc.thoughtSignature
+      }
+      parts.push(part)
     })
     const filteredParts = parts.filter((part): part is Part => Boolean(part))
+
     return {
       role: 'model',
       parts: filteredParts,
@@ -128,46 +144,62 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
 
 // 将Gemini格式转为IMessage
 registerIntoChaiteConverter<GenerateContentResponse>('gemini', msg => {
-  const text = msg.text?.trim()
-  const content = []
-  if (text && text.length > 0) {
-    content.push({ type: 'text', text } as TextContent)
-  }
+  const content: MessageContent[] = []
+  const toolCalls: ToolCall[] = []
+
   msg.candidates?.forEach(candidate => {
     candidate.content?.parts?.forEach(part => {
       const reasoningText = part.text?.trim()
-      if (part.thought && reasoningText) {
-        content.push({ type: 'reasoning', text: reasoningText } as ReasoningContent)
+
+      // Handle Text & Reasoning
+      if (part.text) {
+        if (reasoningText && reasoningText.length > 0) {
+          if (part.thought) {
+            content.push({
+              type: 'reasoning',
+              text: reasoningText,
+              thoughtSignature: part.thoughtSignature,
+            } as ReasoningContent)
+          } else {
+            content.push({
+              type: 'text',
+              text: reasoningText,
+              thoughtSignature: part.thoughtSignature,
+            } as TextContent)
+          }
+        }
       }
-    })
-  })
-  const candidates = msg.candidates
-  candidates?.forEach(candidate => {
-    candidate.content?.parts?.forEach(part => {
+
+      // Handle Image
       if (part.inlineData?.data) {
         content.push({
           type: 'image',
           image: part.inlineData.data,
           mimeType: part.inlineData.mimeType,
+          thoughtSignature: part.thoughtSignature,
         } as ImageContent)
+      }
+
+      // Handle Tool Call
+      if (part.functionCall) {
+        const randomString = Math.random().toString(36).substring(2, 15)
+        toolCalls.push({
+          id: randomString,
+          type: 'function',
+          function: {
+            name: part.functionCall.name,
+            arguments: part.functionCall.args,
+          },
+          thoughtSignature: part.thoughtSignature,
+        } as ToolCall)
       }
     })
   })
-  const toolCalls = msg.functionCalls
+
   return {
     role: 'assistant',
     content,
-    toolCalls: toolCalls?.map(toolCall => {
-      const randomString = Math.random().toString(36).substring(2, 15)
-      return {
-        id: randomString,
-        type: 'function',
-        function: {
-          name: toolCall.name,
-          arguments: toolCall.args,
-        },
-      }
-    }),
+    toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
   } as AssistantMessage
 })
 
