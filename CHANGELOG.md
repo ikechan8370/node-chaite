@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.2](https://github.com/ikechan8370/node-chaite/compare/v1.9.1...v1.9.2) (2025-11-29)
+
+
+### Bug Fixes
+
+* support gemini 3 thoughtsignature (https://ai.google.dev/gemini-api/docs/gemini-3\?thinking\=high\#thought_signatures) ([2195cc8](https://github.com/ikechan8370/node-chaite/commit/2195cc8b33ac9b46ece99b14c1696d341b62e31c))
+
 ## [1.9.1](https://github.com/ikechan8370/node-chaite/compare/v1.9.0...v1.9.1) (2025-11-07)
 
 
