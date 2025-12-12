@@ -101,4 +101,29 @@ describe('GeminiClient', () => {
 
     expect(response.contents[0].type).toBe('text')
   }, 60000);
+
+  test('GeminiClient accepts apiVersion configuration', () => {
+    const geminiClient = new GeminiClient({
+      apiKey: 'test-api-key',
+      baseUrl: 'https://test.example.com',
+      features: ['chat'],
+      historyManager: DefaultHistoryManager,
+      apiVersion: 'v1alpha'
+    })
+    // Verify the client is created successfully with apiVersion
+    expect(geminiClient).toBeDefined()
+    expect(geminiClient.name).toBe('gemini')
+  });
+
+  test('GeminiClient works without apiVersion (uses default)', () => {
+    const geminiClient = new GeminiClient({
+      apiKey: 'test-api-key',
+      baseUrl: 'https://test.example.com',
+      features: ['chat'],
+      historyManager: DefaultHistoryManager
+    })
+    // Verify the client is created successfully without apiVersion
+    expect(geminiClient).toBeDefined()
+    expect(geminiClient.name).toBe('gemini')
+  });
 });
