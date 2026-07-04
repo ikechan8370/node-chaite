@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/ikechan8370/node-chaite/compare/v1.9.2...v1.10.0) (2026-07-04)
+
+
+### Features
+
+* per-model features, channel test, auto-detect, vision config ([c27bd5b](https://github.com/ikechan8370/node-chaite/commit/c27bd5bcbd19617b70b15e1c5c9e7bf6880fef60))
+
 ## [1.9.2](https://github.com/ikechan8370/node-chaite/compare/v1.9.1...v1.9.2) (2025-11-29)
 
 
