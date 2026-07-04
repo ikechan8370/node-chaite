@@ -28,6 +28,16 @@ import { runServer } from '../controllers'
 import { ToolsGroupManager } from '../share'
 import { TriggerManager } from '../share'
 import type { Application } from 'express'
+import type { SkillRegistry } from '../agent/skills/SkillRegistry'
+import type { BackgroundJobManager } from '../agent/background/BackgroundJobManager'
+import type { DynamicScheduler } from '../agent/scheduler/DynamicScheduler'
+import type { McpServerManager } from '../agent/mcp/McpServerConfig'
+import type { AgentRunContext } from '../agent/contracts'
+import type { WorkflowEngine } from '../agent/workflow/WorkflowEngine'
+import type { PlanExecutor } from '../agent/planning/PlanExecutor'
+import { McpToolExecutor } from '../agent/tool-executors/mcp'
+import type { OperationLogManager } from '../share/operation-log'
+import type { AuditEvent } from '../agent/contracts'
 
 /**
  * 入口
@@ -42,6 +52,30 @@ export class Chaite extends EventEmitter {
   private globalConfig?: GlobalConfig
 
   private expressApp?: Application
+
+  /** SkillRegistry loaded from SKILL.md directories */
+  private skillRegistry?: SkillRegistry
+
+  /** BackgroundJobManager for async task execution */
+  private backgroundJobManager?: BackgroundJobManager
+
+  /** Shared storage for agent state (plans, jobs, etc.) */
+  private agentStorage?: BasicStorage<unknown>
+
+  /** Dynamic scheduler for LLM-created scheduled tasks */
+  private dynamicScheduler?: DynamicScheduler
+
+  /** MCP server configuration manager */
+  private mcpServerManager?: McpServerManager
+
+  /** Workflow engine for executing WorkflowDefinitions */
+  private workflowEngine?: WorkflowEngine
+
+  /** Plan executor for LLM-driven dynamic planning */
+  private planExecutor?: PlanExecutor
+
+  /** Operation log manager — records fine-grained AI activity */
+  private operationLogManager?: OperationLogManager
 
   private constructor(private channelsManager: ChannelsManager, private toolsManager: ToolManager,
                         private processorsManager: ProcessorsManager, private chatPresetManager: ChatPresetManager, private toolsGroupManager: ToolsGroupManager, private triggerManager: TriggerManager<TriggerDTO>,
@@ -119,10 +153,78 @@ export class Chaite extends EventEmitter {
     const context = new ChaiteContext(this.logger)
     context.setEvent(e)
     context.setChaite(this)
+
+    // Inject agent context fields from options
+    if (options.jobId) context.jobId = options.jobId
+    if (options.planId) context.planId = options.planId
+    if (options.skillName) context.skillName = options.skillName
+
     return asyncLocalStorage.run(context, async () => {
       if (!options.chatPreset) {
         options.chatPreset = await this.userModeSelector.getChatPreset(e)
       }
+
+      // Skill selection: if no explicit preset provided, try skill-based routing
+      const msgText = message?.content
+        ?.filter(c => c.type === 'text')
+        .map(c => (c as { text: string }).text)
+        .join(' ') ?? ''
+
+      if (!options.skillName && this.skillRegistry) {
+        const matched = this.skillRegistry.matchSkill(msgText)
+        if (matched) {
+          context.skillName = matched.id
+          options.skillName = matched.id
+          // Apply skill's preset override if specified
+          if (matched.frontmatter.preset && !options.chatPreset) {
+            const skillPreset = await this.chatPresetManager.getInstance(matched.frontmatter.preset)
+            if (skillPreset) options.chatPreset = skillPreset
+          }
+        }
+      }
+
+      // If the matched skill declares an executionMode, route accordingly
+      if (options.skillName && this.skillRegistry) {
+        const skill = this.skillRegistry.getSkillByName(options.skillName)
+        const mode = skill?.frontmatter.executionMode
+
+        if (mode === 'workflow' && this.workflowEngine && skill?.frontmatter.workflowRef) {
+          const agentCtx = this.buildAgentRunContext({
+            skillName: options.skillName,
+            userId: String(e.sender.user_id),
+            groupId: e.group ? String(e.group.group_id) : undefined,
+          })
+          try {
+            const buf = await skill.readFile(skill.frontmatter.workflowRef)
+            const workflowDef = JSON.parse(buf.toString('utf-8'))
+            const result = await this.workflowEngine.run(workflowDef, agentCtx)
+            return {
+              contents: [{ type: 'text' as const, text: result.finalOutput ?? (result.status === 'failed' ? `Workflow failed: ${result.error}` : '') }],
+            } as unknown as ModelResponse
+          } catch (err) {
+            this.logger.error(`[Chaite] Workflow execution failed for skill "${options.skillName}": ${String(err)}`)
+            // Fall through to normal LLM path as degraded fallback
+          }
+        }
+
+        if (mode === 'plan' && this.planExecutor) {
+          const agentCtx = this.buildAgentRunContext({
+            skillName: options.skillName,
+            userId: String(e.sender.user_id),
+            groupId: e.group ? String(e.group.group_id) : undefined,
+          })
+          try {
+            const { output } = await this.planExecutor.execute(msgText, agentCtx)
+            return {
+              contents: [{ type: 'text' as const, text: output }],
+            } as unknown as ModelResponse
+          } catch (err) {
+            this.logger.error(`[Chaite] Plan execution failed for skill "${options.skillName}": ${String(err)}`)
+            // Fall through to normal LLM path as degraded fallback
+          }
+        }
+      }
+
       const channels = await this.channelsManager.getChannelByModel(options.chatPreset.sendMessageOption.model || '')
       if (channels.length > 0) {
         const channel = channels[0]
@@ -130,8 +232,6 @@ export class Chaite extends EventEmitter {
         channel.options.setHistoryManager(this.historyManager)
         channel.options.setLogger(this.logger)
         const client = createClient(channel.adapterType, channel.options, context)
-        // const userState = await this.userStateStorage.getItem(e.sender.user_id + '')
-        // const newOptions = Object.assign(options.chatPreset.sendMessageOption, options)
         const newOptions = {
           ...options.chatPreset.sendMessageOption,
           ...Object.fromEntries(
@@ -139,9 +239,6 @@ export class Chaite extends EventEmitter {
               .filter(([_, value]) => value !== undefined),
           ),
         }
-        // 客户端去控制消息id，更灵活
-        // newOptions.conversationId = userState?.current?.conversationId
-        // newOptions.parentMessageId = userState?.current?.messageId || userState?.conversations.find(c => c.id === newOptions.conversationId)?.lastMessageId
         if (this.globalConfig?.getDebug()) {
           this.logger.debug(`sendMessage options: ${JSON.stringify(newOptions)}`)
         }
@@ -150,7 +247,211 @@ export class Chaite extends EventEmitter {
         throw new Error('No available channels')
       }
     })
+  }
 
+  // ─── Skill Registry ─────────────────────────────────────────────────────────
+
+  setSkillRegistry(registry: SkillRegistry): void {
+    this.skillRegistry = registry
+  }
+
+  getSkillRegistry(): SkillRegistry | undefined {
+    return this.skillRegistry
+  }
+
+  // ─── Background Job Manager ──────────────────────────────────────────────────
+
+  setBackgroundJobManager(manager: BackgroundJobManager): void {
+    this.backgroundJobManager = manager
+  }
+
+  getBackgroundJobManager(): BackgroundJobManager | undefined {
+    return this.backgroundJobManager
+  }
+
+  // ─── Agent Storage ───────────────────────────────────────────────────────────
+
+  setAgentStorage(storage: BasicStorage<unknown>): void {
+    this.agentStorage = storage
+  }
+
+  getAgentStorage(): BasicStorage<unknown> | undefined {
+    return this.agentStorage
+  }
+
+  // ─── Dynamic Scheduler ───────────────────────────────────────────────────────
+
+  setDynamicScheduler(scheduler: DynamicScheduler): void {
+    this.dynamicScheduler = scheduler
+  }
+
+  getDynamicScheduler(): DynamicScheduler | undefined {
+    return this.dynamicScheduler
+  }
+
+  // ─── MCP Server Manager ──────────────────────────────────────────────────────
+
+  setMcpServerManager(manager: McpServerManager): void {
+    this.mcpServerManager = manager
+  }
+
+  getMcpServerManager(): McpServerManager | undefined {
+    return this.mcpServerManager
+  }
+
+  // ─── Workflow Engine ─────────────────────────────────────────────────────────
+
+  setWorkflowEngine(engine: WorkflowEngine): void {
+    this.workflowEngine = engine
+  }
+
+  getWorkflowEngine(): WorkflowEngine | undefined {
+    return this.workflowEngine
+  }
+
+  // ─── Plan Executor ───────────────────────────────────────────────────────────
+
+  setPlanExecutor(executor: PlanExecutor): void {
+    this.planExecutor = executor
+  }
+
+  getPlanExecutor(): PlanExecutor | undefined {
+    return this.planExecutor
+  }
+
+  // ─── Operation Log Manager ───────────────────────────────────────────────────
+
+  setOperationLogManager(mgr: OperationLogManager): void {
+    this.operationLogManager = mgr
+    this._subscribeOperationLogEvents(mgr)
+  }
+
+  getOperationLogManager(): OperationLogManager | undefined {
+    return this.operationLogManager
+  }
+
+  /**
+   * Subscribe to Chaite's EventEmitter to automatically capture
+   * job lifecycle and plan/tool audit events into the operation log.
+   */
+  private _subscribeOperationLogEvents(mgr: OperationLogManager): void {
+    const on = <T extends AuditEvent>(event: string, handler: (data: T) => void) => {
+      this.on(event, handler)
+    }
+
+    // ── Background jobs ──────────────────────────────────────────────────────
+    on('job:queued', (data: AuditEvent) => {
+      mgr.addSync({ type: 'job.queued', level: 'info', summary: `Job queued`, jobId: data.jobId, userId: data.userId, metadata: data.data })
+    })
+    on('job:start', (data: AuditEvent) => {
+      mgr.addSync({ type: 'job.start', level: 'info', summary: `Job started`, jobId: data.jobId, userId: data.userId, metadata: data.data })
+    })
+    on('job:complete', (data: AuditEvent) => {
+      mgr.addSync({ type: 'job.complete', level: 'info', summary: `Job completed`, jobId: data.jobId, userId: data.userId, metadata: data.data })
+    })
+    on('job:failed', (data: AuditEvent) => {
+      const errMsg = (data.data?.error as string) ?? ''
+      mgr.addSync({ type: 'job.failed', level: 'error', summary: `Job failed${errMsg ? ': ' + errMsg : ''}`, jobId: data.jobId, userId: data.userId, detail: errMsg, metadata: data.data })
+    })
+    on('job:progress', (data: AuditEvent) => {
+      mgr.addSync({ type: 'job.progress', level: 'info', summary: `Job progress`, jobId: data.jobId, userId: data.userId, metadata: data.data })
+    })
+
+    // ── Plans ────────────────────────────────────────────────────────────────
+    on('plan:start', (data: AuditEvent) => {
+      mgr.addSync({ type: 'plan.start', level: 'info', summary: `Plan started`, planId: data.planId, userId: data.userId, metadata: data.data })
+    })
+    on('plan:step:start', (data: AuditEvent) => {
+      const stepDesc = (data.data?.description as string) ?? data.stepId ?? ''
+      mgr.addSync({ type: 'plan.step.start', level: 'info', summary: `Plan step started${stepDesc ? ': ' + stepDesc : ''}`, planId: data.planId, stepId: data.stepId, userId: data.userId, metadata: data.data })
+    })
+    on('plan:step:end', (data: AuditEvent) => {
+      mgr.addSync({ type: 'plan.step.end', level: 'info', summary: `Plan step completed`, planId: data.planId, stepId: data.stepId, userId: data.userId, metadata: data.data })
+    })
+    on('plan:complete', (data: AuditEvent) => {
+      mgr.addSync({ type: 'plan.complete', level: 'info', summary: `Plan completed`, planId: data.planId, userId: data.userId, metadata: data.data })
+    })
+    on('plan:failed', (data: AuditEvent) => {
+      const errMsg = (data.data?.error as string) ?? ''
+      mgr.addSync({ type: 'plan.failed', level: 'error', summary: `Plan failed${errMsg ? ': ' + errMsg : ''}`, planId: data.planId, userId: data.userId, detail: errMsg, metadata: data.data })
+    })
+
+    // ── Tool events from emitAudit ────────────────────────────────────────────
+    on('tool:start', (data: AuditEvent) => {
+      const toolName = (data.data?.toolName as string) ?? ''
+      mgr.addSync({ type: 'tool.call', level: 'info', summary: `Tool started: ${toolName}`, toolName, userId: data.userId, jobId: data.jobId, planId: data.planId, metadata: data.data })
+    })
+    on('tool:error', (data: AuditEvent) => {
+      const toolName = (data.data?.toolName as string) ?? ''
+      const errMsg = (data.data?.error as string) ?? ''
+      mgr.addSync({ type: 'tool.error', level: 'error', summary: `Tool error: ${toolName}`, toolName, userId: data.userId, detail: errMsg, jobId: data.jobId, planId: data.planId, metadata: data.data })
+    })
+  }
+
+  /**
+   * Build a composite McpToolExecutor from all enabled MCP server configs.
+   * Returns undefined if no MCP servers are configured.
+   * Call this after init and assign to channel.options.toolExecutor if desired.
+   *
+   * Multiple MCP servers are chained as fallback: first server that has the tool wins.
+   */
+  async buildMcpExecutor(): Promise<McpToolExecutor | undefined> {
+    if (!this.mcpServerManager) return undefined
+    const servers = await this.mcpServerManager.listEnabled()
+    if (servers.length === 0) return undefined
+
+    // Chain executors: last one has no fallback, each wraps the next
+    let executor: McpToolExecutor | undefined
+    for (let i = servers.length - 1; i >= 0; i--) {
+      const cfg = servers[i]
+      executor = new McpToolExecutor(
+        { baseUrl: cfg.baseUrl, authHeader: cfg.authHeader, defaultTimeoutMs: cfg.timeoutMs },
+        executor,
+      )
+    }
+    return executor
+  }
+
+  /**
+   * Build an AgentRunContext bound to the current Chaite instance.
+   * Used by BackgroundJobManager and PlanExecutor when running background tasks.
+   */
+  buildAgentRunContext(overrides?: {
+    jobId?: string
+    skillName?: string
+    userId?: string
+    groupId?: string
+  }): AgentRunContext {
+    const logger = this.logger
+    const storage = this.agentStorage ?? (this.userStateStorage as unknown as BasicStorage<unknown>)
+    const chaite = this
+
+    return {
+      sendMessage: async (goal: string, options?: Record<string, unknown>) => {
+        const textContent = [{ type: 'text' as const, text: goal }]
+        const userMsg = { role: 'user' as const, content: textContent }
+        const fakeEvent = {
+          sender: { user_id: overrides?.userId ?? 'agent', nickname: 'Agent' },
+          group: overrides?.groupId ? { group_id: overrides.groupId } : undefined,
+        } as EventMessage
+        const mergedOptions = SendMessageOption.create({
+          jobId: overrides?.jobId,
+          skillName: overrides?.skillName,
+          ...(options as Partial<SendMessageOption>),
+        })
+        return chaite.sendMessage(userMsg, fakeEvent, mergedOptions)
+      },
+      storage,
+      logger,
+      emitAudit: (event) => {
+        chaite.emit(event.type, event)
+        // Also re-emit job:progress and job:complete as top-level events
+        if (event.type === 'job:progress' || event.type === 'job:complete' || event.type === 'job:failed') {
+          chaite.emit(event.type, event.data)
+        }
+      },
+      jobManager: this.backgroundJobManager,
+    }
   }
 
   getChannelsManager() {

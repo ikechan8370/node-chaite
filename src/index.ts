@@ -8,3 +8,6 @@ export * from './share/index'
 export * from './version'
 export * from './core'
 export * from './controllers'
+
+// Agent subsystem — import from 'chaite/agent' or directly from this namespace
+export * from './agent/index'

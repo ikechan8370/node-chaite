@@ -1,180 +1,115 @@
-import express, { Router } from 'express'
-import { Request, Response } from 'express'
+import express, { Router, Request, Response } from 'express'
 import { Chaite, ChaiteResponse, ToolDTO, Filter, SearchOption } from '../index'
-import { getMd5 } from '../utils/hash'
+
 const router: Router = express.Router()
 
-interface ListToolDTOs {
-  name?: string;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function paginate<T>(items: T[], req: Request) {
+  const page = Math.max(1, parseInt(req.query['page'] as string) || 1)
+  const pageSize = Math.min(100, Math.max(1, parseInt(req.query['pageSize'] as string) || 20))
+  return { items: items.slice((page - 1) * pageSize, page * pageSize), total: items.length, page, pageSize }
 }
 
-// todo pageable
-router.get('/list', async (req: Request<object, object, ListToolDTOs>, res: Response) => {
-  const body = req.body
-  const chaite = Chaite.getInstance()
-  let allToolDTOs = await chaite.getToolsManager().listInstances()
-  if (body.name) {
-    allToolDTOs = allToolDTOs.filter(tool => tool.name.includes(body.name as string))
+async function wrap(res: Response, fn: () => Promise<unknown>) {
+  try {
+    const data = await fn()
+    if (!res.headersSent) res.status(200).json(ChaiteResponse.ok(data))
+  } catch (e) {
+    if (!res.headersSent) {
+      Chaite.getInstance().getLogger().error(e as object)
+      res.status(500).json(ChaiteResponse.fail(null, e instanceof Error ? e.message : 'Unknown error'))
+    }
   }
-  res.status(200)
-    .json(ChaiteResponse.ok(allToolDTOs))
+}
+
+// ─── Local CRUD ───────────────────────────────────────────────────────────────
+
+/** GET /api/tools/list?name=xxx&page=1&pageSize=20 */
+router.get('/list', (req: Request, res: Response) => {
+  wrap(res, async () => {
+    let items = await Chaite.getInstance().getToolsManager().listInstances()
+    const name = req.query['name'] as string | undefined
+    if (name) items = items.filter(t => t.name.includes(name))
+    return paginate(items, req)
+  })
 })
 
+/** POST /api/tools — create (no id) or update (with id in body) */
 router.post('/', async (req: Request<object, object, ToolDTO>, res: Response) => {
-  const body = req.body
-  const chaite = Chaite.getInstance()
-  try {
+  wrap(res, async () => {
+    const body = req.body
+    const mgr = Chaite.getInstance().getToolsManager()
     if (body.id) {
-      const old = await chaite.getToolsManager().getInstanceT(body.id)
-      if (!old) {
-        res.status(404)
-          .json(ChaiteResponse.fail(null, 'Tool not found'))
-        return
-      }
-      if (old.name !== body.name) {
-        // 给工具改名，需要调整文件名，删除原本的C
-        await chaite.getToolsManager().renameFile(body.id, old.name, body.name)
-      }
+      const old = await mgr.getInstanceT(body.id)
+      if (!old) { res.status(404).json(ChaiteResponse.fail(null, 'Tool not found')); return null }
+      if (old.name !== body.name) await mgr.renameFile(body.id, old.name, body.name)
     }
-    const channelId = await chaite.getToolsManager().addInstance(body)
-    body.id = channelId
-    res.status(200)
-      .json(ChaiteResponse.ok(body))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
+    const id = await mgr.addInstance(body)
+    body.id = id
+    return body
+  })
 })
 
-router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    const channel = await chaite.getToolsManager().getInstanceT(req.params.id)
-    res.status(200)
-      .json(ChaiteResponse.ok(channel))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
+/** PUT /api/tools/:id — full update */
+router.put('/:id', async (req: Request<{ id: string }, object, ToolDTO>, res: Response) => {
+  wrap(res, async () => {
+    const mgr = Chaite.getInstance().getToolsManager()
+    const old = await mgr.getInstanceT(req.params.id)
+    if (!old) { res.status(404).json(ChaiteResponse.fail(null, 'Tool not found')); return null }
+    const body = Object.assign(req.body, { id: req.params.id })
+    if (old.name !== body.name) await mgr.renameFile(req.params.id, old.name, body.name)
+    const id = await mgr.addInstance(body)
+    return { ...body, id }
+  })
 })
 
-router.delete('/:id', async (req: Request<{ id: string }>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    await chaite.getToolsManager().deleteInstance(req.params.id)
-    res.status(200)
-      .json(ChaiteResponse.ok(null))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
+/** GET /api/tools/:id */
+router.get('/:id', (req: Request<{ id: string }>, res: Response) => {
+  wrap(res, async () => {
+    const tool = await Chaite.getInstance().getToolsManager().getInstanceT(req.params.id)
+    if (!tool) { res.status(404).json(ChaiteResponse.fail(null, 'Tool not found')); return null }
+    return tool
+  })
 })
 
-interface UploadToolDTO {
-  id: string
-}
-
-router.post('/upload', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    const channel = await chaite.getToolsManager().shareToCloud(req.body.id)
-    res.status(200)
-      .json(ChaiteResponse.ok(channel))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
+/** DELETE /api/tools/:id */
+router.delete('/:id', (req: Request<{ id: string }>, res: Response) => {
+  wrap(res, async () => {
+    const mgr = Chaite.getInstance().getToolsManager()
+    const existing = await mgr.getInstanceT(req.params.id)
+    if (!existing) { res.status(404).json(ChaiteResponse.fail(null, 'Tool not found')); return null }
+    await mgr.deleteInstance(req.params.id)
+    return { deleted: true }
+  })
 })
 
-router.post('/download', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    const manager = chaite.getToolsManager()
+// ─── Cloud sync ───────────────────────────────────────────────────────────────
+
+router.post('/upload', (req: Request<object, object, { id: string }>, res: Response) => {
+  wrap(res, () => Chaite.getInstance().getToolsManager().shareToCloud(req.body.id))
+})
+
+router.post('/download', async (req: Request<object, object, { id: string }>, res: Response) => {
+  wrap(res, async () => {
+    const manager = Chaite.getInstance().getToolsManager()
     const tool = await manager.getFromCloud(req.body.id)
-    if (!tool) {
-      res.status(404)
-        .json(ChaiteResponse.fail(null, 'Tool not found'))
-      return
-    }
+    if (!tool) { res.status(404).json(ChaiteResponse.fail(null, 'Tool not found in cloud')); return null }
     tool.cloudId = tool.id
-    const existCloudTools = await manager.getInstanceTByCloudId(tool.cloudId)
-    if (existCloudTools.length > 0) {
-      // 如果已经有了，则视为更新，先检查哈希
-      const existTool = existCloudTools[0]
-      if (existTool.code === tool.code) {
-        res.status(400)
-          .json(ChaiteResponse.fail(null, '工具已存在且是最新版本'))
-        return
-      }
-      // 如果自己的更新日期更新但md5不一致可能是本地修改，会覆盖 再说吧 // todo
-      tool.id = existTool.id
+    const existing = await manager.getInstanceTByCloudId(tool.cloudId)
+    if (existing.length > 0) {
+      if (existing[0].code === tool.code) { res.status(400).json(ChaiteResponse.fail(null, '工具已是最新版本')); return null }
+      tool.id = existing[0].id
     } else {
-      // 否则视为第一次下载
       tool.id = ''
     }
-    const toolId = await manager.upsertInstanceT(tool)
-    tool.id = toolId
-    res.status(200)
-      .json(ChaiteResponse.ok(tool))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
+    const id = await manager.upsertInstanceT(tool)
+    return { ...tool, id }
+  })
 })
 
-
-interface ListCloudToolDTORequest {
-  filter?: Filter,
-  options?: SearchOption,
-  query: string
-}
-
-router.post('/list-cloud', async (req: Request<object, object, ListCloudToolDTORequest>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    const channels = await chaite.getToolsManager().listFromCloud(req.body.filter || {}, req.body.query, req.body.options || {})
-    res.status(200)
-      .json(ChaiteResponse.ok(channels))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
+router.post('/list-cloud', (req: Request<object, object, { filter?: Filter; options?: SearchOption; query: string }>, res: Response) => {
+  wrap(res, () => Chaite.getInstance().getToolsManager().listFromCloud(req.body.filter || {}, req.body.query, req.body.options || {}))
 })
 
 export default router

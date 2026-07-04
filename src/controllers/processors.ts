@@ -1,171 +1,106 @@
-import express, { Router } from 'express'
-import { Request, Response } from 'express'
+import express, { Router, Request, Response } from 'express'
 import { Chaite, ChaiteResponse, Filter, ProcessorDTO, SearchOption } from '../index'
-import { getMd5 } from '../utils/hash'
+
 const router: Router = express.Router()
 
-interface ListProcessorDTO {
-  name?: string;
-  ptype: 'pre' | 'post'
+function paginate<T>(items: T[], req: Request) {
+  const page = Math.max(1, parseInt(req.query['page'] as string) || 1)
+  const pageSize = Math.min(100, Math.max(1, parseInt(req.query['pageSize'] as string) || 20))
+  return { items: items.slice((page - 1) * pageSize, page * pageSize), total: items.length, page, pageSize }
 }
 
-// todo pageable
-router.get('/list', async (req: Request<object, object, ListProcessorDTO>, res: Response) => {
-  const body = req.body
-  const chaite = Chaite.getInstance()
-  let allProcessorDTO = await chaite.getProcessorsManager().listInstances()
-  if (body.name) {
-    allProcessorDTO = allProcessorDTO.filter(tool => tool.name.includes(body.name as string))
-  }
-  if (body.ptype) {
-    allProcessorDTO = allProcessorDTO.filter(tool => tool.type === body.ptype)
-  }
-  res.status(200)
-    .json(ChaiteResponse.ok(allProcessorDTO))
-})
-
-router.post('/', async (req: Request<object, object, ProcessorDTO>, res: Response) => {
-  const body = req.body
-  const chaite = Chaite.getInstance()
+async function wrap(res: Response, fn: () => Promise<unknown>) {
   try {
-    const channel = await chaite.getProcessorsManager().addInstance(body)
-    res.status(200)
-      .json(ChaiteResponse.ok(channel))
+    const data = await fn()
+    if (!res.headersSent) res.status(200).json(ChaiteResponse.ok(data))
   } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
+    if (!res.headersSent) {
+      Chaite.getInstance().getLogger().error(e as object)
+      res.status(500).json(ChaiteResponse.fail(null, e instanceof Error ? e.message : 'Unknown error'))
     }
   }
-})
-
-router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    const channel = await chaite.getProcessorsManager().getInstanceT(req.params.id)
-    res.status(200)
-      .json(ChaiteResponse.ok(channel))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
-})
-
-router.delete('/:id', async (req: Request<{ id: string }>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    await chaite.getProcessorsManager().deleteInstance(req.params.id)
-    res.status(200)
-      .json(ChaiteResponse.ok(null))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
-})
-
-interface UploadToolDTO {
-  id: string
 }
 
-router.post('/upload', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    const channel = await chaite.getProcessorsManager().shareToCloud(req.body.id)
-    res.status(200)
-      .json(ChaiteResponse.ok(channel))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
+// ─── Local CRUD ───────────────────────────────────────────────────────────────
+
+/** GET /api/processors/list?name=xxx&type=pre|post&page=1&pageSize=20 */
+router.get('/list', (req: Request, res: Response) => {
+  wrap(res, async () => {
+    let items = await Chaite.getInstance().getProcessorsManager().listInstances()
+    const name = req.query['name'] as string | undefined
+    const type = req.query['type'] as string | undefined
+    if (name) items = items.filter(p => p.name.includes(name))
+    if (type) items = items.filter(p => p.type === type)
+    return paginate(items, req)
+  })
 })
 
-router.post('/download', async (req: Request<object, object, UploadToolDTO>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    const manager = chaite.getProcessorsManager()
+/** POST /api/processors — create */
+router.post('/', (req: Request<object, object, ProcessorDTO>, res: Response) => {
+  wrap(res, async () => {
+    const id = await Chaite.getInstance().getProcessorsManager().addInstance(req.body)
+    return { ...req.body, id }
+  })
+})
+
+/** PUT /api/processors/:id — full update */
+router.put('/:id', (req: Request<{ id: string }, object, ProcessorDTO>, res: Response) => {
+  wrap(res, async () => {
+    const mgr = Chaite.getInstance().getProcessorsManager()
+    const existing = await mgr.getInstanceT(req.params.id)
+    if (!existing) { res.status(404).json(ChaiteResponse.fail(null, 'Processor not found')); return null }
+    const body: ProcessorDTO = { ...req.body, id: req.params.id } as ProcessorDTO
+    const id = await mgr.upsertInstanceT(body)
+    return { ...body, id }
+  })
+})
+
+/** GET /api/processors/:id */
+router.get('/:id', (req: Request<{ id: string }>, res: Response) => {
+  wrap(res, async () => {
+    const processor = await Chaite.getInstance().getProcessorsManager().getInstanceT(req.params.id)
+    if (!processor) { res.status(404).json(ChaiteResponse.fail(null, 'Processor not found')); return null }
+    return processor
+  })
+})
+
+/** DELETE /api/processors/:id */
+router.delete('/:id', (req: Request<{ id: string }>, res: Response) => {
+  wrap(res, async () => {
+    const mgr = Chaite.getInstance().getProcessorsManager()
+    const existing = await mgr.getInstanceT(req.params.id)
+    if (!existing) { res.status(404).json(ChaiteResponse.fail(null, 'Processor not found')); return null }
+    await mgr.deleteInstance(req.params.id)
+    return { deleted: true }
+  })
+})
+
+// ─── Cloud sync ───────────────────────────────────────────────────────────────
+
+router.post('/upload', (req: Request<object, object, { id: string }>, res: Response) => {
+  wrap(res, () => Chaite.getInstance().getProcessorsManager().shareToCloud(req.body.id))
+})
+
+router.post('/download', (req: Request<object, object, { id: string }>, res: Response) => {
+  wrap(res, async () => {
+    const manager = Chaite.getInstance().getProcessorsManager()
     const processor = await manager.getFromCloud(req.body.id)
-    if (!processor) {
-      res.status(404)
-        .json(ChaiteResponse.fail(null, 'Processor not found'))
-      return
-    }
+    if (!processor) { res.status(404).json(ChaiteResponse.fail(null, 'Processor not found in cloud')); return null }
     processor.cloudId = processor.id
-    const existProcessorsTools = await manager.getInstanceTByCloudId(processor.cloudId)
-    if (existProcessorsTools.length > 0) {
-      // 如果已经有了，则视为更新，先检查哈希
-      const existTool = existProcessorsTools[0]
-      if (existTool.code === processor.code) {
-        res.status(400)
-          .json(ChaiteResponse.fail(null, '处理器已存在且是最新版本'))
-        return
-      }
-      // 如果自己的更新日期更新但md5不一致可能是本地修改，会覆盖 再说吧 // todo
-      processor.id = existProcessorsTools[0].id
+    const existing = await manager.getInstanceTByCloudId(processor.cloudId)
+    if (existing.length > 0) {
+      if (existing[0].code === processor.code) { res.status(400).json(ChaiteResponse.fail(null, '处理器已是最新版本')); return null }
+      processor.id = existing[0].id
     } else {
-      // 否则视为第一次下载
       processor.id = ''
     }
-    const channelId = await manager.upsertInstanceT(processor)
-    processor.id = channelId
-    res.status(200)
-      .json(ChaiteResponse.ok(processor))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
+    const id = await manager.upsertInstanceT(processor)
+    return { ...processor, id }
+  })
 })
 
-
-interface ListCloudToolDTORequest {
-  filter?: Filter,
-  options?: SearchOption,
-  query: string
-}
-
-router.post('/list-cloud', async (req: Request<object, object, ListCloudToolDTORequest>, res: Response) => {
-  const chaite = Chaite.getInstance()
-  try {
-    const channels = await chaite.getProcessorsManager().listFromCloud(req.body.filter || {}, req.body.query, req.body.options || {})
-    res.status(200)
-      .json(ChaiteResponse.ok(channels))
-  } catch (e) {
-    chaite.getLogger().error(e as object)
-    if (e instanceof Error) {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, e.message))
-    } else {
-      res.status(500)
-        .json(ChaiteResponse.fail(null, 'Unknown error'))
-    }
-  }
+router.post('/list-cloud', (req: Request<object, object, { filter?: Filter; options?: SearchOption; query: string }>, res: Response) => {
+  wrap(res, () => Chaite.getInstance().getProcessorsManager().listFromCloud(req.body.filter || {}, req.body.query, req.body.options || {}))
 })
 
 export default router

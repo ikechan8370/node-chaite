@@ -43,6 +43,10 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this._consecutiveToolCallCount = option._consecutiveToolCallCount
     this._consecutiveIdenticalToolCallCount = option._consecutiveIdenticalToolCallCount
     this._lastToolCallSignature = option._lastToolCallSignature
+    this.toolTimeoutMs = option.toolTimeoutMs
+    this.jobId = option.jobId
+    this.planId = option.planId
+    this.skillName = option.skillName
   }
 
   static create(options?: SendMessageOption | Partial<SendMessageOption>): SendMessageOption {
@@ -107,6 +111,18 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
   _consecutiveIdenticalToolCallCount?: number
   _lastToolCallSignature?: string
 
+  /**
+   * Per-tool call timeout in ms. Overrides channel-level toolTimeoutMs.
+   */
+  toolTimeoutMs?: number
+
+  /**
+   * Agent context fields propagated through the call chain.
+   * Set automatically by Chaite when running under a background job or plan.
+   */
+  jobId?: string
+  planId?: string
+  skillName?: string
 
   /**
      * 流模式的回调

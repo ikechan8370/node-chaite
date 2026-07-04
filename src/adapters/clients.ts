@@ -26,6 +26,8 @@ import {
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
 } from '../types'
+import type { ExecutionContext, ToolExecutor } from '../agent/contracts'
+import { McpToolProxy } from '../agent/tool-executors/proxy'
 import DefaultHistoryManager from '../utils/history'
 import { asyncLocalStorage, extractClassName, getKey } from '../utils'
 import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types'
@@ -159,6 +161,33 @@ export class AbstractClient implements IClient {
         pushUnique(toolC)
       }
     }
+    // Append MCP / remote tools discovered via toolExecutor.
+    // These are wrapped as McpToolProxy so they look like normal Tool objects
+    // to the model and to the execution loop — no special-casing needed.
+    const toolExecutor: ToolExecutor | undefined = this.options.toolExecutor
+    if (toolExecutor?.listAvailableTools) {
+      const execCtxBuilder = (): ExecutionContext => ({
+        runId: crypto.randomUUID(),
+        userId: this.context.getEvent()?.sender?.user_id?.toString() ?? 'unknown',
+        groupId: this.context.getEvent()?.group?.group_id?.toString(),
+        skillName: this.context.skillName,
+        jobId: this.context.jobId,
+        planId: this.context.planId,
+        timeoutMs: this.options.toolTimeoutMs,
+      })
+      try {
+        const remoteSchemas = await toolExecutor.listAvailableTools(execCtxBuilder())
+        for (const schema of remoteSchemas) {
+          // Local tool takes priority if same name exists
+          if (!resolvedTools.find(t => t.function.name === schema.name)) {
+            resolvedTools.push(new McpToolProxy(schema, toolExecutor, execCtxBuilder))
+          }
+        }
+      } catch (err) {
+        this.logger.warn(`[fullfillTools] Failed to fetch remote tools: ${(err as Error).message}`)
+      }
+    }
+
     this.tools = resolvedTools
     return this.tools
   }
@@ -214,7 +243,24 @@ export class AbstractClient implements IClient {
           this.logger.debug('skip sending empty user message to model')
         }
       }
+      const _llmCallStart = Date.now()
       const modelResponse = await this._sendMessage(histories, apiKey, options as SendMessageOption)
+      const _llmCallDuration = Date.now() - _llmCallStart
+      // ── Operation log: LLM call ──────────────────────────────────────────────
+      asyncLocalStorage.getStore()?.chaite?.getOperationLogManager?.()?.addSync({
+        type: 'llm.call',
+        level: 'info',
+        summary: `LLM call${options.model ? ` [${options.model}]` : ''}`,
+        model: options.model,
+        conversationId: options.conversationId,
+        userId: (this.context.getEvent?.()?.sender?.user_id ?? this.context.jobId ?? undefined)?.toString(),
+        skillName: this.context.skillName,
+        jobId: this.context.jobId,
+        planId: this.context.planId,
+        durationMs: _llmCallDuration,
+        inputTokens: (modelResponse.usage as any)?.promptTokens ?? (modelResponse.usage as any)?.inputTokens,
+        outputTokens: (modelResponse.usage as any)?.completionTokens ?? (modelResponse.usage as any)?.outputTokens,
+      })
 
       // 后处理器
       if (modelResponse.role === 'assistant') {
@@ -285,29 +331,75 @@ export class AbstractClient implements IClient {
           }
         }
         const toolCallResults: ToolCallResult[] = []
+
         for (const r of modelResponse.toolCalls) {
           const fcName = r.function.name
           const fcArgs = r.function.arguments
+
+          this.logger.info(`run tool ${fcName} with args ${JSON.stringify(fcArgs)}`)
+
+          // Unified execution: local Tool.run() for local tools,
+          // McpToolProxy.run() for remote tools — routing is transparent.
           const tool = this.tools.find(t => t.function.name === fcName)
+          let toolResult: string
+          const _toolCallStart = Date.now()
+          const _toolUserId = (this.context.getEvent?.()?.sender?.user_id ?? this.context.jobId ?? undefined)?.toString()
           if (tool) {
-            this.logger.info(`run tool ${fcName} with args ${JSON.stringify(fcArgs)}`)
-            let toolResult: string
             try {
               toolResult = await tool.run(fcArgs, this.context)
               if (typeof toolResult !== 'string') {
                 toolResult = JSON.stringify(toolResult)
               }
+              // ── Operation log: tool call success ──────────────────────────────
+              asyncLocalStorage.getStore()?.chaite?.getOperationLogManager?.()?.addSync({
+                type: 'tool.call',
+                level: 'info',
+                summary: `Tool call: ${fcName}`,
+                toolName: fcName,
+                durationMs: Date.now() - _toolCallStart,
+                userId: _toolUserId,
+                conversationId: options.conversationId,
+                skillName: this.context.skillName,
+                jobId: this.context.jobId,
+                planId: this.context.planId,
+              })
             } catch (err: unknown) {
               toolResult = (err as Error).message
+              // ── Operation log: tool call error ────────────────────────────────
+              asyncLocalStorage.getStore()?.chaite?.getOperationLogManager?.()?.addSync({
+                type: 'tool.error',
+                level: 'error',
+                summary: `Tool error: ${fcName}`,
+                toolName: fcName,
+                detail: toolResult,
+                durationMs: Date.now() - _toolCallStart,
+                userId: _toolUserId,
+                conversationId: options.conversationId,
+                skillName: this.context.skillName,
+                jobId: this.context.jobId,
+                planId: this.context.planId,
+              })
             }
-            this.logger.info(`tool ${fcName} result ${toolResult}`)
-            toolCallResults.push({
-              tool_call_id: r.id,
-              content: toolResult,
-              type: 'tool',
-              name: r.function.name,
+          } else {
+            toolResult = `ERROR: Tool "${fcName}" not found`
+            asyncLocalStorage.getStore()?.chaite?.getOperationLogManager?.()?.addSync({
+              type: 'tool.error',
+              level: 'error',
+              summary: `Tool not found: ${fcName}`,
+              toolName: fcName,
+              detail: toolResult,
+              userId: _toolUserId,
+              conversationId: options.conversationId,
             })
           }
+
+          this.logger.info(`tool ${fcName} result ${toolResult}`)
+          toolCallResults.push({
+            tool_call_id: r.id,
+            content: toolResult,
+            type: 'tool',
+            name: r.function.name,
+          })
         }
         const tcMsgId = crypto.randomUUID()
         const toolCallResultMessage: ToolCallResultMessage & History = {

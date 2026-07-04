@@ -10,6 +10,8 @@ import OpenAIRouter from './openai'
 import ToolGroupsRouter from './toolsGroup'
 import TriggerRouter from './trigger'
 import SystemRouter from './basic'
+import AgentRouter from './agent'
+import LogsRouter from './logs'
 import cors from 'cors'
 import { authenticateToken } from './middlewares'
 import { getLogger } from '../utils'
@@ -31,6 +33,8 @@ export function createApp (configure?: (app: Application) => void): Application 
   app.use('/api/processors', authenticateToken, ProcessorsRouter)
   app.use('/api/triggers', authenticateToken, TriggerRouter)
   app.use('/api/toolGroups', authenticateToken, ToolGroupsRouter)
+  app.use('/api/agent', authenticateToken, AgentRouter)
+  app.use('/api/logs', authenticateToken, LogsRouter)
   app.use('/v1', authenticateToken, OpenAIRouter)
   configure?.(app)
   app.use(express.static(path.join(__dirname, '../frontend/build')))

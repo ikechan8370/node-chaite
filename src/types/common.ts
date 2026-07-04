@@ -6,6 +6,7 @@ import { DeSerializable, Serializable, Wait } from './cloud'
 import { EventMessage } from './external'
 import { AbstractClient } from '../adapters'
 import type { Chaite } from '../core'
+import type { ToolExecutor } from '../agent/contracts'
 
 export const MultipleKeyStrategyChoice = {
   RANDOM: 'random' as MultipleKeyStrategy,
@@ -34,6 +35,14 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
   preProcessorIds?: string[]
   private preProcessors?: PreProcessor[]
 
+  /**
+   * Optional ToolExecutor for remote-first / sandbox tool execution.
+   * If provided, AbstractClient will use it instead of calling tool.run() directly.
+   */
+  toolExecutor?: ToolExecutor
+  /** Per-tool call timeout in ms (used by ToolExecutor if supported) */
+  toolTimeoutMs?: number
+
   constructor(options?: Partial<BaseClientOptions>) {
     if (options) {
       this.features = options.features || []
@@ -48,6 +57,8 @@ export class BaseClientOptions implements Serializable, DeSerializable<BaseClien
         this.historyManager = options.historyManager
       }
       this.logger = options.logger
+      this.toolExecutor = options.toolExecutor
+      this.toolTimeoutMs = options.toolTimeoutMs
       this.init()
     }
   }
@@ -184,6 +195,15 @@ export class ChaiteContext {
   private event?: EventMessage
   private data?: Record<string, any>
   private client?: AbstractClient
+
+  /** Set when this context is running inside a background job */
+  jobId?: string
+  /** Set when this context is executing a plan */
+  planId?: string
+  /** Active skill name for this request */
+  skillName?: string
+  /** Active workflow id for this request */
+  workflowId?: string
   setHistoryMessages(histories: HistoryMessage[]) {
     this.historyMessages = histories
   }

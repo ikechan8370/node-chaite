@@ -1,0 +1,451 @@
+<script lang="ts" setup>
+import type { DataTableColumns } from 'naive-ui'
+import { NButton, NFlex, NGrid, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
+import { h, onMounted, reactive, ref } from 'vue'
+import type { ListToolModels } from '@/service/api/tools'
+import { createTool, deleteTool, fetchToolList, updateTool, uploadToolToCloud } from '@/service/api/tools'
+import ToolFormModal from './ToolFormModal.vue'
+import { createToolGroup, deleteToolGroup, fetchToolGroupList, updateToolGroup } from '@/service/api/toolGroup'
+import ToolGroupFormModal from '@/views/tools/ToolGroupFormModal.vue'
+import IconLinkCloudSuccess from '~icons/icon-park-outline/cloudy'
+import type { Shareable } from '@/typings/entities/shareable'
+
+function createColumns({
+  upload,
+  edit,
+  remove,
+}: {
+  upload: (row: Shareable.ToolModel) => void
+  edit: (row: Shareable.ToolModel) => void
+  remove: (row: Shareable.ToolModel) => void
+}): DataTableColumns<Shareable.ToolModel> {
+  return [
+    {
+      title: 'ID',
+      key: 'id',
+      resizable: true,
+    },
+    {
+      title: '云端ID',
+      key: 'cloudId',
+      resizable: true,
+    },
+    {
+      title: '名称',
+      key: 'name',
+      render(row: Shareable.ToolModel) {
+        const children = [row.name] as any[]
+        if (row.uploader) {
+          children.push(h(NPopover, { trigger: 'hover' }, { trigger: () => h(IconLinkCloudSuccess, { style: { color: 'green' } }), default: () => '云端工具' }))
+        }
+        return h(NFlex, { align: 'center' }, { default: () => children })
+      },
+      resizable: true,
+    },
+    {
+      title: '状态',
+      key: 'status',
+      render(row: Shareable.ToolModel) {
+        return row.status === 'disabled'
+          ? h(NPopover, { trigger: 'hover' }, { trigger: h(NTag, { type: 'error' }, { default: () => '禁用' }), default: () => '已禁用，不会被任何工具组使用' })
+          : h(NTag, { type: 'success' }, { default: () => '正常' })
+      },
+    },
+    {
+      title: '描述',
+      key: 'description',
+      width: 500,
+    },
+    {
+      title: '创建日期',
+      key: 'createdAt',
+      resizable: true,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      render(row) {
+        return [
+          h(
+            NButton,
+            {
+              type: 'primary',
+              strong: true,
+              tertiary: true,
+              size: 'small',
+              onClick: () => upload(row),
+              disabled: !!row.uploader?.username,
+            },
+            { default: () => '上传' },
+          ),
+          h(
+            NButton,
+            {
+              type: 'info',
+              strong: true,
+              tertiary: true,
+              size: 'small',
+              onClick: () => edit(row),
+            },
+            { default: () => '修改' },
+          ),
+          h(
+            NButton,
+            {
+              type: 'error',
+              strong: true,
+              tertiary: true,
+              size: 'small',
+              onClick: () => remove(row),
+            },
+            { default: () => '删除' },
+          ),
+        ]
+      },
+    },
+  ]
+}
+
+// 工具组列定义
+function createGroupColumns({
+  upload,
+  edit,
+  remove,
+}: {
+  upload: (row: Shareable.ToolsGroupModel) => void
+  edit: (row: Shareable.ToolsGroupModel) => void
+  remove: (row: Shareable.ToolsGroupModel) => void
+}): DataTableColumns<Shareable.ToolsGroupModel> {
+  return [
+    {
+      title: 'ID',
+      key: 'id',
+      resizable: true,
+    },
+    {
+      title: '组名称',
+      key: 'name',
+      render(row) {
+        return h('div', {}, row.name)
+      },
+      resizable: true,
+    },
+    {
+      title: '描述',
+      key: 'description',
+      width: 500,
+    },
+    {
+      title: '工具数量',
+      key: 'toolCount',
+      render(row) {
+        return h('div', {}, row.isDefault ? '-' : (row.toolIds?.length || 0))
+      },
+    },
+    {
+      title: '创建日期',
+      key: 'createdAt',
+      resizable: true,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      render(row) {
+        return [
+          // h(
+          //   NButton,
+          //   {
+          //     type: 'primary',
+          //     strong: true,
+          //     tertiary: true,
+          //     size: 'small',
+          //     onClick: () => view(row),
+          //   },
+          //   { default: () => '查看' },
+          // ),
+          h(
+            NButton,
+            {
+              type: 'info',
+              strong: true,
+              tertiary: true,
+              size: 'small',
+              onClick: () => edit(row),
+              disabled: row.isDefault,
+            },
+            { default: () => '修改' },
+          ),
+          h(
+            NButton,
+            {
+              type: 'error',
+              strong: true,
+              tertiary: true,
+              size: 'small',
+              onClick: () => remove(row),
+              disabled: row.isDefault,
+            },
+            { default: () => '删除' },
+          ),
+        ]
+      },
+    },
+  ]
+}
+
+const message = useMessage()
+const data = reactive({ value: [] as Shareable.ToolModel[] })
+const showModal = ref(false)
+const editMode = ref(false)
+const defaultTool = {
+  modelType: 'settings',
+  name: '',
+  code: '',
+  description: '',
+  uploader: undefined,
+} as Shareable.ToolModel
+const currentTool = ref<Shareable.ToolModel>(JSON.parse(JSON.stringify(defaultTool)))
+const loading = ref(false)
+
+// 工具组相关状态
+const groupData = reactive({ value: [] as Shareable.ToolsGroupModel[] })
+const showGroupModal = ref(false)
+const editGroupMode = ref(false)
+const defaultGroup = {
+  name: '',
+  description: '',
+  toolIds: [],
+  modelType: 'settings',
+  embedded: false,
+} as Shareable.ToolsGroupModel
+const currentGroup = ref<Shareable.ToolsGroupModel>(JSON.parse(JSON.stringify(defaultGroup)))
+const groupLoading = ref(false)
+const activeTab = ref('tools') // 默认显示工具管理标签
+
+function fetchTools(filter?: any) {
+  loading.value = true
+  fetchToolList(filter).then((res) => {
+    data.value = res.data
+    loading.value = false
+  }).catch(() => {
+    loading.value = false
+  })
+}
+
+function handleRemoveTool(row: Shareable.ToolModel) {
+  window.$dialog.warning({
+    title: '确认删除',
+    content: `确定要删除工具 "${row.name}" 吗？此操作不可恢复`,
+    positiveText: '确认删除',
+    onPositiveClick: () => {
+      deleteTool(row.id as string).then((res) => {
+        if (res.code === 0) {
+          message.success('删除成功')
+          fetchTools()
+        }
+      }).finally(() => (loading.value = false))
+    },
+  })
+}
+
+function handleSubmitTool(toolData: Shareable.ToolModel) {
+  loading.value = true
+  const action = editMode.value && toolData.id
+    ? updateTool(toolData.id, toolData)
+    : createTool(toolData)
+  action.then((res) => {
+    if (res.code === 0) {
+      message.success(editMode.value ? '修改成功' : '创建成功')
+      fetchTools()
+    }
+    else {
+      message.error(res.message || '操作失败')
+    }
+  }).finally(() => {
+    loading.value = false
+    showModal.value = false
+  })
+}
+
+const columns = createColumns({
+  upload(row) {
+    // message.warning(`暂未实现`)
+    uploadToolToCloud(row as { id: string }).then((res) => {
+      if (res.code === 0) {
+        message.success('上传成功')
+      }
+    })
+  },
+  edit(row) {
+    editMode.value = true
+    currentTool.value = { ...row }
+    showModal.value = true
+  },
+  remove: handleRemoveTool,
+})
+
+function handleAddTool() {
+  editMode.value = false
+  currentTool.value = JSON.parse(JSON.stringify(defaultTool)) as Shareable.ToolModel
+  showModal.value = true
+}
+
+// 工具组相关函数
+function fetchToolGroups(filter?: any) {
+  groupLoading.value = true
+  // 这里替换为实际的API调用
+  fetchToolGroupList(filter).then((res) => {
+    groupData.value = res.data
+    groupLoading.value = false
+  }).catch(() => {
+    groupLoading.value = false
+  })
+}
+
+function handleViewToolGroup(row: Shareable.ToolsGroupModel) {
+  message.info(`查看工具组: ${row.name}，包含 ${row.toolIds?.length || 0} 个工具`)
+}
+
+function handleRemoveToolGroup(row: Shareable.ToolsGroupModel) {
+  window.$dialog.warning({
+    title: '确认删除',
+    content: `确定要删除工具组 "${row.name}" 吗？此操作不可恢复`,
+    positiveText: '确认删除',
+    onPositiveClick: () => {
+      groupLoading.value = true
+      deleteToolGroup(row.id as string).then((res) => {
+        if (res.code === 0) {
+          message.success('删除成功')
+          fetchToolGroups()
+        }
+      }).finally(() => (groupLoading.value = false))
+    },
+  })
+}
+
+function handleSubmitToolGroup(gData: Shareable.ToolsGroupModel) {
+  groupLoading.value = true
+  const action = editGroupMode.value && gData.id
+    ? updateToolGroup(gData.id, gData)
+    : createToolGroup(gData)
+  action.then((res) => {
+    if (res.code === 0) {
+      message.success(editGroupMode.value ? '修改成功' : '创建成功')
+      fetchToolGroups()
+    }
+    else {
+      message.error(res.message || '操作失败')
+    }
+  }).finally(() => {
+    groupLoading.value = false
+    showGroupModal.value = false
+  })
+}
+
+const groupColumns = createGroupColumns({
+  upload: handleViewToolGroup,
+  edit(row) {
+    editGroupMode.value = true
+    currentGroup.value = { ...row }
+    showGroupModal.value = true
+  },
+  remove: handleRemoveToolGroup,
+})
+
+function handleAddToolGroup() {
+  editGroupMode.value = false
+  currentGroup.value = JSON.parse(JSON.stringify(defaultGroup)) as Shareable.ToolsGroupModel
+  showGroupModal.value = true
+}
+
+onMounted(() => {
+  fetchTools()
+  fetchToolGroups()
+})
+
+// 搜索相关
+const searchModel = reactive({
+  name: undefined,
+} as ListToolModels)
+
+function handleResetSearch() {
+  searchModel.name = undefined
+  fetchTools(searchModel)
+}
+</script>
+
+<template>
+  <NSpace vertical size="large">
+    <n-card>
+      <n-form :model="searchModel" label-placement="left" inline :show-feedback="false">
+        <NGrid cols="1 s:2 m:3 l:6" :x-gap="12" :y-gap="16" responsive="screen" item-responsive>
+          <NFormItemGridItem span="1" label="名称" path="name">
+            <n-input v-model:value="searchModel.name" placeholder="请输入要搜索的名称关键词" />
+          </NFormItemGridItem>
+          <NGridItem span="1">
+            <NFlex class="ml-auto">
+              <NButton type="primary" @click="fetchTools(searchModel)">
+                <template #icon>
+                  <icon-park-outline-search />
+                </template>
+                搜索
+              </NButton>
+              <NButton strong secondary @click="handleResetSearch">
+                <template #icon>
+                  <icon-park-outline-redo />
+                </template>
+                重置
+              </NButton>
+            </NFlex>
+          </NGridItem>
+        </NGrid>
+      </n-form>
+    </n-card>
+    <n-card>
+      <n-tabs v-model:value="activeTab" type="line" animated>
+        <n-tab-pane name="tools" tab="工具管理">
+          <NSpace vertical size="large">
+            <div class="flex gap-4">
+              <NButton type="primary" @click="handleAddTool">
+                <template #icon>
+                  <icon-park-outline-add-one />
+                </template>
+                新建工具
+              </NButton>
+            </div>
+            <n-data-table :columns="columns" :data="data.value" :loading="loading" />
+          </NSpace>
+        </n-tab-pane>
+
+        <n-tab-pane name="groups" tab="工具组管理">
+          <NSpace vertical size="large">
+            <div class="flex gap-4">
+              <NButton type="primary" @click="handleAddToolGroup">
+                <template #icon>
+                  <icon-park-outline-add-one />
+                </template>
+                新建工具组
+              </NButton>
+            </div>
+            <n-data-table :columns="groupColumns" :data="groupData.value" :loading="groupLoading" />
+          </NSpace>
+        </n-tab-pane>
+      </n-tabs>
+    </n-card>
+
+    <ToolFormModal
+      v-model:show="showModal"
+      :edit-mode="editMode"
+      :initial-data="currentTool"
+      @submit="handleSubmitTool"
+    />
+
+    <ToolGroupFormModal
+      v-model:show="showGroupModal"
+      :edit-mode="editGroupMode"
+      :initial-data="currentGroup"
+      :available-tools="data.value"
+      @submit="handleSubmitToolGroup"
+    />
+  </NSpace>
+</template>
