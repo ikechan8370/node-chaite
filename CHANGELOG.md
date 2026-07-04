@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/ikechan8370/node-chaite/compare/v1.10.0...v1.10.1) (2026-07-04)
+
+
+### Bug Fixes
+
+* add packages field to frontend pnpm-workspace.yaml ([88175d9](https://github.com/ikechan8370/node-chaite/commit/88175d97f6df846fe1dda243ebcb3cba30a0b335))
+
 ## [1.10.0](https://github.com/ikechan8370/node-chaite/compare/v1.9.2...v1.10.0) (2026-07-04)
 
 
