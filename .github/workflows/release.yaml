@@ -36,8 +36,6 @@ jobs:
           version: 9
       # 安装依赖
       - run: pnpm install
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.RELEASE }}
         if: ${{ steps.release.outputs.release_created }}
       # 安装前端依赖并构建
       - run: cd frontend && pnpm install && pnpm build
@@ -46,9 +44,7 @@ jobs:
       - run: pnpm run prepublishOnly
         if: ${{ steps.release.outputs.release_created }}
       # 发布到 npm
-      - run: |
-          npm config set //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
-          npm publish --access public
+      - run: pnpm publish --access public --no-git-checks --//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
