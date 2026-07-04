@@ -46,7 +46,9 @@ jobs:
       - run: pnpm run prepublishOnly
         if: ${{ steps.release.outputs.release_created }}
       # 发布到 npm
-      - run: pnpm run pub
+      - run: |
+          npm config set //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
