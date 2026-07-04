@@ -91,6 +91,7 @@ export class OpenAIClient extends AbstractClient {
         stream: true,
         tools: tools.length > 0 ? tools : undefined,
         reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
+        thinking_budget_tokens: isThinkingModel && options.reasoningBudgetTokens ? options.reasoningBudgetTokens : undefined,
         tool_choice: tools.length > 0 ? toolChoice : undefined,
       })
       if (options.onChunk) {
@@ -153,7 +154,8 @@ export class OpenAIClient extends AbstractClient {
         tools: tools.length > 0 ? tools : undefined,
         tool_choice: tools.length > 0 ? toolChoice : undefined,
         reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
-      })
+        thinking_budget_tokens: isThinkingModel && options.reasoningBudgetTokens ? options.reasoningBudgetTokens : undefined,
+      } as any)
     }
     if (debug) {
       this.logger.info(`openai response: ${JSON.stringify(chatCompletion)}`)
@@ -207,5 +209,12 @@ export class OpenAIClient extends AbstractClient {
         embeddings: embeddings.data.map(e => e.embedding),
       } as EmbeddingResult
     })
+  }
+}
+
+// 扩展 OpenAI SDK 类型以支持 llama-server 的 thinking_budget_tokens 参数
+declare module 'openai' {
+  interface ChatCompletionCreateParamsBase {
+    thinking_budget_tokens?: number | null;
   }
 }
