@@ -123,7 +123,7 @@ const loading = ref(false)
 function fetchTriggers(filter?: any) {
   loading.value = true
   fetchTriggerList(filter).then((res) => {
-    data.value = res.data
+    data.value = res.data.items || res.data
     loading.value = false
   }).catch(() => {
     loading.value = false

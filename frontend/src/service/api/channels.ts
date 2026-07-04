@@ -40,3 +40,25 @@ export function downloadChannelFromCloud(data: { id: string }) {
 export function listChannelsFromCloud(req: Shareable.ListCloudChannelRequest) {
   return request.Post<Service.ResponseResult<Shareable.PaginationResult<Shareable.ChannelModel>>>('/api/channels/list-cloud', req)
 }
+
+export interface TestChannelResult {
+  success: boolean
+  model: string
+  elapsed: number
+  response?: string
+  usage?: { totalTokens: number }
+  error?: string
+}
+
+export function testChannel(data: { id: string; model?: string }) {
+  return request.Post<Service.ResponseResult<TestChannelResult>>('/api/channels/test', data)
+}
+
+export interface AutoFeaturesResult {
+  model: string
+  features: Record<string, { supported: boolean; detail?: string }>
+}
+
+export function autoDetectFeatures(data: { id: string; model?: string }) {
+  return request.Post<Service.ResponseResult<AutoFeaturesResult>>('/api/channels/auto-features', data)
+}

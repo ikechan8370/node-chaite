@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
-import { createVitePlugins } from './build/plugins'
-import { createViteProxy } from './build/proxy'
+import { createVitePlugins } from './vite-config/plugins'
+import { createViteProxy } from './vite-config/proxy'
 import { serviceConfig } from './service.config'
 
 // https://vitejs.dev/config/
@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
         env.VITE_HTTP_PROXY === 'Y' ? createViteProxy(envConfig) : undefined,
     },
     build: {
+      outDir: 'build',
       target: 'esnext',
       reportCompressedSize: false, // 启用/禁用 gzip 压缩大小报告
     },

@@ -225,7 +225,7 @@ const activeTab = ref('tools') // 默认显示工具管理标签
 function fetchTools(filter?: any) {
   loading.value = true
   fetchToolList(filter).then((res) => {
-    data.value = res.data
+    data.value = res.data.items || res.data
     loading.value = false
   }).catch(() => {
     loading.value = false
@@ -295,7 +295,7 @@ function fetchToolGroups(filter?: any) {
   groupLoading.value = true
   // 这里替换为实际的API调用
   fetchToolGroupList(filter).then((res) => {
-    groupData.value = res.data
+    groupData.value = res.data.items || res.data
     groupLoading.value = false
   }).catch(() => {
     groupLoading.value = false

@@ -1,5 +1,7 @@
 import express, { Router, Request, Response } from 'express'
 import { Chaite, ChaiteResponse, Channel, Filter, SearchOption } from '../index'
+import { ChaiteContext, TextContent, ImageContent, UserMessage, BaseClientOptions, Tool } from '../types'
+import { createClient } from '../adapters'
 
 const router: Router = express.Router()
 
@@ -31,7 +33,7 @@ router.get('/list', (req: Request, res: Response) => {
     if (name) items = items.filter(c => c.name.includes(name))
     if (type) items = items.filter(c => c.adapterType === type)
     if (status) items = items.filter(c => c.status === status)
-    if (model) items = items.filter(c => c.models.includes(model))
+    if (model) items = items.filter(c => c.models.some(m => m.name.includes(model)))
     return paginate(items, req)
   })
 })
@@ -102,6 +104,154 @@ router.post('/download', (req: Request<object, object, { id: string }>, res: Res
 
 router.post('/list-cloud', (req: Request<object, object, { filter?: Filter; options?: SearchOption; query: string }>, res: Response) => {
   wrap(res, () => Chaite.getInstance().getChannelsManager().listFromCloud(req.body.filter || {}, req.body.query, req.body.options || {}))
+})
+
+// ─── Channel test ────────────────────────────────────────────────────────────
+
+/** POST /api/channels/test — test channel connectivity */
+router.post('/test', (req: Request<object, object, { id: string; model?: string }>, res: Response) => {
+  wrap(res, async () => {
+    const { id, model } = req.body
+    const mgr = Chaite.getInstance().getChannelsManager()
+    const channel = await mgr.getInstance(id)
+    if (!channel) {
+      res.status(404).json(ChaiteResponse.fail(null, 'Channel not found'))
+      return null
+    }
+
+    const testModel = model || channel.models[0]?.name
+    if (!testModel) {
+      res.status(400).json(ChaiteResponse.fail(null, 'No model specified and channel has no models'))
+      return null
+    }
+
+    const context = new ChaiteContext(Chaite.getInstance().getLogger())
+    context.chaite = Chaite.getInstance()
+    const client = createClient(channel.adapterType, channel.options, context)
+    const startTime = Date.now()
+
+    try {
+      const result = await client.sendMessage(
+        { role: 'user', content: [{ type: 'text', text: 'Hi! Reply with exactly: OK' }] } as UserMessage,
+        { model: testModel, maxToken: 10, temperature: 0, stream: false }
+      )
+      const elapsed = Date.now() - startTime
+      const content = result.contents
+        ? result.contents.map((c: any) => c.text || '').join('')
+        : ''
+
+      return {
+        success: true,
+        model: testModel,
+        elapsed,
+        response: content.trim().substring(0, 200),
+        usage: result.usage,
+      }
+    } catch (e) {
+      const elapsed = Date.now() - startTime
+      return {
+        success: false,
+        model: testModel,
+        elapsed,
+        error: e instanceof Error ? e.message : 'Unknown error',
+      }
+    }
+  })
+})
+
+/** POST /api/channels/auto-features — auto-detect channel features */
+router.post('/auto-features', (req: Request<object, object, { id: string; model?: string }>, res: Response) => {
+  wrap(res, async () => {
+    const { id, model } = req.body
+    const mgr = Chaite.getInstance().getChannelsManager()
+    const channel = await mgr.getInstance(id)
+    if (!channel) {
+      res.status(404).json(ChaiteResponse.fail(null, 'Channel not found'))
+      return null
+    }
+
+    const testModel = model || channel.models[0]?.name
+    if (!testModel) {
+      res.status(400).json(ChaiteResponse.fail(null, 'No model specified'))
+      return null
+    }
+
+    const context = new ChaiteContext(Chaite.getInstance().getLogger())
+    context.chaite = Chaite.getInstance()
+    const client = createClient(channel.adapterType, channel.options, context)
+    const results: Record<string, { supported: boolean; detail?: string }> = {}
+
+    // Test chat
+    try {
+      await client.sendMessage(
+        { role: 'user', content: [{ type: 'text', text: 'Say just HELLO' }] } as UserMessage,
+        { model: testModel, maxToken: 10, temperature: 0, stream: false }
+      )
+      results.chat = { supported: true, detail: 'OK' }
+    } catch (e: any) {
+      results.chat = { supported: false, detail: e?.message || 'failed' }
+    }
+
+    // Test visual (send a tiny 1x1 base64 png)
+    try {
+      const tinyPng = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+      const visualMsg: UserMessage = {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Say exactly one word describing this image' } as TextContent,
+          { type: 'image', image: tinyPng, mimeType: 'image/png' } as ImageContent,
+        ],
+      }
+      await client.sendMessage(visualMsg,
+        { model: testModel, maxToken: 20, temperature: 0, stream: false }
+      )
+      results.visual = { supported: true, detail: 'OK' }
+    } catch (e: any) {
+      results.visual = { supported: false, detail: e?.message || 'failed' }
+    }
+
+    // Test embedding
+    try {
+      await client.getEmbedding('test', { model: testModel })
+      results.embedding = { supported: true, detail: 'OK' }
+    } catch (e: any) {
+      results.embedding = { supported: false, detail: e?.message || 'failed' }
+    }
+
+    // Test tool — create a temp client with a dummy tool and check if the model calls it
+    try {
+      const toolClient = createClient(channel.adapterType, {
+        ...channel.options,
+        tools: [{
+          name: 'get_weather',
+          type: 'function' as const,
+          function: {
+            name: 'get_weather',
+            description: 'Get current weather for a city',
+            parameters: {
+              type: 'object' as const,
+              properties: { location: { type: 'string', description: 'City name' } },
+              required: ['location'],
+            },
+          },
+          run: async () => 'ok',
+        }] as unknown as Tool[],
+      }, context)
+      await toolClient.sendMessage(
+        { role: 'user', content: [{ type: 'text', text: 'What is the weather in Beijing? Use the get_weather function to check.' } as TextContent] } as UserMessage,
+        { model: testModel, maxToken: 500, temperature: 0, stream: false, toolChoice: { type: 'any' } }
+      )
+      // toolChoice: 'any' → tool_choice: 'required'. If no error, tools are supported.
+      results.tool = { supported: true, detail: 'OK' }
+    } catch (e: any) {
+      results.tool = { supported: false, detail: e?.message || 'failed' }
+    }
+
+    return {
+      model: testModel,
+      features: results,
+    }
+  })
 })
 
 export default router

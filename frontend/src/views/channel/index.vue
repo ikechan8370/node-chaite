@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NDropdown, NFlex, NGrid, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NCheckbox, NDropdown, NFlex, NGrid, NModal, NPopover, NSpace, NTag, NText, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
 import IconLinkCloudSuccess from '~icons/icon-park-outline/cloudy'
 import type { ListChannels } from '@/service/api/channels'
-import { createChanel, deleteChanel, fetchChannelList, updateChannel } from '@/service/api/channels'
+import { createChanel, deleteChanel, fetchChannelList, updateChannel, testChannel, autoDetectFeatures, type TestChannelResult } from '@/service/api/channels'
 import ChannelFormModal from './ChannelFormModal.vue'
 import ChannelModel = Shareable.ChannelModel
 
@@ -13,7 +13,7 @@ function createColumns({
   edit,
   remove,
 }: {
-  play: (row: ChannelModel) => void
+  play: (row: ChannelModel, model?: string) => void
   edit: (row: ChannelModel) => void
   remove: (row: ChannelModel) => void
 }): DataTableColumns<ChannelModel> {
@@ -123,11 +123,11 @@ function createColumns({
               trigger: 'hover',
               options: row.models.map((model) => {
                 return {
-                  label: model,
-                  key: model,
+                  label: model.name || model,
+                  key: model.name || model,
                 }
               }),
-              onSelect: () => play(row),
+              onSelect: (key: string) => play(row, key),
             },
             { default: () => h(
               NButton,
@@ -207,7 +207,7 @@ const searchModel = reactive({
 function fetchChannels(filter: ListChannels) {
   loading.value = true
   fetchChannelList(filter).then((res) => {
-    data.value = res.data
+    data.value = res.data.items || res.data
     loading.value = false
   }).catch((err) => {
     console.error(err)
@@ -287,8 +287,8 @@ function handleSubmitChannel(channelData: Partial<Shareable.ChannelModel>) {
 }
 
 const columns = createColumns({
-  play(row) {
-    message.warning(`测试渠道: ${row.name}，暂未实现`)
+  play(row, model?: string) {
+    handleTestChannel(row, model || row.models[0]?.name || '')
   },
   edit(row) {
     handleEditChannel(row)
@@ -297,6 +297,60 @@ const columns = createColumns({
     handleRemoveChannel(row)
   },
 })
+
+// ─── Test channel ───
+const testLoading = ref(false)
+const testResult = ref<TestChannelResult | null>(null)
+const showTestModal = ref(false)
+const testedChannelName = ref('')
+const testedModel = ref('')
+
+async function handleTestChannel(row: ChannelModel, model: string) {
+  if (!row.id) return
+  testedChannelName.value = row.name
+  testedModel.value = model
+  testLoading.value = true
+  testResult.value = null
+  showTestModal.value = true
+  try {
+    const res = await testChannel({ id: row.id, model })
+    testResult.value = res.data
+  } catch (e: any) {
+    testResult.value = { success: false, model, elapsed: 0, error: e?.message || 'Request failed' }
+  } finally {
+    testLoading.value = false
+  }
+}
+
+// ─── Auto-detect features ───
+const autoDetectLoading = ref(false)
+
+async function handleAutoDetect(row: ChannelModel, model?: string) {
+  if (!row.id) return
+  const m = model || row.models[0]
+  if (!m) { message.warning('请先添加模型'); return }
+  autoDetectLoading.value = true
+  try {
+    const res = await autoDetectFeatures({ id: row.id, model: m })
+    if (res.code === 0) {
+      // Open edit modal with auto-detected features
+      const detectedFeatures: string[] = []
+      for (const [key, val] of Object.entries(res.data.features)) {
+        if (val.supported) detectedFeatures.push(key)
+      }
+      currentChannel.value = { ...row, options: { ...row.options, features: detectedFeatures as any } }
+      editMode.value = true
+      showModal.value = true
+      message.success(`自动探测完成: ${detectedFeatures.join(', ') || '无'}`)
+    } else {
+      message.error(res.message || '探测失败')
+    }
+  } catch (e: any) {
+    message.error(e?.message || '探测失败')
+  } finally {
+    autoDetectLoading.value = false
+  }
+}
 
 onMounted(() => {
   fetchChannels(filter.value)
@@ -405,7 +459,7 @@ const filterStatusOptions = computed(() => {
       </n-card>
     </NSpace>
 
-    <!-- Use the extracted ChannelFormModal component -->
+    <!-- Channel Form Modal -->
     <ChannelFormModal
       v-model:show="showModal"
       :edit-mode="editMode"
@@ -414,6 +468,49 @@ const filterStatusOptions = computed(() => {
       :post-processor-options="postProcessorOptions"
       @submit="handleSubmitChannel"
     />
+
+    <!-- Test Result Modal -->
+    <NModal v-model:show="showTestModal" preset="card" title="渠道测试" style="width: 500px; max-width: 90vw">
+      <div v-if="testLoading" style="text-align: center; padding: 20px;">
+        <NSpace vertical align="center">
+          <NText>正在测试渠道 "{{ testedChannelName }}" 模型 "{{ testedModel }}"...</NText>
+        </NSpace>
+      </div>
+      <div v-else-if="testResult" style="padding: 8px 0;">
+        <NSpace vertical>
+          <div>
+            <NText strong>渠道: </NText>
+            <NText>{{ testedChannelName }}</NText>
+          </div>
+          <div>
+            <NText strong>模型: </NText>
+            <NText>{{ testResult.model }}</NText>
+          </div>
+          <div>
+            <NText strong>耗时: </NText>
+            <NText>{{ testResult.elapsed }}ms</NText>
+          </div>
+          <div>
+            <NText strong>状态: </NText>
+            <NTag :type="testResult.success ? 'success' : 'error'">
+              {{ testResult.success ? '✓ 成功' : '✗ 失败' }}
+            </NTag>
+          </div>
+          <div v-if="testResult.success && testResult.response">
+            <NText strong>响应: </NText>
+            <NText depth="3">{{ testResult.response }}</NText>
+          </div>
+          <div v-if="!testResult.success && testResult.error">
+            <NText strong>错误: </NText>
+            <NText type="error">{{ testResult.error }}</NText>
+          </div>
+          <div v-if="testResult.success && testResult.usage">
+            <NText strong>Token用量: </NText>
+            <NText>{{ testResult.usage.totalTokens }}</NText>
+          </div>
+        </NSpace>
+      </div>
+    </NModal>
   </div>
 </template>
 

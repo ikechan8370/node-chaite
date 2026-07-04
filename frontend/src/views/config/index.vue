@@ -26,6 +26,7 @@ import IconLinkSystem from '~icons/icon-park-outline/system'
 import IconLinkPermission from '~icons/icon-park-outline/permissions'
 import IconLinkLock from '~icons/icon-park-outline/electronic-locks-open'
 import IconLinkMemory from '~icons/icon-park-outline/brain'
+import IconLinkVision from '~icons/icon-park-outline/preview-open'
 import type { CustomConfig } from '@/service/api/config'
 import { fetchConfig, saveConfig } from '@/service/api/config'
 import { fetchPresetList } from '@/service/api/presets'
@@ -65,6 +66,11 @@ const menuOptions: MenuOption[] = [
     label: '记忆配置',
     key: 'memory',
     icon: renderIcon(IconLinkMemory),
+  },
+  {
+    label: '视觉配置',
+    key: 'vision',
+    icon: renderIcon(IconLinkVision),
   },
   {
     label: 'Chaite配置',
@@ -168,6 +174,15 @@ const config = reactive({
     authKey: '',
     host: '',
     port: 48370,
+  },
+  vision: {
+    nonVisionStrategy: 'tool',
+    visionChannelId: '',
+    imageDescriptionModel: '',
+    imageDescriptionSystemPrompt: 'You are an image analysis assistant. Answer questions about images accurately and thoroughly.',
+    defaultQuestion: '请详细描述这张图片的内容，包括场景、人物、物体、文字、颜色等所有可见细节。',
+    maxImageSize: 10485760,
+    enableGroupContextImages: true,
   },
 })
 
@@ -1358,6 +1373,66 @@ onMounted(async () => {
                         style="width: 100%"
                         placeholder="输入监听端口"
                       />
+                    </NFormItemGridItem>
+                  </NGrid>
+                </NForm>
+              </NCard>
+            </NTabPane>
+
+            <!-- 视觉配置选项卡 -->
+            <NTabPane name="vision" tab="视觉配置">
+              <NCard class="inner-card">
+                <template #header>
+                  <span>视觉处理</span>
+                </template>
+                <NForm label-placement="left" label-width="auto" :model="config.vision">
+                  <NGrid :cols="24" :x-gap="12" :y-gap="16">
+                    <NFormItemGridItem span="24 s:12 m:12" label="非视觉模型策略">
+                      <NSelect
+                        v-model:value="config.vision.nonVisionStrategy"
+                        :options="[
+                          { label: '工具模式（引用文本 + ask_about_image 工具）', value: 'tool' },
+                          { label: '忽略模式（仅替换为 [图片]）', value: 'ignore' },
+                        ]"
+                      />
+                    </NFormItemGridItem>
+                    <NFormItemGridItem span="24 s:12 m:12" label="视觉模型渠道ID">
+                      <NInput
+                        v-model:value="config.vision.visionChannelId"
+                        placeholder="留空则自动查找第一个支持 visual 的渠道"
+                      />
+                    </NFormItemGridItem>
+                    <NFormItemGridItem span="24 s:12 m:12" label="图片描述模型">
+                      <NInput
+                        v-model:value="config.vision.imageDescriptionModel"
+                        placeholder="留空则使用渠道默认模型"
+                      />
+                    </NFormItemGridItem>
+                    <NFormItemGridItem span="24" label="图片描述系统提示词">
+                      <NInput
+                        v-model:value="config.vision.imageDescriptionSystemPrompt"
+                        type="textarea"
+                        :rows="3"
+                      />
+                    </NFormItemGridItem>
+                    <NFormItemGridItem span="24" label="默认图片提问">
+                      <NInput
+                        v-model:value="config.vision.defaultQuestion"
+                        type="textarea"
+                        :rows="2"
+                        placeholder="未指定 question 时的默认提问"
+                      />
+                    </NFormItemGridItem>
+                    <NFormItemGridItem span="24 s:12 m:6" label="最大图片大小 (bytes)">
+                      <NInputNumber
+                        v-model:value="config.vision.maxImageSize"
+                        :min="1"
+                        style="width: 100%"
+                      />
+                    </NFormItemGridItem>
+                    <NFormItemGridItem span="24 s:12 m:6" label="群聊上下文图片">
+                      <NSwitch v-model:value="config.vision.enableGroupContextImages" />
+                      <span class="text-xs ml-2">开启后群聊图片会进入主干对话</span>
                     </NFormItemGridItem>
                   </NGrid>
                 </NForm>

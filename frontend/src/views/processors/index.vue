@@ -106,7 +106,7 @@ const loading = ref(false)
 function fetchProcessors(filter?: any) {
   loading.value = true
   fetchProcessorList(filter).then((res) => {
-    data.value = res.data
+    data.value = res.data.items || res.data
     loading.value = false
   }).catch(() => {
     loading.value = false

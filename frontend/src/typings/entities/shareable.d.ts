@@ -56,6 +56,8 @@ namespace Shareable {
 
   type ClientType = 'openai' | 'gemini' | 'claude'
   type MultipleKeyStrategy = 'random' | 'round-robin' | 'conversation-hash'
+  type Feature = 'chat' | 'visual' | 'tool' | 'embedding'
+
   interface BaseClientOptions {
     baseUrl: string
     apiKey: string | string[]
@@ -66,16 +68,23 @@ namespace Shareable {
     postProcessorIds?: string[]
 
     preProcessorIds?: string[]
+
+    features?: Feature[]
   }
   interface ChannelStatistics {
     callTimes?: number
     useToken?: number
     perModel: Record<string, Omit<ChannelStatistics, 'perModel'>>
   }
+  interface ModelConfig {
+    name: string
+    features: Feature[]
+  }
+
   interface Channels {
     adapterType: ClientType
     options: BaseClientOptions
-    models: string[]
+    models: ModelConfig[]
     weight: number
     priority: number
     status: 'enabled' | 'disabled'
@@ -203,6 +212,8 @@ namespace Shareable {
      * 禁止系统prompt
      */
     disableSystemInstructions?: boolean
+    /** 功能特性 */
+    features?: Feature[]
   }
   type PresetModel = ShareableModel & ChatPreset
 

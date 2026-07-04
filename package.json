@@ -15,7 +15,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "frontend",
+    "frontend/build",
     "LICENSE",
     "README.md",
     "package.json"

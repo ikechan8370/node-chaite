@@ -4,6 +4,8 @@ import {
   ChannelsLoadBalancer,
   ChannelStatistics,
   ClientType,
+  Feature,
+  ModelConfig,
   Wait,
 } from '../types/index'
 import { CHANNEL_STATUS_MAP } from '../const/index'
@@ -67,7 +69,7 @@ export class DefaultChannelLoadBalancer implements ChannelsLoadBalancer {
    */
   async getChannels(modelName: string, channels: Channel[], totalQuantity: number): Promise<{ channel: Channel; quantity: number }[]> {
     // 筛选出支持该模型的渠道
-    const supportedChannels = channels.filter(channel => channel.models.includes(modelName))
+    const supportedChannels = channels.filter(channel => channel.models.some(m => m.name === modelName))
 
     if (supportedChannels.length === 0) {
       throw new Error('No channels support the specified model')
@@ -113,7 +115,9 @@ export class Channel extends AbstractShareable<Channel> implements Wait {
   constructor(params: Partial<Channel>) {
     super(params)
     this.modelType = 'settings'
-    this.models = params.models || []
+    this.models = (params.models || []).map((m: any) =>
+      typeof m === 'string' ? { name: m, features: ['chat', 'tool'] as Feature[] } : m
+    )
     if (params.adapterType) {
       this.adapterType = params.adapterType
     }
@@ -140,7 +144,7 @@ export class Channel extends AbstractShareable<Channel> implements Wait {
 
   adapterType: ClientType
   options: BaseClientOptions
-  models: string[]
+  models: ModelConfig[]
   type: ClientType
   weight: number
   priority: number
@@ -156,7 +160,7 @@ export class Channel extends AbstractShareable<Channel> implements Wait {
   toString(): string {
     const toJsonStr = {
       id: this.id,
-      models: this.models,
+      models: this.models.map(m => ({ name: m.name, features: m.features })),
       adapterType: this.adapterType,
       options: this.options.toString(),
       name: this.name,
@@ -194,7 +198,7 @@ export class Channel extends AbstractShareable<Channel> implements Wait {
     }
 
     if (this.models && this.models.length > 0) {
-      base += `\n支持模型：${this.models.join(', ')}`
+      base += `\n支持模型：${this.models.map(m => m.name).join(', ')}`
     }
 
     if (verbose) {

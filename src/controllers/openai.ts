@@ -18,7 +18,7 @@ router.get('/models', async (req, res) => {
     const models = Array.from(new Set(
       channels
         .filter(channel => channel.status === 'enabled')
-        .flatMap(channel => channel.models),
+        .flatMap(channel => channel.models.map(m => m.name)),
     )).map(id => ({
       id,
       object: 'model',

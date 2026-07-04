@@ -3,3 +3,4 @@ node_modules
 package-lock.json
 dist
 src/version.ts
+frontend/build

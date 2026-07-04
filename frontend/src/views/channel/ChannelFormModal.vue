@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { NButton, NCard, NCollapse, NCollapseItem, NDynamicTags, NFlex, NForm, NFormItemGridItem, NGrid, NInput, NInputNumber, NModal, NSelect, NSpace, NSwitch } from 'naive-ui'
+import { NButton, NCard, NCheckbox, NCollapse, NCollapseItem, NFlex, NForm, NFormItemGridItem, NGrid, NInput, NInputNumber, NModal, NSelect, NSpace, NSwitch, useMessage } from 'naive-ui'
 import type { FormInst } from 'naive-ui'
+import { autoDetectFeatures } from '@/service/api/channels'
 
 const props = defineProps({
   show: Boolean,
@@ -68,46 +69,93 @@ const addChannel = ref<Partial<Shareable.ChannelModel>>({
 })
 
 const modelsValidationStatus = computed(() => {
-  const modelsArray = Array.isArray(addChannel.value.models)
-    ? addChannel.value.models
-    : []
-
+  const modelsArray = addChannel.value.models || []
   if (modelsArray.length === 0) {
     return 'error'
   }
-
-  // Check for duplicates
-  const uniqueModels = new Set(modelsArray)
-  if (uniqueModels.size !== modelsArray.length) {
+  // Check for duplicate names
+  const names = modelsArray.map(m => m.name)
+  if (new Set(names).size !== names.length) {
     return 'error'
   }
-
-  return undefined // Valid
+  // Check for empty names
+  if (modelsArray.some(m => !m.name?.trim())) {
+    return 'error'
+  }
+  return undefined
 })
 
 const modelsFeedback = computed(() => {
-  const modelsArray = Array.isArray(addChannel.value.models)
-    ? addChannel.value.models
-    : []
-
+  const modelsArray = addChannel.value.models || []
   if (modelsArray.length === 0) {
     return '请至少添加一个模型'
   }
-
-  // Check for duplicates
-  const uniqueModels = new Set(modelsArray)
-  if (uniqueModels.size !== modelsArray.length) {
+  const names = modelsArray.map(m => m.name)
+  if (new Set(names).size !== names.length) {
     return '模型名称不能重复'
   }
-
+  if (modelsArray.some(m => !m.name?.trim())) {
+    return '模型名称不能为空'
+  }
   return ''
 })
 
 // Model management
-const tagModelMode = ref(true)
-const modelTags = ref<string[]>([])
-const newModelInput = ref('')
-const modelsText = ref('')
+function addModelEntry() {
+  if (!addChannel.value.models) addChannel.value.models = []
+  addChannel.value.models.push({ name: '', features: ['chat', 'tool'] })
+}
+
+function removeModelEntry(index: number) {
+  if (addChannel.value.models) {
+    addChannel.value.models.splice(index, 1)
+  }
+}
+
+const message = useMessage()
+const detectingModelIndex = ref(-1)
+
+async function detectModelFeatures(index: number) {
+  const model = addChannel.value.models?.[index]
+  if (!model?.name?.trim()) {
+    message.warning('请先输入模型名称')
+    return
+  }
+  if (!props.initialData?.id) {
+    message.warning('请先保存渠道后再探测')
+    return
+  }
+  detectingModelIndex.value = index
+  try {
+    const res = await autoDetectFeatures({ id: props.initialData.id as string, model: model.name })
+    if (res.code === 0) {
+      const features: string[] = []
+      for (const [key, val] of Object.entries(res.data.features)) {
+        if (val.supported) features.push(key)
+      }
+      model.features = features as any
+      message.success(`${model.name}: ${features.join(', ') || '无'}`)
+    } else {
+      message.error(res.message || '探测失败')
+    }
+  } catch (e: any) {
+    message.error(e?.message || '探测失败')
+  } finally {
+    detectingModelIndex.value = -1
+  }
+}
+
+function toggleModelFeature(index: number, feature: string, checked: boolean) {
+  if (!addChannel.value.models) return
+  const model = addChannel.value.models[index]
+  if (!model) return
+  if (!model.features) model.features = []
+  if (checked) {
+    if (!model.features.includes(feature as any)) model.features.push(feature as any)
+  } else {
+    model.features = model.features.filter(f => f !== feature)
+  }
+}
 
 const statusEnabled = computed({
   get: () => addChannel.value.status === 'enabled',
@@ -118,32 +166,18 @@ const statusEnabled = computed({
 watch(() => props.initialData, (newVal) => {
   if (props.editMode && newVal) {
     addChannel.value = { ...newVal }
-    modelTags.value = [...(newVal.models || [])]
-    modelsText.value = (newVal.models || []).join(', ')
+    // Ensure models have features
+    if (addChannel.value.models) {
+      addChannel.value.models = addChannel.value.models.map((m: any) => typeof m === 'string'
+        ? { name: m, features: ['chat', 'tool'] }
+        : { name: m.name || '', features: m.features || ['chat', 'tool'] })
+    }
   }
 }, { immediate: true })
 
 // Methods
 function updateStatus(value: boolean) {
   addChannel.value.status = value ? 'enabled' : 'disabled'
-}
-
-function updateModels(value: string[]) {
-  addChannel.value.models = [...value]
-}
-
-function addModelTag() {
-  if (newModelInput.value.trim()) {
-    modelTags.value.push(newModelInput.value.trim())
-    updateModels(modelTags.value)
-    newModelInput.value = ''
-  }
-}
-
-function updateModelsFromText(value: string) {
-  const models = value.split(',').map(item => item.trim()).filter(Boolean)
-  addChannel.value.models = models
-  modelTags.value = models
 }
 
 function handleAddChannel() {
@@ -218,9 +252,6 @@ watch(showModal, (val) => {
       },
       description: '',
     }
-    modelTags.value = []
-    modelsText.value = ''
-    newModelInput.value = ''
   }
 })
 </script>
@@ -263,41 +294,79 @@ watch(showModal, (val) => {
                 @blur="updateApiKey"
               />
             </NFormItemGridItem>
-
-            <!-- Models Section - Always Visible -->
-            <NFormItemGridItem
-              span="24 s:12 m:8"
-              label="支持模型"
-              path="models"
-              :validation-status="modelsValidationStatus"
-              :feedback="modelsFeedback"
-            >
-              <NFlex vertical>
-                <NFlex align="center" class="mb-2">
-                  <NSwitch v-model:value="tagModelMode" size="small" />
-                  <span class="ml-2 text-xs">{{ tagModelMode ? '标签模式' : '文本模式' }}</span>
-                </NFlex>
-                <template v-if="tagModelMode">
-                  <NDynamicTags
-                    v-model:value="modelTags"
-                    @update:value="updateModels"
-                  />
-                  <NInput
-                    v-model:value="newModelInput"
-                    class="mt-2"
-                    placeholder="输入模型名称后按回车添加"
-                    @keydown.enter.prevent="addModelTag"
-                  />
-                </template>
-                <NInput
-                  v-else
-                  v-model:value="modelsText"
-                  placeholder="请输入支持的模型列表，以逗号分隔"
-                  @update:value="updateModelsFromText"
-                />
-              </NFlex>
-            </NFormItemGridItem>
           </NGrid>
+
+          <!-- Models Section -->
+          <div class="mt-4">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span>
+                  <span style="color: red;">*</span> 支持模型
+                  <span v-if="modelsValidationStatus" style="color: #d03050; font-size: 12px;">
+                    — {{ modelsFeedback }}
+                  </span>
+                </span>
+                <NButton size="small" type="primary" @click="addModelEntry">
+                  + 添加模型
+                </NButton>
+              </div>
+              <div
+                v-for="(model, idx) in (addChannel.models || [])"
+                :key="idx"
+                style="border: 1px solid #e8e8e8; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px;"
+              >
+                <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
+                  <NInput
+                    v-model:value="model.name"
+                    placeholder="模型名称"
+                    size="small"
+                    style="flex: 1; max-width: 180px;"
+                  />
+                  <NButton
+                    size="tiny"
+                    :loading="detectingModelIndex === idx"
+                    @click="detectModelFeatures(idx)"
+                  >
+                    🔍
+                  </NButton>
+                  <NButton size="tiny" type="error" quaternary @click="removeModelEntry(idx)">
+                    删除
+                  </NButton>
+                </div>
+                <NSpace :size="4">
+                  <NCheckbox
+                    size="small"
+                    :checked="model.features?.includes('chat')"
+                    @update:checked="(v: boolean) => toggleModelFeature(idx, 'chat', v)"
+                  >
+                    💬 对话
+                  </NCheckbox>
+                  <NCheckbox
+                    size="small"
+                    :checked="model.features?.includes('visual')"
+                    @update:checked="(v: boolean) => toggleModelFeature(idx, 'visual', v)"
+                  >
+                    👁️ 识图
+                  </NCheckbox>
+                  <NCheckbox
+                    size="small"
+                    :checked="model.features?.includes('tool')"
+                    @update:checked="(v: boolean) => toggleModelFeature(idx, 'tool', v)"
+                  >
+                    🔧 工具
+                  </NCheckbox>
+                  <NCheckbox
+                    size="small"
+                    :checked="model.features?.includes('embedding')"
+                    @update:checked="(v: boolean) => toggleModelFeature(idx, 'embedding', v)"
+                  >
+                    📊 嵌入
+                  </NCheckbox>
+                </NSpace>
+              </div>
+              <div v-if="!addChannel.models || addChannel.models.length === 0" style="color: #999; font-size: 12px;">
+                暂无模型，请点击"添加模型"
+              </div>
+            </div>
 
           <!-- Advanced Settings in Collapsible Panel -->
           <NCollapse class="mt-4">

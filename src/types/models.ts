@@ -2,6 +2,12 @@
 // 模型相关
 export type Feature = 'chat' | 'visual' | 'tool' | 'embedding'
 
+/** 模型配置：名称 + 功能特性 */
+export interface ModelConfig {
+  name: string
+  features: Feature[]
+}
+
 /**
  * other roles like developer or function should be handled by different implementations
  */

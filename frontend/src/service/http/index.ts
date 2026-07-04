@@ -1,4 +1,4 @@
-import { generateProxyPattern } from '@/../build/proxy'
+import { generateProxyPattern } from '@/../vite-config/proxy'
 import { serviceConfig } from '@/../service.config'
 import { createAlovaInstance } from './alova'
 

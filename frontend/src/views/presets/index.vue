@@ -134,7 +134,7 @@ const searchModel = reactive({
 function fetchPresets(filter: ListPresets) {
   loading.value = true
   fetchPresetList(filter).then((res) => {
-    data.value = res.data
+    data.value = res.data.items || res.data
     loading.value = false
   }).catch((err) => {
     console.error(err)
@@ -223,13 +223,13 @@ const columns = createColumns({
 async function getProcessors() {
   try {
     const res = await fetchProcessorList({})
-    preProcessorOptions.value = res.data.filter(p => p.type === 'pre').map((pre) => {
+    preProcessorOptions.value = (res.data.items || res.data).filter(p => p.type === 'pre').map((pre) => {
       return {
         label: pre.name,
         value: pre.id,
       }
     })
-    postProcessorOptions.value = res.data.filter(p => p.type === 'post').map((post) => {
+    postProcessorOptions.value = (res.data.items || res.data).filter(p => p.type === 'post').map((post) => {
       return {
         label: post.name,
         value: post.id,
@@ -258,7 +258,7 @@ async function getProcessors() {
 
 function fetchToolGroups(filter?: any) {
   fetchToolGroupList(filter).then((res) => {
-    toolsOptions.value = res.data.map((tool) => {
+    toolsOptions.value = (res.data.items || res.data).map((tool) => {
       return {
         label: tool.name,
         value: tool.id,

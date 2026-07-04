@@ -39,7 +39,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.RELEASE }}
         if: ${{ steps.release.outputs.release_created }}
-      # 构建输出
+      # 安装前端依赖并构建
+      - run: cd frontend && pnpm install && pnpm build
+        if: ${{ steps.release.outputs.release_created }}
+      # 构建后端
       - run: pnpm run prepublishOnly
         if: ${{ steps.release.outputs.release_created }}
       # 发布到 npm
