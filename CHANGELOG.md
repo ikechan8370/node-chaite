@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.2](https://github.com/ikechan8370/node-chaite/compare/v1.10.1...v1.10.2) (2026-07-04)
+
+
+### Bug Fixes
+
+* use explicit npm config for publish auth ([d73e188](https://github.com/ikechan8370/node-chaite/commit/d73e188eeaef54bec37d1465de11938aadd7a0b2))
+
 ## [1.10.1](https://github.com/ikechan8370/node-chaite/compare/v1.10.0...v1.10.1) (2026-07-04)
 
 
