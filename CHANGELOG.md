@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.5](https://github.com/ikechan8370/node-chaite/compare/v1.10.4...v1.10.5) (2026-07-05)
+
+
+### Bug Fixes
+
+* pagination bug ([20cf2e5](https://github.com/ikechan8370/node-chaite/commit/20cf2e58387b5461e3902986c8937a694522f860))
+
 ## [1.10.4](https://github.com/ikechan8370/node-chaite/compare/v1.10.3...v1.10.4) (2026-07-05)
 
 
