@@ -59,11 +59,12 @@ router.post('/chat/completions', async (req: Request<object, object, OpenAI.Chat
     }
 
     const channel = channels[0]
-    await channel.options.ready()
-    channel.options.setHistoryManager(Chaite.getInstance().getHistoryManager())
-    channel.options.setLogger(Chaite.getInstance().getLogger())
+    const clientOptions = channel.getOptionsForModel(model as string)
+    await clientOptions.ready()
+    clientOptions.setHistoryManager(Chaite.getInstance().getHistoryManager())
+    clientOptions.setLogger(Chaite.getInstance().getLogger())
 
-    const client = createClient(channel.adapterType, channel.options)
+    const client = createClient(channel.adapterType, clientOptions)
     const fromChaiteConverter = getFromChaiteConverter('openai')
     const intoChaiteConverter = getIntoChaiteConverter('openai')
     const history = messages.map(intoChaiteConverter)
@@ -191,11 +192,12 @@ router.post('/embeddings', async (req, res) => {
     }
 
     const channel = channels[0]
-    await channel.options.ready()
-    channel.options.setHistoryManager(Chaite.getInstance().getHistoryManager())
-    channel.options.setLogger(Chaite.getInstance().getLogger())
+    const clientOptions = channel.getOptionsForModel(model as string)
+    await clientOptions.ready()
+    clientOptions.setHistoryManager(Chaite.getInstance().getHistoryManager())
+    clientOptions.setLogger(Chaite.getInstance().getLogger())
 
-    const client = createClient(channel.adapterType, channel.options)
+    const client = createClient(channel.adapterType, clientOptions)
 
     const inputs = Array.isArray(input) ? input : [input]
     // const embeddings = []

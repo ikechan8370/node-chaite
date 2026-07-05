@@ -225,13 +225,15 @@ export class Chaite extends EventEmitter {
         }
       }
 
-      const channels = await this.channelsManager.getChannelByModel(options.chatPreset.sendMessageOption.model || '')
+      const modelName = options.chatPreset.sendMessageOption.model || ''
+      const channels = await this.channelsManager.getChannelByModel(modelName)
       if (channels.length > 0) {
         const channel = channels[0]
-        await channel.options.ready()
-        channel.options.setHistoryManager(this.historyManager)
-        channel.options.setLogger(this.logger)
-        const client = createClient(channel.adapterType, channel.options, context)
+        const clientOptions = channel.getOptionsForModel(modelName)
+        await clientOptions.ready()
+        clientOptions.setHistoryManager(this.historyManager)
+        clientOptions.setLogger(this.logger)
+        const client = createClient(channel.adapterType, clientOptions, context)
         const newOptions = {
           ...options.chatPreset.sendMessageOption,
           ...Object.fromEntries(

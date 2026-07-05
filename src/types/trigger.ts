@@ -152,8 +152,9 @@ export abstract class BaseTrigger implements Trigger {
         const channels = await Chaite.getInstance().getChannelsManager().getChannelByModel(options.model || '')
         if (channels.length > 0) {
           const channel = channels[0]
-          await channel.options.ready()
-          const client = createClient(channel.adapterType, channel.options, context)
+          const clientOptions = channel.getOptionsForModel(options.model || '')
+          await clientOptions.ready()
+          const client = createClient(channel.adapterType, clientOptions, context)
           options.conversationId = crypto.randomUUID()
           options.parentMessageId = crypto.randomUUID()
           return await client.sendMessage(message, options)

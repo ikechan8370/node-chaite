@@ -142,6 +142,14 @@ export class Channel extends AbstractShareable<Channel> implements Wait {
     await this.init()
   }
 
+  getOptionsForModel(modelName: string): BaseClientOptions {
+    const modelConfig = this.models.find(model => model.name === modelName)
+    return BaseClientOptions.create({
+      ...this.options,
+      features: modelConfig?.features || this.options.features || [],
+    })
+  }
+
   adapterType: ClientType
   options: BaseClientOptions
   models: ModelConfig[]
