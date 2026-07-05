@@ -102,11 +102,19 @@ const defaultProcessor = {
 } as Shareable.ProcessorModel
 const currentProcessor = ref<Shareable.ProcessorModel>(JSON.parse(JSON.stringify(defaultProcessor)))
 const loading = ref(false)
+const processorPage = ref(1)
+const processorPageSize = ref(20)
+const processorTotal = ref(0)
 
 function fetchProcessors(filter?: any) {
   loading.value = true
-  fetchProcessorList(filter).then((res) => {
-    data.value = res.data.items || res.data
+  fetchProcessorList({
+    ...filter,
+    page: processorPage.value,
+    pageSize: processorPageSize.value,
+  }).then((res) => {
+    data.value = res.data.items
+    processorTotal.value = res.data.total
     loading.value = false
   }).catch(() => {
     loading.value = false
@@ -182,6 +190,23 @@ const searchModel = reactive({
 
 function handleResetSearch() {
   searchModel.name = undefined
+  processorPage.value = 1
+  fetchProcessors(searchModel)
+}
+
+function handleProcessorSearch() {
+  processorPage.value = 1
+  fetchProcessors(searchModel)
+}
+
+function handleProcessorPageChange(page: number) {
+  processorPage.value = page
+  fetchProcessors(searchModel)
+}
+
+function handleProcessorPageSizeChange(pageSize: number) {
+  processorPageSize.value = pageSize
+  processorPage.value = 1
   fetchProcessors(searchModel)
 }
 </script>
@@ -196,7 +221,7 @@ function handleResetSearch() {
           </NFormItemGridItem>
           <NGridItem span="1">
             <NFlex class="ml-auto">
-              <NButton type="primary" @click="fetchProcessors(searchModel)">
+              <NButton type="primary" @click="handleProcessorSearch">
                 <template #icon>
                   <icon-park-outline-search />
                 </template>
@@ -224,6 +249,15 @@ function handleResetSearch() {
           </NButton>
         </div>
         <n-data-table :columns="columns" :data="data.value" :loading="loading" />
+        <n-pagination
+          :page="processorPage"
+          :page-size="processorPageSize"
+          :item-count="processorTotal"
+          show-size-picker
+          :page-sizes="[10, 20, 50, 100]"
+          @update:page="handleProcessorPageChange"
+          @update:page-size="handleProcessorPageSizeChange"
+        />
       </NSpace>
     </n-card>
 

@@ -4,10 +4,19 @@ import PaginationResult = Shareable.PaginationResult
 
 export interface ListToolModels {
   name?: string
+  page?: number
+  pageSize?: number
+}
+
+interface LocalListResult<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
 }
 
 export function fetchToolList(query: ListToolModels) {
-  return request.Get<Service.ResponseResult<Shareable.ToolModel[]>>('/api/tools/list', {
+  return request.Get<Service.ResponseResult<LocalListResult<Shareable.ToolModel>>>('/api/tools/list', {
     params: query,
   })
 }

@@ -1,12 +1,21 @@
 import { request } from '../http'
 
+interface LocalListResult<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 export interface ListProcessorDTO {
   name?: string
   ptype?: 'post' | 'pre'
+  page?: number
+  pageSize?: number
 }
 
 export function fetchProcessorList(query: ListProcessorDTO = {}) {
-  return request.Get<Service.ResponseResult<Shareable.ProcessorModel[]>>('/api/processors/list', {
+  return request.Get<Service.ResponseResult<LocalListResult<Shareable.ProcessorModel>>>('/api/processors/list', {
     params: query,
   })
 }

@@ -220,12 +220,20 @@ const defaultGroup = {
 } as Shareable.ToolsGroupModel
 const currentGroup = ref<Shareable.ToolsGroupModel>(JSON.parse(JSON.stringify(defaultGroup)))
 const groupLoading = ref(false)
+const toolPage = ref(1)
+const toolPageSize = ref(20)
+const toolTotal = ref(0)
 const activeTab = ref('tools') // 默认显示工具管理标签
 
 function fetchTools(filter?: any) {
   loading.value = true
-  fetchToolList(filter).then((res) => {
-    data.value = res.data.items || res.data
+  fetchToolList({
+    ...filter,
+    page: toolPage.value,
+    pageSize: toolPageSize.value,
+  }).then((res) => {
+    data.value = res.data.items
+    toolTotal.value = res.data.total
     loading.value = false
   }).catch(() => {
     loading.value = false
@@ -370,6 +378,23 @@ const searchModel = reactive({
 
 function handleResetSearch() {
   searchModel.name = undefined
+  toolPage.value = 1
+  fetchTools(searchModel)
+}
+
+function handleToolSearch() {
+  toolPage.value = 1
+  fetchTools(searchModel)
+}
+
+function handleToolPageChange(page: number) {
+  toolPage.value = page
+  fetchTools(searchModel)
+}
+
+function handleToolPageSizeChange(pageSize: number) {
+  toolPageSize.value = pageSize
+  toolPage.value = 1
   fetchTools(searchModel)
 }
 </script>
@@ -384,7 +409,7 @@ function handleResetSearch() {
           </NFormItemGridItem>
           <NGridItem span="1">
             <NFlex class="ml-auto">
-              <NButton type="primary" @click="fetchTools(searchModel)">
+              <NButton type="primary" @click="handleToolSearch">
                 <template #icon>
                   <icon-park-outline-search />
                 </template>
@@ -414,6 +439,15 @@ function handleResetSearch() {
               </NButton>
             </div>
             <n-data-table :columns="columns" :data="data.value" :loading="loading" />
+            <n-pagination
+              :page="toolPage"
+              :page-size="toolPageSize"
+              :item-count="toolTotal"
+              show-size-picker
+              :page-sizes="[10, 20, 50, 100]"
+              @update:page="handleToolPageChange"
+              @update:page-size="handleToolPageSizeChange"
+            />
           </NSpace>
         </n-tab-pane>
 
