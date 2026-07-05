@@ -393,7 +393,7 @@ async function handleDownloadSimpleExtension() {
 const presets = ref([] as Array<Shareable.PresetModel>)
 function fetchPresets() {
   fetchPresetList({}).then((res) => {
-    presets.value = res.data
+    presets.value = res.data.items || res.data
   }).catch((err) => {
     console.error(err)
   })
