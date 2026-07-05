@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.4](https://github.com/ikechan8370/node-chaite/compare/v1.10.3...v1.10.4) (2026-07-05)
+
+
+### Bug Fixes
+
+* 配置管理页面预设下拉菜单为空 — API返回分页对象但代码当成数组处理 ([0e148b7](https://github.com/ikechan8370/node-chaite/commit/0e148b799320b19ac160dc5f587157fbd8f7987e))
+
 ## [1.10.3](https://github.com/ikechan8370/node-chaite/compare/v1.10.2...v1.10.3) (2026-07-04)
 
 
