@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.0](https://github.com/ikechan8370/node-chaite/compare/v1.10.7...v1.11.0) (2026-07-11)
+
+
+### Features
+
+* add skill-based MCP capabilities ([25f1551](https://github.com/ikechan8370/node-chaite/commit/25f15518d4bdea34c159161767a736b1ed223640))
+* streamline channel model configuration ([fd23336](https://github.com/ikechan8370/node-chaite/commit/fd23336c95d1d4acb21acf93000a37c605125f4d))
+
 ## [1.10.7](https://github.com/ikechan8370/node-chaite/compare/v1.10.6...v1.10.7) (2026-07-11)
 
 
