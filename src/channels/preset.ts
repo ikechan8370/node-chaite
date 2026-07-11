@@ -14,6 +14,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       this.local = params.local || false
       this.namespace = params.namespace
       this.groupContext = params.groupContext
+      this.dynamicContextHistory = params.dynamicContextHistory
       this.disableSystemInstructions = params.disableSystemInstructions
     }
   }
@@ -28,6 +29,8 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
    * 携带群聊上下文
    */
   groupContext?: 'disable' | 'enabled' | 'use_system'
+  /** Whether dynamic context from older turns is kept in normal chat history. */
+  dynamicContextHistory?: 'use_system' | 'retain' | 'discard'
   /**
    * 禁止系统prompt
    */
@@ -49,6 +52,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       description: this.description,
       sendMessageOption: this.sendMessageOption?.toString(), // 嵌套序列化
       groupContext: this.groupContext,
+      dynamicContextHistory: this.dynamicContextHistory,
       disableSystemInstructions: this.disableSystemInstructions,
     })
   }
@@ -70,6 +74,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     preset.uploader = raw.uploader
     preset.modelType = raw.modelType
     preset.groupContext = raw.groupContext
+    preset.dynamicContextHistory = raw.dynamicContextHistory
     preset.disableSystemInstructions = raw.disableSystemInstructions
 
     if (raw.sendMessageOption) {

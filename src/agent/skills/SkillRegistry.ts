@@ -114,6 +114,7 @@ export class SkillRegistry {
   }
 
   async load(): Promise<void> {
+    this.skills.clear()
     if (!fs.existsSync(this.skillsDir)) {
       return
     }
@@ -175,10 +176,16 @@ export class SkillRegistry {
     let bestScore = 0
 
     for (const skill of this.skills.values()) {
-      const { name, description } = skill.frontmatter
-      const candidate = `${name} ${description ?? ''}`.toLowerCase()
+      const { name, description, keywords = [] } = skill.frontmatter
+      const candidate = `${name} ${description ?? ''} ${keywords.join(' ')}`.toLowerCase()
       const words = lower.split(/\W+/).filter(w => w.length > 2)
+      // \w is ASCII-only, so keep explicit phrase matching for Chinese and
+      // other non-Latin trigger words.
+      const phrases = [name, description ?? '', ...keywords]
+        .map(value => value.toLowerCase().trim())
+        .filter(value => value.length > 1)
       const score = words.filter(w => candidate.includes(w)).length
+        + phrases.filter(phrase => lower.includes(phrase)).length * 2
       if (score > bestScore) {
         bestScore = score
         best = skill

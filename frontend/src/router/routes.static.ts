@@ -16,8 +16,8 @@ export const staticRoutes: AppRoute.RowRoute[] = [
   { name: 'observability', path: '/observability', title: '运行与记录', requiresAuth: true, icon: 'icon-park-outline:chart-line', menuType: 'dir', componentPath: null, id: 30, pid: null },
   { name: 'logs', path: '/logs', title: '使用记录', requiresAuth: true, icon: 'icon-park-outline:list-view', menuType: 'page', componentPath: '/logs/index.vue', id: 31, pid: 30 },
 
-  { name: 'system', path: '/system', title: '系统', requiresAuth: true, icon: 'icon-park-outline:setting', menuType: 'dir', componentPath: null, id: 40, pid: null },
-  { name: 'config', path: '/config', title: '配置', requiresAuth: true, icon: 'icon-park-outline:setting-config', menuType: 'page', componentPath: '/config/index.vue', id: 41, pid: 40 },
-  { name: 'chaite', path: '/chaite', title: 'Chaite Cloud', requiresAuth: true, icon: 'icon-park-outline:cloudy', menuType: 'page', componentPath: '/chaite/index.vue', id: 42, pid: 40 },
-  { name: 'agent', path: '/agent', title: '实验室', requiresAuth: true, icon: 'icon-park-outline:experiment-one', menuType: 'page', componentPath: '/agent/index.vue', id: 43, pid: 40 },
+  // 实验室是主功能入口；配置与云服务由左侧栏固定到底部渲染。
+  { name: 'agent', path: '/agent', title: '实验室', requiresAuth: true, icon: 'icon-park-outline:experiment-one', menuType: 'page', componentPath: '/agent/index.vue', id: 43, pid: null },
+  { name: 'config', path: '/config', title: '配置', requiresAuth: true, icon: 'icon-park-outline:setting-config', menuType: 'page', componentPath: '/config/index.vue', id: 41, pid: null },
+  { name: 'chaite', path: '/chaite', title: 'Chaite Cloud', requiresAuth: true, icon: 'icon-park-outline:cloudy', menuType: 'page', componentPath: '/chaite/index.vue', id: 42, pid: null },
 ]

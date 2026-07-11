@@ -212,6 +212,9 @@ export interface HistoryManager {
 
     deleteConversation(conversationId: string): Promise<void>
 
+    /** Remove one history message and reconnect its direct children to its parent. */
+    removeHistory?(messageId: string, conversationId: string): Promise<void>
+
     getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined>
 }
 
@@ -223,6 +226,8 @@ export abstract class AbstractHistoryManager implements HistoryManager {
     abstract getHistory(messageId?: string, conversationId?: string): Promise<HistoryMessage[]>
 
     abstract deleteConversation(conversationId: string): Promise<void>
+
+    removeHistory?(messageId: string, conversationId: string): Promise<void>
 
     abstract getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined>
 }

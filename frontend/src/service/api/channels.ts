@@ -24,6 +24,16 @@ export function fetchChannelModels() {
   return request.Get<Service.ResponseResult<ChannelModelSummary[]>>('/api/channels/models')
 }
 
+export interface VisionChannelModels {
+  id: string
+  name: string
+  models: Array<{ name: string; features: string[] }>
+}
+
+export function fetchVisionChannelModels() {
+  return request.Get<Service.ResponseResult<VisionChannelModels[]>>('/api/channels/vision-models')
+}
+
 export function fetchChannelDetail(id: string) {
   return request.Get<Service.ResponseResult<Shareable.ChannelModel>>(`/api/channels/${id}`)
 }

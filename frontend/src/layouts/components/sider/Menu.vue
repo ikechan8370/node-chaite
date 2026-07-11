@@ -2,11 +2,22 @@
 import type { MenuInst } from 'naive-ui'
 import { useAppStore, useRouteStore } from '@/store'
 
+const props = withDefaults(defineProps<{
+  placement?: 'main' | 'bottom'
+}>(), {
+  placement: 'main',
+})
+
 const route = useRoute()
 const appStore = useAppStore()
 const routeStore = useRouteStore()
 
 const menuInstRef = ref<MenuInst | null>(null)
+const bottomMenuKeys = new Set(['/config', '/chaite'])
+const menuOptions = computed(() => routeStore.menus.filter((option) => {
+  const isBottom = bottomMenuKeys.has(String(option.key))
+  return props.placement === 'bottom' ? isBottom : !isBottom
+}))
 watch(
   () => route.path,
   () => {
@@ -22,7 +33,7 @@ watch(
     :collapsed="appStore.collapsed"
     :indent="20"
     :collapsed-width="64"
-    :options="routeStore.menus"
+    :options="menuOptions"
     :value="routeStore.activeMenu"
   />
 </template>

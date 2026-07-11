@@ -208,6 +208,8 @@ namespace Shareable {
      * 携带群聊上下文
      */
     groupContext?: 'disable' | 'enabled' | 'use_system'
+    /** Whether older dynamic group-context messages remain in normal chat history. */
+    dynamicContextHistory?: 'use_system' | 'retain' | 'discard'
     /**
      * 禁止系统prompt
      */

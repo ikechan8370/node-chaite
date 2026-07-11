@@ -39,11 +39,13 @@ import type {
   UpdateSkillDTO,
 } from '@/service/api/agent'
 import { fetchPresetList } from '@/service/api/presets'
+import { fetchToolGroupList } from '@/service/api/toolGroup'
 import McpServerFormModal from './McpServerFormModal.vue'
 import SkillFormModal from './SkillFormModal.vue'
 
 const message = useMessage()
-const activeTab = ref('skills')
+const route = useRoute()
+const activeTab = ref(typeof route.query.tab === 'string' ? route.query.tab : 'skills')
 
 // ─── Skills ───────────────────────────────────────────────────────────────────
 
@@ -54,6 +56,7 @@ const skillEditMode = ref(false)
 const currentSkillDetail = ref<Partial<SkillDetail>>({})
 const skillReloading = ref(false)
 const presetOptions = ref<Array<{ label: string; value: string }>>([])
+const toolGroupOptions = ref<Array<{ label: string; value: string }>>([])
 
 const skillSearchName = ref('')
 
@@ -289,7 +292,7 @@ function handleTestMcp(row: McpServerConfig) {
   testMcpServer(row.id)
     .then((res) => {
       if (res.code === 0)
-        message.success(`连接成功，发现 ${res.data.toolCount} 个工具`)
+        { message.success(`连接成功，发现并缓存 ${res.data.cachedToolCount ?? res.data.toolCount} 个工具：${res.data.tools.slice(0, 8).map(tool => tool.name).join('、')}${res.data.toolCount > 8 ? '…' : ''}`); fetchMcpServers() }
       else
         message.error(res.message || '连接失败')
     })
@@ -318,9 +321,9 @@ const mcpColumns: DataTableColumns<McpServerConfig> = [
   { title: '名称', key: 'name', width: 160 },
   {
     title: '地址',
-    key: 'baseUrl',
+    key: 'endpoint',
     ellipsis: { tooltip: true },
-    render: row => h('span', { style: 'font-family: monospace; font-size: 12px' }, row.baseUrl),
+    render: row => h('span', { style: 'font-family: monospace; font-size: 12px' }, row.transport === 'stdio' ? `${row.command || ''} ${(row.args || []).join(' ')}` : row.url || row.baseUrl || ''),
   },
   {
     title: '状态',
@@ -330,6 +333,12 @@ const mcpColumns: DataTableColumns<McpServerConfig> = [
       type: row.enabled ? 'success' : 'default',
       size: 'small',
     }, { default: () => row.enabled ? '启用' : '禁用' }),
+  },
+  {
+    title: '已缓存工具',
+    key: 'tools',
+    width: 100,
+    render: row => row.tools?.length ?? 0,
   },
   {
     title: '描述',
@@ -524,10 +533,18 @@ function loadPresets() {
   }).catch(() => {})
 }
 
+function loadToolGroups() {
+  fetchToolGroupList({ pageSize: 100 }).then((res) => {
+    const groups = res.data.items || res.data
+    toolGroupOptions.value = groups.map(group => ({ label: group.name, value: group.id }))
+  }).catch(() => {})
+}
+
 onMounted(() => {
   fetchSkills()
   fetchMcpServers()
   loadPresets()
+  loadToolGroups()
 })
 
 function handleTabChange(tab: string) {
@@ -687,6 +704,7 @@ function handleTabChange(tab: string) {
       :edit-mode="skillEditMode"
       :initial-data="currentSkillDetail"
       :preset-options="presetOptions"
+      :mcp-server-options="mcpData.map(server => ({ label: server.name, value: server.id }))"
       @submit="handleSubmitSkill"
     />
 
@@ -694,6 +712,7 @@ function handleTabChange(tab: string) {
       v-model:show="showMcpModal"
       :edit-mode="mcpEditMode"
       :initial-data="currentMcp"
+      :tool-group-options="toolGroupOptions"
       @submit="handleSubmitMcp"
     />
   </NSpace>

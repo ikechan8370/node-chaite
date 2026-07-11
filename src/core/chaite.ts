@@ -32,6 +32,7 @@ import type { SkillRegistry } from '../agent/skills/SkillRegistry'
 import type { BackgroundJobManager } from '../agent/background/BackgroundJobManager'
 import type { DynamicScheduler } from '../agent/scheduler/DynamicScheduler'
 import type { McpServerManager } from '../agent/mcp/McpServerConfig'
+import { McpCapabilityManager } from '../agent/mcp/McpCapabilityManager'
 import type { AgentRunContext } from '../agent/contracts'
 import type { WorkflowEngine } from '../agent/workflow/WorkflowEngine'
 import type { PlanExecutor } from '../agent/planning/PlanExecutor'
@@ -67,6 +68,8 @@ export class Chaite extends EventEmitter {
 
   /** MCP server configuration manager */
   private mcpServerManager?: McpServerManager
+  private mcpCapabilityManager?: McpCapabilityManager
+  private mcpManagementGuard?: (context: ChaiteContext) => boolean
 
   /** Workflow engine for executing WorkflowDefinitions */
   private workflowEngine?: WorkflowEngine
@@ -247,6 +250,31 @@ export class Chaite extends EventEmitter {
               .filter(([_, value]) => value !== undefined),
           ),
         }
+        if (this.skillRegistry && this.mcpCapabilityManager) {
+          const catalogue = this.skillRegistry.listSkillMetas()
+            .filter(skill => skill.frontmatter.mcpServer)
+            .slice(0, 20)
+            .map(skill => `- ${skill.id}: ${skill.frontmatter.description}`)
+            .join('\n')
+          if (catalogue) {
+            newOptions.systemOverride = [newOptions.systemOverride, `# 可按需启用的 Skill\n${catalogue}\n遇到需要专业外部能力的任务，先使用 search_skills；确认后使用 activate_skill_tools。不要猜测或直接调用未启用的 MCP 工具。`]
+              .filter(Boolean)
+              .join('\n\n')
+          }
+        }
+        // A direct skill is progressive disclosure too: its full instructions
+        // are loaded only after matching, never added to every chat prompt.
+        if (options.skillName && this.skillRegistry) {
+          const skill = this.skillRegistry.getSkillByName(options.skillName)
+          if (skill) {
+            const instructions = await skill.loadInstructions()
+            if (instructions) {
+              newOptions.systemOverride = [newOptions.systemOverride, `# Active skill: ${skill.id}\n${instructions}`]
+                .filter(Boolean)
+                .join('\n\n')
+            }
+          }
+        }
         if (this.globalConfig?.getDebug()) {
           this.logger.debug(`sendMessage options: ${JSON.stringify(newOptions)}`)
         }
@@ -301,10 +329,23 @@ export class Chaite extends EventEmitter {
 
   setMcpServerManager(manager: McpServerManager): void {
     this.mcpServerManager = manager
+    this.mcpCapabilityManager = new McpCapabilityManager(() => this.mcpServerManager)
   }
 
   getMcpServerManager(): McpServerManager | undefined {
     return this.mcpServerManager
+  }
+
+  getMcpCapabilityManager(): McpCapabilityManager | undefined {
+    return this.mcpCapabilityManager
+  }
+
+  setMcpManagementGuard(guard: (context: ChaiteContext) => boolean): void {
+    this.mcpManagementGuard = guard
+  }
+
+  canManageMcp(context: ChaiteContext): boolean {
+    return this.mcpManagementGuard?.(context) ?? false
   }
 
   // ─── Workflow Engine ─────────────────────────────────────────────────────────
@@ -412,10 +453,7 @@ export class Chaite extends EventEmitter {
     let executor: McpToolExecutor | undefined
     for (let i = servers.length - 1; i >= 0; i--) {
       const cfg = servers[i]
-      executor = new McpToolExecutor(
-        { baseUrl: cfg.baseUrl, authHeader: cfg.authHeader, defaultTimeoutMs: cfg.timeoutMs },
-        executor,
-      )
+      executor = new McpToolExecutor(cfg, executor)
     }
     return executor
   }

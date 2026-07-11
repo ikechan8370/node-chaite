@@ -55,6 +55,21 @@ router.get('/models', (req: Request, res: Response) => {
   })
 })
 
+/** GET /api/channels/vision-models — enabled channels and models that support vision */
+router.get('/vision-models', (req: Request, res: Response) => {
+  wrap(res, async () => {
+    const channels = await Chaite.getInstance().getChannelsManager().listInstances()
+    return channels
+      .filter(channel => channel.status === 'enabled')
+      .map(channel => ({
+        id: channel.id,
+        name: channel.name,
+        models: channel.models.filter(model => model.features?.includes('visual')).map(model => ({ name: model.name, features: model.features })),
+      }))
+      .filter(channel => channel.models.length > 0)
+  })
+})
+
 /** POST /api/channels — create */
 router.post('/', (req: Request<object, object, Channel>, res: Response) => {
   wrap(res, async () => {

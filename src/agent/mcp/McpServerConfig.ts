@@ -1,14 +1,39 @@
 import type { BasicStorage } from '../../types/storage'
 import * as crypto from 'node:crypto'
 
+export type McpTransportType = 'streamable-http' | 'sse' | 'stdio'
+
+export interface McpToolManifest {
+  name: string
+  description?: string
+  schema?: unknown
+}
+
 /** Persistent configuration for a single MCP server connection */
 export interface McpServerConfig {
   id: string
   name: string
   description?: string
-  baseUrl: string
-  /** Optional Authorization header value (e.g. "Bearer xxx") */
+  /** Transport type. Existing baseUrl-only records default to streamable HTTP. */
+  transport?: McpTransportType
+  /** MCP endpoint for Streamable HTTP / legacy SSE transports. */
+  url?: string
+  /** @deprecated Use url. Kept to migrate existing MCP configuration records. */
+  baseUrl?: string
+  /** Extra request headers. Useful for Authorization and vendor API keys. */
+  headers?: Record<string, string>
+  /** @deprecated Use headers.Authorization. */
   authHeader?: string
+  /** Command to run for a local stdio MCP server. */
+  command?: string
+  args?: string[]
+  env?: Record<string, string>
+  cwd?: string
+  /** Existing tool groups that expose this server's tools to a preset. */
+  toolGroupIds?: string[]
+  /** Cached on a successful connection test; avoids discovering tools per chat. */
+  tools?: McpToolManifest[]
+  toolsDiscoveredAt?: number
   /** Default timeout for tool calls in ms */
   timeoutMs?: number
   /** Whether this server is active */
@@ -62,5 +87,12 @@ export class McpServerManager {
   async listEnabled(): Promise<McpServerConfig[]> {
     const all = await this.list()
     return all.filter(c => c.enabled)
+  }
+
+  async listEnabledForToolGroups(toolGroupIds: string[]): Promise<McpServerConfig[]> {
+    const selected = new Set(toolGroupIds)
+    return (await this.listEnabled()).filter(server =>
+      (server.toolGroupIds ?? []).some(id => selected.has(id)),
+    )
   }
 }

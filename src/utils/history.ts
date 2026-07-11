@@ -39,6 +39,15 @@ export class InMemoryHistoryManager extends AbstractHistoryManager {
   async deleteConversation(conversationId: string): Promise<void> {
     this.cache.delete(conversationId)
   }
+  async removeHistory(messageId: string, conversationId: string): Promise<void> {
+    const messages = this.cache.get(conversationId)
+    const target = messages?.get(messageId)
+    if (!messages || !target) return
+    for (const message of messages.values()) {
+      if (message.parentId === messageId) message.parentId = target.parentId
+    }
+    messages.delete(messageId)
+  }
   async getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined> {
     return this.cache.get(conversationId)?.get(messageId)
   }

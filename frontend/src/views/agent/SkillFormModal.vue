@@ -19,6 +19,7 @@ const props = defineProps<{
   editMode: boolean
   initialData: Partial<SkillDetail>
   presetOptions?: Array<{ label: string; value: string }>
+  mcpServerOptions?: Array<{ label: string; value: string }>
 }>()
 
 const emit = defineEmits<{
@@ -41,6 +42,9 @@ interface FormState {
   allowedTools: string[]
   preset: string
   planningModel: string
+  keywords: string[]
+  mcpServer: string
+  mcpTools: string[]
 }
 
 const defaultForm = (): FormState => ({
@@ -51,6 +55,9 @@ const defaultForm = (): FormState => ({
   allowedTools: [],
   preset: '',
   planningModel: '',
+  keywords: [],
+  mcpServer: '',
+  mcpTools: [],
 })
 
 const form = ref<FormState>(defaultForm())
@@ -66,6 +73,9 @@ watch(() => [props.initialData, props.show], ([data]) => {
       allowedTools: d.allowedTools ?? [],
       preset: d.preset ?? '',
       planningModel: d.planningModel ?? '',
+      keywords: d.keywords ?? [],
+      mcpServer: d.mcpServer ?? '',
+      mcpTools: d.mcpTools ?? [],
     }
   }
 }, { immediate: true })
@@ -105,6 +115,9 @@ function handleSubmit() {
       allowedTools: form.value.allowedTools.length > 0 ? form.value.allowedTools : undefined,
       preset: form.value.preset || undefined,
       planningModel: form.value.planningModel || undefined,
+      keywords: form.value.keywords.length ? form.value.keywords : undefined,
+      mcpServer: form.value.mcpServer || undefined,
+      mcpTools: form.value.mcpTools.length ? form.value.mcpTools : undefined,
     }
     emit('submit', payload)
     showModal.value = false
@@ -152,6 +165,18 @@ function handleSubmit() {
 
         <NFormItemGridItem :span="24" label="允许使用的工具 (可选，空则不限制)" path="allowedTools">
           <NDynamicTags v-model:value="form.allowedTools" />
+        </NFormItemGridItem>
+
+        <NFormItemGridItem :span="24" label="匹配关键词（可选）">
+          <NDynamicTags v-model:value="form.keywords" />
+        </NFormItemGridItem>
+
+        <NFormItemGridItem :span="12" label="关联 MCP Server（可选）">
+          <NSelect v-model:value="form.mcpServer" :options="mcpServerOptions ?? []" clearable placeholder="此 Skill 激活的 MCP" />
+        </NFormItemGridItem>
+
+        <NFormItemGridItem :span="12" label="默认启用 MCP 工具">
+          <NDynamicTags v-model:value="form.mcpTools" />
         </NFormItemGridItem>
 
         <NFormItemGridItem :span="24" label="系统提示词 (System Prompt)" path="systemPrompt">

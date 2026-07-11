@@ -4,6 +4,8 @@ export interface SkillFrontmatter {
   /** Unique skill name, a-z0-9- recommended */
   name: string
   description: string
+  /** Extra phrases, including Chinese phrases, used for lightweight routing. */
+  keywords?: string[]
   version?: string
   license?: string
   compatibility?: string
@@ -20,6 +22,10 @@ export interface SkillFrontmatter {
   processors?: string[]
   /** Trigger ids */
   triggers?: string[]
+  /** MCP server name/id used by this skill, if any. */
+  mcpServer?: string
+  /** Minimal MCP tool set the skill may activate. */
+  mcpTools?: string[]
   /**
    * When true, this skill is protected from modification or deletion by the LLM's
    * self-management tools (update_skill / delete_skill / create_skill overwrite).

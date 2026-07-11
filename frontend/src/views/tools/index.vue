@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { DataTableColumns } from 'naive-ui'
+const router = useRouter()
 import { NButton, NFlex, NGrid, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
 import type { ListToolModels } from '@/service/api/tools'
@@ -231,6 +232,30 @@ const toolPageSize = ref(20)
 const toolTotal = ref(0)
 const activeTab = ref('tools') // 默认显示工具管理标签
 
+interface BuiltinToolRow {
+  name: string
+  description: string
+  visibility: string
+  source: string
+}
+
+const builtinTools: BuiltinToolRow[] = [
+  { name: 'search_skills', description: '搜索精简的 Skill 能力目录，不加载 MCP 工具 schema。', visibility: '所有启用 MCP 的对话', source: 'Skill / MCP 运行时' },
+  { name: 'activate_skill_tools', description: '按 Skill 激活少量 MCP 工具；仅激活后的下一轮才会看见真实工具。', visibility: '所有启用 MCP 的对话', source: 'Skill / MCP 运行时' },
+  { name: 'list_mcp_servers', description: '查看 MCP Server 及已缓存工具数，不返回密钥。', visibility: '仅机器人主人', source: 'MCP 管理' },
+  { name: 'draft_mcp_server', description: '生成 MCP 配置草案；主人 QQ 确认后才会保存。', visibility: '仅机器人主人', source: 'MCP 管理' },
+  { name: 'list_skills', description: '列出已加载 Skill。', visibility: '仅机器人主人', source: 'Skill 管理' },
+  { name: 'create_skill / update_skill / delete_skill', description: '创建、修改或删除 Skill 文件。', visibility: '仅机器人主人', source: 'Skill 管理' },
+  { name: 'create_workflow / run_skill', description: '维护工作流或按需运行 Skill。', visibility: '仅机器人主人', source: 'Skill 管理' },
+]
+
+const builtinColumns: DataTableColumns<BuiltinToolRow> = [
+  { title: '工具', key: 'name', width: 250 },
+  { title: '作用', key: 'description' },
+  { title: '可见范围', key: 'visibility', width: 180 },
+  { title: '来源', key: 'source', width: 150 },
+]
+
 function fetchTools(filter?: any) {
   loading.value = true
   fetchToolList({
@@ -411,7 +436,7 @@ function handleToolPageSizeChange(pageSize: number) {
 
 <template>
   <div class="chaite-page">
-    <header class="chaite-page-header" data-tour="tools"><div><h1>工具与分组</h1><p>维护模型可调用的能力，并通过工具组快速关联到预设。</p></div><NButton type="primary" @click="handleAddTool"><template #icon><icon-park-outline-add-one /></template>创建工具</NButton></header>
+    <header class="chaite-page-header" data-tour="tools"><div><h1>工具与分组</h1><p>维护模型可调用的能力，并通过工具组快速关联到预设。</p></div><NSpace><NButton secondary @click="router.push('/agent?tab=mcp')"><template #icon><icon-park-outline-connection /></template>MCP 服务器</NButton><NButton type="primary" @click="handleAddTool"><template #icon><icon-park-outline-add-one /></template>创建工具</NButton></NSpace></header>
   <NSpace vertical size="large">
     <n-card class="chaite-panel" :bordered="false">
       <n-form :model="searchModel" label-placement="left" inline :show-feedback="false">
@@ -474,6 +499,14 @@ function handleToolPageSizeChange(pageSize: number) {
               </NButton>
             </div>
             <n-data-table :columns="groupColumns" :data="groupData.value" :loading="groupLoading" />
+          </NSpace>
+        </n-tab-pane>
+        <n-tab-pane name="builtins" tab="内置工具">
+          <NSpace vertical size="large">
+            <n-alert type="info" :show-icon="false">
+              内置工具由 Chaite 在运行时按权限注入，不会写入本地工具数据库，也无需加入工具组。MCP 的真实工具只有在对应 Skill 被激活后才会临时出现。
+            </n-alert>
+            <n-data-table :columns="builtinColumns" :data="builtinTools" />
           </NSpace>
         </n-tab-pane>
       </n-tabs>

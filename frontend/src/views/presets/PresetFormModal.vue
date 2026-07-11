@@ -47,6 +47,12 @@ const groupContextOptions = [
   { label: '使用系统提示词', value: 'use_system' },
 ]
 
+const dynamicContextHistoryOptions = [
+  { label: '使用全局配置', value: 'use_system' },
+  { label: '仅保留最新一轮（省 Token）', value: 'discard' },
+  { label: '保留每一轮（适合上下文缓存）', value: 'retain' },
+]
+
 const responseModalitiesOptions = [
   { label: '文本', value: 'text' },
   { label: '图片', value: 'image' },
@@ -124,6 +130,7 @@ const addPreset = ref<Partial<Shareable.PresetModel>>({
   prefix: '',
   local: true,
   groupContext: 'use_system',
+  dynamicContextHistory: 'use_system',
   disableSystemInstructions: false,
 })
 
@@ -138,6 +145,9 @@ watch(() => props.initialData, (newVal) => {
 
     if (!data.sendMessageOption.toolChoice) {
       data.sendMessageOption.toolChoice = { type: 'auto', tools: [] }
+    }
+    if (!data.dynamicContextHistory) {
+      data.dynamicContextHistory = 'use_system'
     }
 
     addPreset.value = data
@@ -205,6 +215,8 @@ watch(showModal, (val) => {
       },
       prefix: '',
       local: true,
+      groupContext: 'use_system',
+      dynamicContextHistory: 'use_system',
     }
   }
 })
@@ -289,6 +301,14 @@ watch(showModal, (val) => {
                     v-model:value="addPreset.groupContext"
                     :options="groupContextOptions"
                     placeholder="请选择群聊上下文设置"
+                  />
+                </NFormItemGridItem>
+
+                <NFormItemGridItem span="12 s:12 m:12" label="动态上下文历史" path="dynamicContextHistory">
+                  <NSelect
+                    v-model:value="addPreset.dynamicContextHistory"
+                    :options="dynamicContextHistoryOptions"
+                    placeholder="选择是否保留旧的群聊上下文和时间"
                   />
                 </NFormItemGridItem>
 

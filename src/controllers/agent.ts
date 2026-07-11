@@ -41,6 +41,16 @@ function paginate<T>(items: T[], req: Request): { items: T[]; total: number; pag
   return { items: items.slice((page - 1) * pageSize, page * pageSize), total, page, pageSize }
 }
 
+async function discoverMcpTools(config: McpServerConfig) {
+  const { McpToolExecutor } = await import('../agent/tool-executors/mcp')
+  const executor = new McpToolExecutor(config)
+  try {
+    return await executor.listAvailableTools({ runId: 'discovery', userId: 'admin', timeoutMs: config.timeoutMs })
+  } finally {
+    await executor.close()
+  }
+}
+
 /** Return 403 if the skill is marked readonly. Returns true if the response was sent (caller should return). */
 function readonlyGuard(res: Response, name: string, frontmatter: SkillFrontmatter): boolean {
   if (frontmatter.readonly) {
@@ -77,6 +87,9 @@ function buildSkillFrontmatter(fields: Partial<SkillFrontmatter>): string {
   a('allowedTools', fields.allowedTools)
   a('processors', fields.processors)
   a('triggers', fields.triggers)
+  a('keywords', fields.keywords)
+  s('mcpServer', fields.mcpServer)
+  a('mcpTools', fields.mcpTools)
   lines.push('---')
   return lines.join('\n') + '\n'
 }
@@ -134,7 +147,7 @@ router.post('/skills', (req: Request, res: Response) => {
   const registry = Chaite.getInstance().getSkillRegistry()
   if (!registry) return notConfigured(res, 'SkillRegistry')
   handle(res, async () => {
-    const { name, description, systemPrompt, executionMode, allowedTools, preset, planningModel, overwrite = false } = req.body as {
+    const { name, description, systemPrompt, executionMode, allowedTools, preset, planningModel, keywords, mcpServer, mcpTools, overwrite = false } = req.body as {
       name: string
       description: string
       systemPrompt: string
@@ -142,6 +155,9 @@ router.post('/skills', (req: Request, res: Response) => {
       allowedTools?: string | string[]
       preset?: string
       planningModel?: string
+      keywords?: string | string[]
+      mcpServer?: string
+      mcpTools?: string | string[]
       overwrite?: boolean
     }
 
@@ -161,9 +177,11 @@ router.post('/skills', (req: Request, res: Response) => {
     }
 
     const tools = typeof allowedTools === 'string' ? parseToolList(allowedTools) : allowedTools
+    const skillKeywords = typeof keywords === 'string' ? parseToolList(keywords) : keywords
+    const selectedMcpTools = typeof mcpTools === 'string' ? parseToolList(mcpTools) : mcpTools
     const skillDir = path.join(registry.getSkillsDir(), safeName)
     await fs.promises.mkdir(skillDir, { recursive: true })
-    await fs.promises.writeFile(path.join(skillDir, 'SKILL.md'), buildSkillFrontmatter({ name: safeName, description, executionMode, allowedTools: tools, preset, planningModel }), 'utf-8')
+    await fs.promises.writeFile(path.join(skillDir, 'SKILL.md'), buildSkillFrontmatter({ name: safeName, description, executionMode, allowedTools: tools, preset, planningModel, keywords: skillKeywords, mcpServer, mcpTools: selectedMcpTools }), 'utf-8')
     await fs.promises.writeFile(path.join(skillDir, 'system-prompt.md'), systemPrompt, 'utf-8')
     await registry.load()
 
@@ -187,13 +205,16 @@ router.patch('/skills/:name', (req: Request<{ name: string }>, res: Response) =>
     }
     if (readonlyGuard(res, req.params.name, skill.frontmatter)) return null
 
-    const { description, systemPrompt, executionMode, allowedTools, preset, planningModel } = req.body as {
+    const { description, systemPrompt, executionMode, allowedTools, preset, planningModel, keywords, mcpServer, mcpTools } = req.body as {
       description?: string
       systemPrompt?: string
       executionMode?: SkillFrontmatter['executionMode']
       allowedTools?: string | string[]
       preset?: string
       planningModel?: string
+      keywords?: string | string[]
+      mcpServer?: string
+      mcpTools?: string | string[]
     }
 
     const updated: Partial<SkillFrontmatter> = { ...skill.frontmatter }
@@ -204,6 +225,9 @@ router.patch('/skills/:name', (req: Request<{ name: string }>, res: Response) =>
     if (allowedTools !== undefined) {
       updated.allowedTools = typeof allowedTools === 'string' ? parseToolList(allowedTools) : allowedTools
     }
+    if (keywords !== undefined) updated.keywords = typeof keywords === 'string' ? parseToolList(keywords) : keywords
+    if (mcpServer !== undefined) updated.mcpServer = mcpServer
+    if (mcpTools !== undefined) updated.mcpTools = typeof mcpTools === 'string' ? parseToolList(mcpTools) : mcpTools
 
     await fs.promises.writeFile(path.join(skill.rootDir, 'SKILL.md'), buildSkillFrontmatter(updated), 'utf-8')
     if (systemPrompt) {
@@ -421,7 +445,20 @@ router.post('/mcp-servers', (
 ) => {
   const mgr = Chaite.getInstance().getMcpServerManager()
   if (!mgr) return notConfigured(res, 'McpServerManager')
-  handle(res, () => mgr.add(req.body))
+  handle(res, async () => {
+    // Adding a server is also its first connection validation and discovery.
+    // Do not leave an unusable endpoint in the user's configuration.
+    const created = await mgr.add(req.body)
+    try {
+      const tools = await discoverMcpTools(created)
+      const updated = await mgr.update(created.id, { tools, toolsDiscoveredAt: Date.now() })
+      if (!updated) throw new Error('MCP server disappeared while saving its tool manifest')
+      return updated
+    } catch (error) {
+      await mgr.delete(created.id)
+      throw new Error(`MCP server connection failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  })
 })
 
 /** PATCH /api/agent/mcp-servers/:id — update an existing MCP server */
@@ -432,7 +469,15 @@ router.patch('/mcp-servers/:id', (
   const mgr = Chaite.getInstance().getMcpServerManager()
   if (!mgr) return notConfigured(res, 'McpServerManager')
   handle(res, async () => {
-    const updated = await mgr.update(req.params.id, req.body)
+    const existing = await mgr.get(req.params.id)
+    if (!existing) {
+      res.status(404).json(ChaiteResponse.fail(null, 'MCP server not found'))
+      return null
+    }
+    // Validate the proposed connection before replacing a working config.
+    const candidate = { ...existing, ...req.body, id: existing.id, createdAt: existing.createdAt, updatedAt: existing.updatedAt }
+    const tools = await discoverMcpTools(candidate)
+    const updated = await mgr.update(req.params.id, { ...req.body, tools, toolsDiscoveredAt: Date.now() })
     if (!updated) {
       res.status(404).json(ChaiteResponse.fail(null, 'MCP server not found'))
       return null
@@ -466,10 +511,12 @@ router.post('/mcp-servers/:id/test', (req: Request<{ id: string }>, res: Respons
       res.status(404).json(ChaiteResponse.fail(null, 'MCP server not found'))
       return null
     }
-    const { McpToolExecutor } = await import('../agent/tool-executors/mcp')
-    const executor = new McpToolExecutor({ baseUrl: cfg.baseUrl, authHeader: cfg.authHeader, defaultTimeoutMs: cfg.timeoutMs ?? 10_000 })
-    const tools = await executor.listAvailableTools({ runId: 'test', userId: 'admin' })
-    return { ok: true, toolCount: tools.length, tools }
+    const tools = await discoverMcpTools(cfg)
+    const updated = await mgr.update(cfg.id, { tools, toolsDiscoveredAt: Date.now() })
+    if (!updated || updated.tools?.length !== tools.length) {
+      throw new Error('MCP tool manifest could not be persisted')
+    }
+    return { ok: true, toolCount: tools.length, cachedToolCount: updated.tools.length, tools }
   })
 })
 

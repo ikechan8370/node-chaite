@@ -63,6 +63,22 @@ export class KVHistoryManager implements HistoryManager {
     await this.kvStore.delete(conversationKey)
   }
 
+  async removeHistory(messageId: string, conversationId: string): Promise<void> {
+    const target = await this.getOneHistory(messageId, conversationId)
+    if (!target) return
+    const conversationKey = this.getConversationKey(conversationId)
+    const messageList = JSON.parse(await this.kvStore.get(conversationKey) || '[]') as string[]
+    for (const id of messageList) {
+      const message = await this.getOneHistory(id, conversationId)
+      if (message?.parentId === messageId) {
+        message.parentId = target.parentId
+        await this.kvStore.set(this.getMessageKey(conversationId, id), JSON.stringify(message))
+      }
+    }
+    await this.kvStore.delete(this.getMessageKey(conversationId, messageId))
+    await this.kvStore.set(conversationKey, JSON.stringify(messageList.filter(id => id !== messageId)))
+  }
+
   async getOneHistory(messageId: string, conversationId: string): Promise<HistoryMessage | undefined> {
     const messageKey = this.getMessageKey(conversationId, messageId)
     const messageData = await this.kvStore.get(messageKey)

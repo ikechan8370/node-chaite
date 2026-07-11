@@ -69,5 +69,8 @@
     "pdf-parse": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
   }
 }

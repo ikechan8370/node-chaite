@@ -1,3 +1,5 @@
 export * from './system-tools'
 export * from './schedule-tools'
 export * from './self-tools'
+export * from './mcp-capability-tools'
+export * from './mcp-management-tools'

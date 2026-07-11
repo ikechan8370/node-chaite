@@ -21,6 +21,7 @@ export type SkillExecutionMode = 'direct' | 'plan' | 'workflow'
 export interface SkillFrontmatter {
   name: string
   description: string
+  keywords?: string[]
   version?: string
   executionMode?: SkillExecutionMode
   workflowRef?: string
@@ -30,6 +31,8 @@ export interface SkillFrontmatter {
   processors?: string[]
   triggers?: string[]
   readonly?: boolean
+  mcpServer?: string
+  mcpTools?: string[]
 }
 
 export interface SkillMeta {
@@ -57,6 +60,9 @@ export interface CreateSkillDTO {
   allowedTools?: string[]
   preset?: string
   planningModel?: string
+  keywords?: string[]
+  mcpServer?: string
+  mcpTools?: string[]
   overwrite?: boolean
 }
 
@@ -67,6 +73,9 @@ export interface UpdateSkillDTO {
   allowedTools?: string[]
   preset?: string
   planningModel?: string
+  keywords?: string[]
+  mcpServer?: string
+  mcpTools?: string[]
 }
 
 export interface RunSkillDTO {
@@ -187,8 +196,18 @@ export interface McpServerConfig {
   id: string
   name: string
   description?: string
-  baseUrl: string
+  transport?: 'streamable-http' | 'sse' | 'stdio'
+  url?: string
+  baseUrl?: string
+  headers?: Record<string, string>
   authHeader?: string
+  command?: string
+  args?: string[]
+  env?: Record<string, string>
+  cwd?: string
+  toolGroupIds?: string[]
+  tools?: Array<{ name: string; description?: string; schema?: unknown }>
+  toolsDiscoveredAt?: number
   timeoutMs?: number
   enabled: boolean
   createdAt: number
@@ -200,6 +219,7 @@ export type CreateMcpServerDTO = Omit<McpServerConfig, 'id' | 'createdAt' | 'upd
 export interface McpTestResult {
   ok: boolean
   toolCount: number
+  cachedToolCount?: number
   tools: Array<{ name: string; description?: string }>
 }
 

@@ -28,6 +28,10 @@ import {
 } from '../types'
 import type { ExecutionContext, ToolExecutor } from '../agent/contracts'
 import { McpToolProxy } from '../agent/tool-executors/proxy'
+import { McpToolExecutor } from '../agent/tool-executors/mcp'
+import { createMcpCapabilityTools } from '../agent/tools/mcp-capability-tools'
+import { createMcpManagementTools } from '../agent/tools/mcp-management-tools'
+import { createSelfTools } from '../agent/tools/self-tools'
 import DefaultHistoryManager from '../utils/history'
 import { asyncLocalStorage, extractClassName, getKey } from '../utils'
 import { ClientType, EmbeddingOption, HistoryManager, IClient, SendMessageOption } from '../types'
@@ -131,6 +135,17 @@ export class AbstractClient implements IClient {
     const toolsGroupManager = this.context.chaite.getToolsGroupManager()
     const toolManager = this.context.chaite.getToolsManager()
     const groupIds = toolGroupIds ? [...toolGroupIds] : []
+    // These two tiny schemas provide progressive disclosure for MCP skills.
+    // They replace sending an entire MCP server's tool schemas every turn.
+    if (this.context.chaite?.getMcpCapabilityManager?.()) {
+      for (const tool of createMcpCapabilityTools()) pushUnique(tool)
+    }
+    // Configuration-changing tools are never exposed in normal group chats.
+    // The host application decides who is the owner through this guard.
+    if (this.context.chaite?.canManageMcp?.(this.context)) {
+      for (const tool of createMcpManagementTools()) pushUnique(tool)
+      for (const tool of createSelfTools()) pushUnique(tool)
+    }
     if (groupIds.includes('default_local')) {
       const toolDTOS = await toolManager.listInstances()
       for (const toolDTO of toolDTOS) {
@@ -185,6 +200,42 @@ export class AbstractClient implements IClient {
         }
       } catch (err) {
         this.logger.warn(`[fullfillTools] Failed to fetch remote tools: ${(err as Error).message}`)
+      }
+    }
+
+    // Only MCP tools explicitly activated by a skill are exposed. We reconnect
+    // and list tools at activation time so execution uses the live server view;
+    // the same response refreshes the persisted manifest used by management.
+    const capabilityManager = this.context.chaite?.getMcpCapabilityManager?.()
+    const mcpManager = this.context.chaite?.getMcpServerManager?.()
+    if (capabilityManager) {
+      for (const active of capabilityManager.getActive(this.context)) {
+        const server = active.server
+        const executor = new McpToolExecutor(server)
+        const execCtxBuilder = (): ExecutionContext => ({
+          runId: crypto.randomUUID(),
+          userId: this.context.getEvent()?.sender?.user_id?.toString() ?? 'unknown',
+          groupId: this.context.getEvent()?.group?.group_id?.toString(),
+          skillName: this.context.skillName,
+          jobId: this.context.jobId,
+          planId: this.context.planId,
+          timeoutMs: server.timeoutMs ?? this.options.toolTimeoutMs,
+        })
+        try {
+          const liveSchemas = await executor.listAvailableTools(execCtxBuilder())
+          const schemas = liveSchemas
+            .filter(schema => active.toolNames.includes(schema.name))
+          await mcpManager?.update(server.id, { tools: liveSchemas, toolsDiscoveredAt: Date.now() })
+          for (const schema of schemas) {
+            // A local tool, or an earlier MCP server, wins on duplicate names.
+            if (!resolvedTools.find(tool => tool.function.name === schema.name)) {
+              resolvedTools.push(new McpToolProxy(schema, executor, execCtxBuilder))
+            }
+          }
+        }
+        catch (error) {
+          this.logger.warn(`[fullfillTools] MCP server "${server.name}" unavailable: ${(error as Error).message}`)
+        }
       }
     }
 

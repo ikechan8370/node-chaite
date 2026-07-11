@@ -38,6 +38,9 @@ const appStore = useAppStore()
       <n-scrollbar class="flex-1">
         <Menu />
       </n-scrollbar>
+      <div class="sider-bottom-menu">
+        <Menu placement="bottom" />
+      </div>
     </n-layout-sider>
     <n-layout
       class="h-full flex flex-col"
@@ -102,3 +105,10 @@ const appStore = useAppStore()
     </n-layout>
   </n-layout>
 </template>
+
+<style scoped>
+.sider-bottom-menu {
+  border-top: 1px solid var(--n-border-color);
+  padding: 8px 0;
+}
+</style>

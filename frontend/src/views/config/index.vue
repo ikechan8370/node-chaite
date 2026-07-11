@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, h, onMounted, reactive, ref } from 'vue'
+import { computed, h, onMounted, reactive, ref, watch } from 'vue'
 import type { Component } from 'vue'
 import type { MenuOption } from 'naive-ui'
 import {
@@ -30,6 +30,7 @@ import IconLinkVision from '~icons/icon-park-outline/preview-open'
 import type { CustomConfig } from '@/service/api/config'
 import { fetchConfig, saveConfig } from '@/service/api/config'
 import { fetchPresetList } from '@/service/api/presets'
+import { fetchVisionChannelModels } from '@/service/api/channels'
 import type { DownloadSimpleExtensionParams, MemoryConfig, SimpleExtensionStatus } from '@/service/api/memory'
 import {
   downloadSimpleExtension,
@@ -151,6 +152,7 @@ const config = reactive({
     blockStrategy: 'full',
     blockWordMask: '**',
     enableGroupContext: false,
+    retainDynamicContextHistory: false,
     groupContextLength: 20,
     groupContextTemplatePrefix: 'Latest several messages in the group chat:\n'
       + '| sender.card | sender.nickname | sender.user_id | sender.role | sender.title | time | messageId | raw_message |\n'
@@ -184,6 +186,12 @@ const config = reactive({
     defaultQuestion: '请详细描述这张图片的内容，包括场景、人物、物体、文字、颜色等所有可见细节。',
     maxImageSize: 10485760,
     enableGroupContextImages: true,
+    enableGroupContextImageCompression: true,
+    groupContextImageCompressionThreshold: 524288,
+    groupContextImageCompressionStrategy: 'budget' as 'fixed' | 'budget',
+    groupContextImageCompressionScale: 70,
+    groupContextImageCompressionQuality: 75,
+    groupContextImageCompressionBudget: 3145728,
   },
 })
 
@@ -252,6 +260,42 @@ const simpleStatusLoading = ref(false)
 const simpleDownloadLoading = ref(false)
 const simpleSelectedAsset = ref<typeof simpleAssetOptions[number]['value']>('auto')
 const simpleCustomAssetName = ref('')
+const visionChannels = ref<Array<{ id: string; name: string; models: Array<{ name: string; features: string[] }> }>>([])
+const visionChannelsLoaded = ref(false)
+
+const visionChannelOptions = computed(() => [
+  { label: '自动选择第一个可用视觉渠道（推荐）', value: '' },
+  ...visionChannels.value.map(channel => ({ label: `${channel.name}（${channel.models.length} 个视觉模型）`, value: channel.id })),
+])
+
+const visionModelOptions = computed(() => {
+  const channel = visionChannels.value.find(item => item.id === config.vision.visionChannelId)
+  if (!channel) return [{ label: '自动选择渠道的第一个视觉模型', value: '' }]
+  return [
+    { label: '自动选择该渠道的第一个视觉模型', value: '' },
+    ...channel.models.map(model => ({ label: model.name, value: model.name })),
+  ]
+})
+
+function ensureVisionModelSelection() {
+  if (!visionChannelsLoaded.value || !config.vision.visionChannelId) return
+  const selected = visionModelOptions.value.some(option => option.value === config.vision.imageDescriptionModel)
+  if (!selected) config.vision.imageDescriptionModel = ''
+}
+
+watch(() => config.vision.visionChannelId, ensureVisionModelSelection)
+
+async function loadVisionChannels() {
+  try {
+    const res = await fetchVisionChannelModels()
+    if (res.code === 0) visionChannels.value = res.data
+    visionChannelsLoaded.value = true
+    ensureVisionModelSelection()
+  }
+  catch (error) {
+    console.error('加载视觉渠道失败:', error)
+  }
+}
 
 function applyMemoryConfigPayload(payload?: Partial<MemoryConfig>) {
   if (!payload) {
@@ -282,7 +326,19 @@ async function getConfig(): Promise<CustomConfig> {
   else {
     message.error('配置加载失败')
   }
-  Object.assign(config, data.data)
+  // Keep defaults introduced by newer plugin versions when loading an older
+  // persisted vision object that does not yet contain them.
+  Object.assign(config, {
+    ...data.data,
+    llm: {
+      ...config.llm,
+      ...(data.data?.llm || {}),
+    },
+    vision: {
+      ...config.vision,
+      ...(data.data?.vision || {}),
+    },
+  })
   if (!Array.isArray(config.bym.presetMap)) {
     config.bym.presetMap = []
   }
@@ -414,7 +470,7 @@ function filterOption(query: string, option: any) {
 // Load configuration on component mount
 onMounted(async () => {
   try {
-    await Promise.all([getConfig(), getMemoryConfig()])
+    await Promise.all([getConfig(), getMemoryConfig(), loadVisionChannels()])
     fetchPresets()
     await refreshSimpleExtensionStatus()
   }
@@ -825,6 +881,13 @@ onMounted(async () => {
                   <NGrid :cols="24" :x-gap="12" :y-gap="16">
                     <NFormItemGridItem span="24 s:24 m:12" label="启用群组上下文" path="enableGroupContext">
                       <NSwitch v-model:value="config.llm.enableGroupContext" />
+                    </NFormItemGridItem>
+
+                    <NFormItemGridItem span="24 s:24 m:12" label="保留每轮动态上下文" path="retainDynamicContextHistory">
+                      <NSwitch v-model:value="config.llm.retainDynamicContextHistory" />
+                      <template #feedback>
+                        <span class="form-hint">默认关闭：仅保留最新一轮群聊记录、时间和记忆；支持提示词缓存的渠道可开启</span>
+                      </template>
                     </NFormItemGridItem>
 
                     <NFormItemGridItem span="24 s:24 m:12" label="上下文长度" path="groupContextLength" :span-feedback="24">
@@ -1406,16 +1469,19 @@ onMounted(async () => {
                         ]"
                       />
                     </NFormItemGridItem>
-                    <NFormItemGridItem span="24 s:12 m:12" label="视觉模型渠道ID">
-                      <NInput
+                    <NFormItemGridItem span="24 s:12 m:12" label="视觉模型渠道">
+                      <NSelect
                         v-model:value="config.vision.visionChannelId"
-                        placeholder="留空则自动查找第一个支持 visual 的渠道"
+                        :options="visionChannelOptions"
+                        placeholder="选择视觉渠道，或保留自动选择"
                       />
                     </NFormItemGridItem>
                     <NFormItemGridItem span="24 s:12 m:12" label="图片描述模型">
-                      <NInput
+                      <NSelect
                         v-model:value="config.vision.imageDescriptionModel"
-                        placeholder="留空则使用渠道默认模型"
+                        :options="visionModelOptions"
+                        :disabled="!config.vision.visionChannelId"
+                        placeholder="先选择视觉渠道，或保持自动"
                       />
                     </NFormItemGridItem>
                     <NFormItemGridItem span="24" label="图片描述系统提示词">
@@ -1444,6 +1510,56 @@ onMounted(async () => {
                       <NSwitch v-model:value="config.vision.enableGroupContextImages" />
                       <span class="text-xs ml-2">开启后群聊图片会进入主干对话</span>
                     </NFormItemGridItem>
+                    <NFormItemGridItem span="24 s:12 m:6" label="上下文图片压缩">
+                      <NSwitch
+                        v-model:value="config.vision.enableGroupContextImageCompression"
+                        :disabled="!config.vision.enableGroupContextImages"
+                      />
+                      <span class="text-xs ml-2">仅优化送入模型的副本，原图仍保留</span>
+                    </NFormItemGridItem>
+                    <template v-if="config.vision.enableGroupContextImages && config.vision.enableGroupContextImageCompression">
+                      <NFormItemGridItem span="24 s:12 m:8" label="压缩策略">
+                        <NSelect
+                          v-model:value="config.vision.groupContextImageCompressionStrategy"
+                          :options="[
+                            { label: '固定压缩（仅处理超过阈值的图片）', value: 'fixed' },
+                            { label: '总量预算（本轮图片尽量不超过预算）', value: 'budget' },
+                          ]"
+                        />
+                      </NFormItemGridItem>
+                      <NFormItemGridItem span="24 s:12 m:8" label="压缩阈值 (bytes)">
+                        <NInputNumber
+                          v-model:value="config.vision.groupContextImageCompressionThreshold"
+                          :min="0"
+                          :step="1024"
+                          style="width: 100%"
+                        />
+                      </NFormItemGridItem>
+                      <NFormItemGridItem v-if="config.vision.groupContextImageCompressionStrategy === 'budget'" span="24 s:12 m:8" label="本轮图片总预算 (bytes)">
+                        <NInputNumber
+                          v-model:value="config.vision.groupContextImageCompressionBudget"
+                          :min="1024"
+                          :step="1024"
+                          style="width: 100%"
+                        />
+                      </NFormItemGridItem>
+                      <NFormItemGridItem span="24 s:12 m:8" label="缩放比例 (%)">
+                        <NInputNumber
+                          v-model:value="config.vision.groupContextImageCompressionScale"
+                          :min="10"
+                          :max="100"
+                          style="width: 100%"
+                        />
+                      </NFormItemGridItem>
+                      <NFormItemGridItem span="24 s:12 m:8" label="JPEG 质量">
+                        <NInputNumber
+                          v-model:value="config.vision.groupContextImageCompressionQuality"
+                          :min="20"
+                          :max="95"
+                          style="width: 100%"
+                        />
+                      </NFormItemGridItem>
+                    </template>
                   </NGrid>
                 </NForm>
               </NCard>
