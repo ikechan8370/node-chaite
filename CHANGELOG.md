@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/ikechan8370/node-chaite/compare/v1.11.0...v1.11.1) (2026-07-11)
+
+
+### Bug Fixes
+
+* complete Gemini tool array schemas ([59149ff](https://github.com/ikechan8370/node-chaite/commit/59149ff6d0222f451dbb0c28eeb7c57c49b09f2d))
+
 ## [1.11.0](https://github.com/ikechan8370/node-chaite/compare/v1.10.7...v1.11.0) (2026-07-11)
 
 
