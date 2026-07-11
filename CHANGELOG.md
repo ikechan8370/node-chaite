@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.6](https://github.com/ikechan8370/node-chaite/compare/v1.10.5...v1.10.6) (2026-07-05)
+
+
+### Bug Fixes
+
+* features level ([f7a19a2](https://github.com/ikechan8370/node-chaite/commit/f7a19a211c48cd26967ff8e8e42e86a23be817d3))
+
 ## [1.10.5](https://github.com/ikechan8370/node-chaite/compare/v1.10.4...v1.10.5) (2026-07-05)
 
 
