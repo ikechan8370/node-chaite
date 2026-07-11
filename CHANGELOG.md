@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.7](https://github.com/ikechan8370/node-chaite/compare/v1.10.6...v1.10.7) (2026-07-11)
+
+
+### Bug Fixes
+
+* frontend logic refacter ([8526236](https://github.com/ikechan8370/node-chaite/commit/8526236dc3559c6a768016e7d9eccdbf4f17e536))
+
 ## [1.10.6](https://github.com/ikechan8370/node-chaite/compare/v1.10.5...v1.10.6) (2026-07-05)
 
 
