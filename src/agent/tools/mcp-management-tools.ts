@@ -26,7 +26,10 @@ function draftMcpServerTool(): Tool {
       name: 'draft_mcp_server',
       description: 'Prepare an MCP server configuration for the owner. It is not saved or started until the owner confirms it with the QQ confirmation command.',
       parameters: { type: 'object', properties: {
-        name: { type: 'string', description: 'Server name' }, transport: { type: 'string', description: 'streamable-http, sse, or stdio' }, url: { type: 'string', description: 'URL for HTTP/SSE' }, command: { type: 'string', description: 'Command for stdio' }, args: { type: 'array', description: 'stdio command arguments' }, tool_group_ids: { type: 'array', description: 'Existing tool group IDs to bind' }, description: { type: 'string', description: 'Optional description' },
+        name: { type: 'string', description: 'Server name' }, transport: { type: 'string', description: 'streamable-http, sse, or stdio' }, url: { type: 'string', description: 'URL for HTTP/SSE' }, command: { type: 'string', description: 'Command for stdio' },
+        args: { type: 'array', description: 'stdio command arguments', items: { type: 'string', description: 'One command argument' } },
+        tool_group_ids: { type: 'array', description: 'Existing tool group IDs to bind', items: { type: 'string', description: 'One tool group ID' } },
+        description: { type: 'string', description: 'Optional description' },
       }, required: ['name', 'transport'] },
     },
     async run(args, context?: ChaiteContext) {

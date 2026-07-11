@@ -37,7 +37,11 @@ function activateSkillToolsTool(): Tool {
         type: 'object',
         properties: {
           skill_name: { type: 'string', description: 'Skill name returned by search_skills' },
-          tools: { type: 'array', description: 'Optional subset of the skill MCP tools. Omit to use the skill default set.' },
+          tools: {
+            type: 'array',
+            description: 'Optional subset of the skill MCP tools. Omit to use the skill default set.',
+            items: { type: 'string', description: 'One MCP tool name' },
+          },
         },
         required: ['skill_name'],
       },

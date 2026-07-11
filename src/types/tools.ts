@@ -18,6 +18,10 @@ export interface Parameter {
 export interface Property {
     type: 'string' | 'number' | 'boolean' | 'array' | 'object'
     description: string | null
+    /** Required by Gemini for array-typed parameters. */
+    items?: Property
+    properties?: Record<string, Property>
+    required?: string[]
 }
 
 export interface Tool {
