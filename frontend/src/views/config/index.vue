@@ -186,12 +186,6 @@ const config = reactive({
     defaultQuestion: '请详细描述这张图片的内容，包括场景、人物、物体、文字、颜色等所有可见细节。',
     maxImageSize: 10485760,
     enableGroupContextImages: true,
-    enableGroupContextImageCompression: true,
-    groupContextImageCompressionThreshold: 524288,
-    groupContextImageCompressionStrategy: 'budget' as 'fixed' | 'budget',
-    groupContextImageCompressionScale: 70,
-    groupContextImageCompressionQuality: 75,
-    groupContextImageCompressionBudget: 3145728,
   },
 })
 
@@ -1510,56 +1504,6 @@ onMounted(async () => {
                       <NSwitch v-model:value="config.vision.enableGroupContextImages" />
                       <span class="text-xs ml-2">开启后群聊图片会进入主干对话</span>
                     </NFormItemGridItem>
-                    <NFormItemGridItem span="24 s:12 m:6" label="上下文图片压缩">
-                      <NSwitch
-                        v-model:value="config.vision.enableGroupContextImageCompression"
-                        :disabled="!config.vision.enableGroupContextImages"
-                      />
-                      <span class="text-xs ml-2">仅优化送入模型的副本，原图仍保留</span>
-                    </NFormItemGridItem>
-                    <template v-if="config.vision.enableGroupContextImages && config.vision.enableGroupContextImageCompression">
-                      <NFormItemGridItem span="24 s:12 m:8" label="压缩策略">
-                        <NSelect
-                          v-model:value="config.vision.groupContextImageCompressionStrategy"
-                          :options="[
-                            { label: '固定压缩（仅处理超过阈值的图片）', value: 'fixed' },
-                            { label: '总量预算（本轮图片尽量不超过预算）', value: 'budget' },
-                          ]"
-                        />
-                      </NFormItemGridItem>
-                      <NFormItemGridItem span="24 s:12 m:8" label="压缩阈值 (bytes)">
-                        <NInputNumber
-                          v-model:value="config.vision.groupContextImageCompressionThreshold"
-                          :min="0"
-                          :step="1024"
-                          style="width: 100%"
-                        />
-                      </NFormItemGridItem>
-                      <NFormItemGridItem v-if="config.vision.groupContextImageCompressionStrategy === 'budget'" span="24 s:12 m:8" label="本轮图片总预算 (bytes)">
-                        <NInputNumber
-                          v-model:value="config.vision.groupContextImageCompressionBudget"
-                          :min="1024"
-                          :step="1024"
-                          style="width: 100%"
-                        />
-                      </NFormItemGridItem>
-                      <NFormItemGridItem span="24 s:12 m:8" label="缩放比例 (%)">
-                        <NInputNumber
-                          v-model:value="config.vision.groupContextImageCompressionScale"
-                          :min="10"
-                          :max="100"
-                          style="width: 100%"
-                        />
-                      </NFormItemGridItem>
-                      <NFormItemGridItem span="24 s:12 m:8" label="JPEG 质量">
-                        <NInputNumber
-                          v-model:value="config.vision.groupContextImageCompressionQuality"
-                          :min="20"
-                          :max="95"
-                          style="width: 100%"
-                        />
-                      </NFormItemGridItem>
-                    </template>
                   </NGrid>
                 </NForm>
               </NCard>
