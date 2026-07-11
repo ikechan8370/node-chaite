@@ -174,6 +174,7 @@ const config = reactive({
     authKey: '',
     host: '',
     port: 48370,
+    operationLogLimit: 50000,
   },
   vision: {
     nonVisionStrategy: 'tool',
@@ -1372,6 +1373,15 @@ onMounted(async () => {
                         :max="65535"
                         style="width: 100%"
                         placeholder="输入监听端口"
+                      />
+                    </NFormItemGridItem>
+                    <NFormItemGridItem span="24 s:24 m:12" label="日志保存条数" path="operationLogLimit">
+                      <NInputNumber
+                        v-model:value="config.chaite.operationLogLimit"
+                        :min="0"
+                        :precision="0"
+                        style="width: 100%"
+                        placeholder="50000；设为 0 不自动清理"
                       />
                     </NFormItemGridItem>
                   </NGrid>

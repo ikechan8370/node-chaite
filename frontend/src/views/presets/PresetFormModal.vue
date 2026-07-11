@@ -26,6 +26,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  modelOptions: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const emit = defineEmits(['update:show', 'submit'])
@@ -224,7 +228,14 @@ watch(showModal, (val) => {
 
             <!-- 模型 -->
             <NFormItemGridItem span="12 s:8 m:8" label="模型" path="sendMessageOption.model">
-              <NInput v-model:value="addPreset.sendMessageOption!!.model" placeholder="请输入模型" />
+              <NSelect
+                v-model:value="addPreset.sendMessageOption!!.model"
+                :options="modelOptions as SelectMixedOption[]"
+                filterable
+                tag
+                clearable
+                placeholder="选择渠道模型，或直接输入自定义模型名"
+              />
             </NFormItemGridItem>
 
             <!-- 温度 -->

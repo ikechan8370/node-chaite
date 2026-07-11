@@ -15,6 +15,15 @@ export function fetchChannelList(query: ListChannels) {
   })
 }
 
+export interface ChannelModelSummary {
+  name: string
+  channelCount: number
+}
+
+export function fetchChannelModels() {
+  return request.Get<Service.ResponseResult<ChannelModelSummary[]>>('/api/channels/models')
+}
+
 export function fetchChannelDetail(id: string) {
   return request.Get<Service.ResponseResult<Shareable.ChannelModel>>(`/api/channels/${id}`)
 }

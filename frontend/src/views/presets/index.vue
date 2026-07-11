@@ -11,6 +11,7 @@ import { fetchProcessorList } from '@/service/api/processors'
 import type { SelectMixedOption } from 'naive-ui/es/select/src/interface'
 import { fetchToolGroupList } from '@/service/api/toolGroup'
 import { fetchConfig, saveConfig } from '@/service/api/config'
+import { fetchChannelModels } from '@/service/api/channels'
 
 function createColumns({
   edit,
@@ -131,6 +132,7 @@ const currentPreset = ref<PresetModel>(JSON.parse(JSON.stringify(defaultPreset))
 const preProcessorOptions = ref([] as SelectMixedOption[])
 const postProcessorOptions = ref([] as SelectMixedOption[])
 const toolsOptions = ref([] as SelectMixedOption[])
+const modelOptions = ref([] as SelectMixedOption[])
 
 // 搜索相关
 const searchModel = reactive({
@@ -299,11 +301,25 @@ function fetchToolGroups(filter?: any) {
   })
 }
 
+async function getChannelModels() {
+  try {
+    const res = await fetchChannelModels()
+    modelOptions.value = res.data.map(model => ({
+      value: model.name,
+      label: `${model.name}（${model.channelCount} 个渠道）`,
+    }))
+  }
+  catch (err) {
+    console.error(err)
+  }
+}
+
 onMounted(() => {
   fetchPresets(filter.value)
   getProcessors()
   // getTools()
   fetchToolGroups()
+  getChannelModels()
 })
 </script>
 
@@ -365,6 +381,7 @@ onMounted(() => {
       :pre-processor-options="preProcessorOptions"
       :post-processor-options="postProcessorOptions"
       :tools-options="toolsOptions"
+      :model-options="modelOptions"
       @submit="handleSubmitPreset"
     />
   </div>

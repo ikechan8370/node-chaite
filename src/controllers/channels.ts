@@ -38,6 +38,23 @@ router.get('/list', (req: Request, res: Response) => {
   })
 })
 
+/** GET /api/channels/models — unique configured models with their channel counts */
+router.get('/models', (req: Request, res: Response) => {
+  wrap(res, async () => {
+    const channels = await Chaite.getInstance().getChannelsManager().listInstances()
+    const counts = new Map<string, number>()
+    for (const channel of channels) {
+      for (const model of channel.models) {
+        const name = model.name?.trim()
+        if (name) counts.set(name, (counts.get(name) ?? 0) + 1)
+      }
+    }
+    return [...counts.entries()]
+      .map(([name, channelCount]) => ({ name, channelCount }))
+      .sort((left, right) => left.name.localeCompare(right.name))
+  })
+})
+
 /** POST /api/channels — create */
 router.post('/', (req: Request<object, object, Channel>, res: Response) => {
   wrap(res, async () => {

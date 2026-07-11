@@ -103,7 +103,8 @@ const modelsFeedback = computed(() => {
 // Model management
 function addModelEntry() {
   if (!addChannel.value.models) addChannel.value.models = []
-  addChannel.value.models.push({ name: '', features: ['chat', 'tool'] })
+  // New entries must be immediately visible even when a channel has many models.
+  addChannel.value.models.unshift({ name: '', features: ['chat', 'tool'] })
 }
 
 function removeModelEntry(index: number) {
