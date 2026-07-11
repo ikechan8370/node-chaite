@@ -84,10 +84,12 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
             const fileURL = `file://${path.resolve(filePath).replace(/\\/g, '/')}`
             // 清除模块缓存以确保获取最新版本
             const module = await import(fileURL + `?t=${Date.now()}`)
-            if (module.default && typeof module.default === 'object' && module.default.name) {
-              // 使用示例自己的name作为键，文件名作为值
-              getLogger().debug(`Loaded ${this.type} '${module.default.name}' from file '${file}'`)
-              newInstanceMap.set(module.default.name, file)
+            const instance = this.resolveModuleInstance(module)
+            if (instance && typeof instance === 'object' && typeof (instance as { name?: unknown }).name === 'string') {
+              // 使用实例自己的 name 作为键，支持 default 实例、default 类和具名导出类。
+              const instanceName = (instance as { name: string }).name
+              getLogger().debug(`Loaded ${this.type} '${instanceName}' from file '${file}'`)
+              newInstanceMap.set(instanceName, file)
             }
           } catch (error) {
             getLogger().error(`Error loading ${this.type} from file '${file}':`, error as never)
@@ -132,11 +134,38 @@ export abstract class ExecutableShareableManager<T extends Shareable<T>, C> {
     try {
       // 清除模块缓存，确保获取最新版本
       const module = await import(fileURL + `?t=${Date.now()}`)
-      return module.default as C
+      const instance = this.resolveModuleInstance(module)
+      return instance as C | undefined
     } catch (error) {
       getLogger().error(`Error loading tool '${name}':`, error as never)
       return undefined
     }
+  }
+
+  /**
+   * Plugins historically used both `export default new Tool()` and
+   * `export class MyProcessor ...`. Resolve both shapes from the same loader.
+   */
+  private resolveModuleInstance(module: Record<string, unknown>): unknown {
+    const candidates = [module.default, ...Object.entries(module)
+      .filter(([key]) => key !== 'default')
+      .map(([, value]) => value)]
+    for (const candidate of candidates) {
+      if (candidate && typeof candidate === 'object' && typeof (candidate as { name?: unknown }).name === 'string') {
+        return candidate
+      }
+      if (typeof candidate === 'function') {
+        try {
+          const instance = new (candidate as new () => unknown)()
+          if (instance && typeof instance === 'object' && typeof (instance as { name?: unknown }).name === 'string') {
+            return instance
+          }
+        } catch {
+          // Ignore unrelated exported helpers/classes and try the next export.
+        }
+      }
+    }
+    return undefined
   }
 
   /**

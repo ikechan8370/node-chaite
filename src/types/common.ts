@@ -204,6 +204,11 @@ export class ChaiteContext {
   skillName?: string
   /** Active workflow id for this request */
   workflowId?: string
+  /** Resource identity used by usage logging. */
+  channelId?: string
+  channelName?: string
+  presetId?: string
+  presetName?: string
   setHistoryMessages(histories: HistoryMessage[]) {
     this.historyMessages = histories
   }

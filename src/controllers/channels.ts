@@ -127,6 +127,8 @@ router.post('/test', (req: Request<object, object, { id: string; model?: string 
 
     const context = new ChaiteContext(Chaite.getInstance().getLogger())
     context.chaite = Chaite.getInstance()
+    context.channelId = channel.id
+    context.channelName = channel.name
     const client = createClient(channel.adapterType, channel.options, context)
     const startTime = Date.now()
 

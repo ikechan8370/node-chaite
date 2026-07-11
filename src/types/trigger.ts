@@ -121,6 +121,7 @@ export abstract class BaseTrigger implements Trigger {
     }
 
     protected async triggerAction(action: () => Promise<void>): Promise<void> {
+      const startedAt = Date.now()
       try {
         // 先执行实际动作
         const context = new ChaiteContext()
@@ -130,8 +131,17 @@ export abstract class BaseTrigger implements Trigger {
           // 如果是一次性触发器，则执行清理
           await this.checkOneTimeAndCleanup()
         })
+        Chaite.getInstance().getOperationLogManager()?.addSync({
+          type: 'trigger.call', level: 'info', summary: `触发器执行：${this.name}`,
+          triggerName: this.name, durationMs: Date.now() - startedAt,
+        })
       } catch (err) {
         getLogger().error(`触发器 ${this.name} 执行出错:`, err as never)
+        Chaite.getInstance().getOperationLogManager()?.addSync({
+          type: 'trigger.error', level: 'error', summary: `触发器失败：${this.name}`,
+          triggerName: this.name, detail: err instanceof Error ? err.message : String(err),
+          durationMs: Date.now() - startedAt,
+        })
         // 即使出错也要执行清理
         if (this.isOneTime) {
           await this.checkOneTimeAndCleanup()
@@ -152,6 +162,10 @@ export abstract class BaseTrigger implements Trigger {
         const channels = await Chaite.getInstance().getChannelsManager().getChannelByModel(options.model || '')
         if (channels.length > 0) {
           const channel = channels[0]
+          context.channelId = channel.id
+          context.channelName = channel.name
+          context.presetId = preset?.id
+          context.presetName = preset?.name
           const clientOptions = channel.getOptionsForModel(options.model || '')
           await clientOptions.ready()
           const client = createClient(channel.adapterType, clientOptions, context)

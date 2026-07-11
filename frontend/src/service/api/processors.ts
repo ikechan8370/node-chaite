@@ -36,6 +36,11 @@ export function deleteProcessor(id: string) {
   return request.Delete<Service.ResponseResult<any>>(`/api/processors/${id}`)
 }
 
+export type TestMessageContent = { type: 'text'; text: string } | { type: 'image'; image: string; mimeType?: string } | { type: 'audio'; data: string; format: 'mp3' | 'wav' }
+export function testProcessor(id: string, data: { message: { role: 'user' | 'assistant'; content: TestMessageContent[] }; history?: unknown[]; userId?: string; groupId?: string }) {
+  return request.Post<Service.ResponseResult<{ processor: string; type: 'pre' | 'post'; before: unknown; after: unknown; durationMs: number }>>(`/api/processors/${id}/test`, data)
+}
+
 export function uploadProcessorToCloud(data: { id: string }) {
   return request.Post<Service.ResponseResult<Shareable.ProcessorModel>>('/api/processors/upload', data)
 }

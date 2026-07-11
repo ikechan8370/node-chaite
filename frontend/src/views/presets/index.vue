@@ -10,12 +10,17 @@ import PresetModel = Shareable.PresetModel
 import { fetchProcessorList } from '@/service/api/processors'
 import type { SelectMixedOption } from 'naive-ui/es/select/src/interface'
 import { fetchToolGroupList } from '@/service/api/toolGroup'
+import { fetchConfig, saveConfig } from '@/service/api/config'
 
 function createColumns({
   edit,
+  clone,
+  useForBym,
   remove,
 }: {
   edit: (row: PresetModel) => void
+  clone: (row: PresetModel) => void
+  useForBym: (row: PresetModel) => void
   remove: (row: PresetModel) => void
 }): DataTableColumns<PresetModel> {
   return [
@@ -79,8 +84,10 @@ function createColumns({
               size: 'small',
               onClick: () => edit(row),
             },
-            { default: () => '修改' },
+              { default: () => '修改' },
           ),
+          h(NButton, { strong: true, tertiary: true, size: 'small', onClick: () => clone(row) }, { default: () => '复制' }),
+          h(NButton, { strong: true, tertiary: true, size: 'small', type: 'success', onClick: () => useForBym(row) }, { default: () => '用于伪人' }),
           h(
             NButton,
             {
@@ -133,7 +140,7 @@ const searchModel = reactive({
 
 function fetchPresets(filter: ListPresets) {
   loading.value = true
-  fetchPresetList(filter).then((res) => {
+  fetchPresetList({ ...filter, pageSize: 100 }).then((res) => {
     data.value = res.data.items || res.data
     loading.value = false
   }).catch((err) => {
@@ -159,6 +166,25 @@ function handleEditPreset(row: PresetModel) {
   console.error(row)
   currentPreset.value = { ...row }
   showModal.value = true
+}
+
+function handleClonePreset(row: PresetModel) {
+  editMode.value = false
+  const copy = JSON.parse(JSON.stringify(row)) as PresetModel
+  delete copy.id
+  copy.name = `${row.name} 副本`
+  currentPreset.value = copy
+  showModal.value = true
+}
+
+async function handleUseForBym(row: PresetModel) {
+  const rsp = await fetchConfig()
+  if (rsp.code !== 0) { message.error(rsp.message || '配置读取失败'); return }
+  const config: any = rsp.data
+  config.bym = { ...(config.bym || {}), enable: true, defaultPreset: row.id }
+  const saved = await saveConfig(config)
+  if (saved.code === 0) message.success(`已启用伪人模式并使用“${row.name}”`)
+  else message.error(saved.message || '配置保存失败')
 }
 
 function handleRemovePreset(row: PresetModel) {
@@ -214,6 +240,12 @@ function handleSubmitPreset(presetData: Partial<Shareable.PresetModel>) {
 const columns = createColumns({
   edit(row) {
     handleEditPreset(row)
+  },
+  clone(row) {
+    handleClonePreset(row)
+  },
+  useForBym(row) {
+    handleUseForBym(row)
   },
   remove(row) {
     handleRemovePreset(row)
@@ -276,9 +308,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="chaite-page">
+    <header class="chaite-page-header" data-tour="presets">
+      <div><h1>预设库</h1><p>搜索、整理和维护群聊角色与对话行为。</p></div>
+      <NButton type="primary" size="large" @click="handleAddPreset"><template #icon><icon-park-outline-add-one /></template>创建预设</NButton>
+    </header>
     <NSpace vertical size="large">
-      <n-card>
+      <n-card class="chaite-panel" :bordered="false">
         <n-form ref="formRef" :model="searchModel" label-placement="left" inline :show-feedback="false">
           <NGrid cols="1 s:2 m:3 l:4" :x-gap="12" :y-gap="16" responsive="screen" item-responsive>
             <NFormItemGridItem span="1" label="名称" path="name">
@@ -306,7 +342,7 @@ onMounted(() => {
           </NGrid>
         </n-form>
       </n-card>
-      <n-card>
+      <n-card class="chaite-panel" :bordered="false">
         <NSpace vertical size="large">
           <div class="flex gap-4">
             <NButton type="primary" @click="handleAddPreset">
@@ -316,7 +352,7 @@ onMounted(() => {
               新建预设
             </NButton>
           </div>
-          <n-data-table :columns="columns" :data="data.value" :loading="loading" />
+          <n-data-table :columns="columns" :data="data.value" :loading="loading" :pagination="{ pageSize: 20, showSizePicker: true, pageSizes: [20, 50, 100] }" />
         </NSpace>
       </n-card>
     </NSpace>

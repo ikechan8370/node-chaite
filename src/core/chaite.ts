@@ -36,7 +36,7 @@ import type { AgentRunContext } from '../agent/contracts'
 import type { WorkflowEngine } from '../agent/workflow/WorkflowEngine'
 import type { PlanExecutor } from '../agent/planning/PlanExecutor'
 import { McpToolExecutor } from '../agent/tool-executors/mcp'
-import type { OperationLogManager } from '../share/operation-log'
+import { OperationLogManager } from '../share/operation-log'
 import type { AuditEvent } from '../agent/contracts'
 
 /**
@@ -75,13 +75,15 @@ export class Chaite extends EventEmitter {
   private planExecutor?: PlanExecutor
 
   /** Operation log manager — records fine-grained AI activity */
-  private operationLogManager?: OperationLogManager
+  private operationLogManager: OperationLogManager
 
   private constructor(private channelsManager: ChannelsManager, private toolsManager: ToolManager,
                         private processorsManager: ProcessorsManager, private chatPresetManager: ChatPresetManager, private toolsGroupManager: ToolsGroupManager, private triggerManager: TriggerManager<TriggerDTO>,
                         private userModeSelector: UserModeSelector, private userStateStorage: BasicStorage<UserState>,
                         private historyManager: HistoryManager = new InMemoryHistoryManager(), private logger: ILogger) {
     super()
+    this.operationLogManager = new OperationLogManager()
+    this._subscribeOperationLogEvents(this.operationLogManager)
   }
 
   public static init(channelsManager: ChannelsManager, toolsManager: ToolManager,
@@ -226,9 +228,13 @@ export class Chaite extends EventEmitter {
       }
 
       const modelName = options.chatPreset.sendMessageOption.model || ''
+      context.presetId = options.chatPreset.id
+      context.presetName = options.chatPreset.name
       const channels = await this.channelsManager.getChannelByModel(modelName)
       if (channels.length > 0) {
         const channel = channels[0]
+        context.channelId = channel.id
+        context.channelName = channel.name
         const clientOptions = channel.getOptionsForModel(modelName)
         await clientOptions.ready()
         clientOptions.setHistoryManager(this.historyManager)

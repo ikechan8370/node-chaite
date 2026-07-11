@@ -208,8 +208,10 @@ function handleResetSearch() {
 </script>
 
 <template>
+  <div class="chaite-page">
+    <header class="chaite-page-header"><div><h1>触发器</h1><p>管理定时和事件触发行为，并在使用记录中追踪执行结果。</p></div><NButton type="primary" @click="handleAddTrigger"><template #icon><icon-park-outline-add-one /></template>创建触发器</NButton></header>
   <NSpace vertical size="large">
-    <n-card>
+    <n-card class="chaite-panel" :bordered="false">
       <n-form :model="searchModel" label-placement="left" inline :show-feedback="false">
         <NGrid cols="1 s:2 m:3 l:6" :x-gap="12" :y-gap="16" responsive="screen" item-responsive>
           <NFormItemGridItem span="1" label="名称" path="name">
@@ -256,7 +258,7 @@ function handleResetSearch() {
         </NGrid>
       </n-form>
     </n-card>
-    <n-card>
+    <n-card class="chaite-panel" :bordered="false">
       <NSpace vertical size="large">
         <div class="flex gap-4">
           <NButton type="primary" @click="handleAddTrigger">
@@ -277,4 +279,5 @@ function handleResetSearch() {
       @submit="handleSubmitTrigger"
     />
   </NSpace>
+  </div>
 </template>

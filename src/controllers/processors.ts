@@ -1,5 +1,7 @@
 import express, { Router, Request, Response } from 'express'
-import { Chaite, ChaiteResponse, Filter, ProcessorDTO, SearchOption } from '../index'
+import { Chaite, ChaiteContext, ChaiteResponse, Filter, ProcessorDTO, SearchOption } from '../index'
+import type { AssistantMessage, HistoryMessage, UserMessage } from '../types'
+import { asyncLocalStorage, extractClassName } from '../utils'
 
 const router: Router = express.Router()
 
@@ -32,6 +34,40 @@ router.get('/list', (req: Request, res: Response) => {
     if (name) items = items.filter(p => p.name.includes(name))
     if (type) items = items.filter(p => p.type === type)
     return paginate(items, req)
+  })
+})
+
+/** POST /api/processors/:id/test — process a synthetic message in the live runtime. */
+router.post('/:id/test', (req: Request<{ id: string }, object, {
+  message: UserMessage | AssistantMessage
+  history?: HistoryMessage[]
+  userId?: string
+  groupId?: string
+}>, res: Response) => {
+  wrap(res, async () => {
+    const chaite = Chaite.getInstance()
+    const mgr = chaite.getProcessorsManager()
+    const dto = await mgr.getInstanceT(req.params.id)
+    if (!dto) throw new Error('Processor not found')
+    const instanceName = extractClassName(dto.code || '') || dto.name
+    const processor = await mgr.getInstance(instanceName)
+    if (!processor) throw new Error(`处理器“${dto.name}”尚未被运行时加载，请保存后稍候再试`)
+    if (!req.body.message || req.body.message.role !== (dto.type === 'pre' ? 'user' : 'assistant')) {
+      throw new Error(dto.type === 'pre' ? '前处理器需要 user 消息' : '后处理器需要 assistant 消息')
+    }
+    const context = new ChaiteContext(chaite.getLogger())
+    context.setChaite(chaite)
+    context.setHistoryMessages(req.body.history || [])
+    context.setEvent({
+      sender: { user_id: req.body.userId || 'console-test', nickname: 'Console Test' },
+      group: req.body.groupId ? { group_id: req.body.groupId } : undefined,
+      raw_message: '[管理面板处理器测试]',
+    } as any)
+    const before = structuredClone(req.body.message)
+    const startedAt = Date.now()
+    const runnable = processor as unknown as { process: (message: UserMessage | AssistantMessage) => Promise<UserMessage | AssistantMessage> }
+    const after = await asyncLocalStorage.run(context, () => runnable.process(structuredClone(req.body.message) as any))
+    return { processor: dto.name, type: dto.type, before, after, durationMs: Date.now() - startedAt }
   })
 })
 

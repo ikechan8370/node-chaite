@@ -2,6 +2,10 @@ import { request } from '../http'
 
 export type OperationLogType =
   | 'llm.call'
+  | 'processor.call'
+  | 'processor.error'
+  | 'trigger.call'
+  | 'trigger.error'
   | 'tool.call'
   | 'tool.error'
   | 'job.queued'
@@ -28,9 +32,16 @@ export interface OperationLog {
   summary: string
   detail?: string
   userId?: string
+  groupId?: string
   conversationId?: string
+  channelId?: string
+  channelName?: string
   model?: string
+  presetId?: string
+  presetName?: string
   toolName?: string
+  processorName?: string
+  triggerName?: string
   skillName?: string
   jobId?: string
   planId?: string
@@ -38,6 +49,9 @@ export interface OperationLog {
   durationMs?: number
   inputTokens?: number
   outputTokens?: number
+  totalTokens?: number
+  cachedTokens?: number
+  reasoningTokens?: number
   metadata?: Record<string, unknown>
 }
 
@@ -55,12 +69,27 @@ export interface LogsStats {
   last24h: number
   avgLlmDurationMs: number
   totalTokens: number
+  inputTokens: number
+  outputTokens: number
+  cachedTokens: number
+  reasoningTokens: number
+  errorRate: number
+  byChannel: Record<string, number>
+  byModel: Record<string, number>
+  byPreset: Record<string, number>
 }
 
 export interface ListLogsQuery {
   type?: OperationLogType
   level?: OperationLogLevel
   userId?: string
+  groupId?: string
+  channelId?: string
+  model?: string
+  presetId?: string
+  toolName?: string
+  processorName?: string
+  triggerName?: string
   keyword?: string
   from?: number
   to?: number

@@ -5,6 +5,7 @@ import { h, onMounted, reactive, ref } from 'vue'
 import type { ListToolModels } from '@/service/api/tools'
 import { createTool, deleteTool, fetchToolList, updateTool, uploadToolToCloud } from '@/service/api/tools'
 import ToolFormModal from './ToolFormModal.vue'
+import ToolTestModal from './ToolTestModal.vue'
 import { createToolGroup, deleteToolGroup, fetchToolGroupList, updateToolGroup } from '@/service/api/toolGroup'
 import ToolGroupFormModal from '@/views/tools/ToolGroupFormModal.vue'
 import IconLinkCloudSuccess from '~icons/icon-park-outline/cloudy'
@@ -13,10 +14,12 @@ import type { Shareable } from '@/typings/entities/shareable'
 function createColumns({
   upload,
   edit,
+  test,
   remove,
 }: {
   upload: (row: Shareable.ToolModel) => void
   edit: (row: Shareable.ToolModel) => void
+  test: (row: Shareable.ToolModel) => void
   remove: (row: Shareable.ToolModel) => void
 }): DataTableColumns<Shareable.ToolModel> {
   return [
@@ -89,6 +92,7 @@ function createColumns({
             },
             { default: () => '修改' },
           ),
+          h(NButton, { type: 'success', strong: true, tertiary: true, size: 'small', onClick: () => test(row) }, { default: () => '测试' }),
           h(
             NButton,
             {
@@ -206,6 +210,8 @@ const defaultTool = {
 } as Shareable.ToolModel
 const currentTool = ref<Shareable.ToolModel>(JSON.parse(JSON.stringify(defaultTool)))
 const loading = ref(false)
+const showTestModal = ref(false)
+const testingTool = ref<Shareable.ToolModel>()
 
 // 工具组相关状态
 const groupData = reactive({ value: [] as Shareable.ToolsGroupModel[] })
@@ -288,6 +294,10 @@ const columns = createColumns({
     editMode.value = true
     currentTool.value = { ...row }
     showModal.value = true
+  },
+  test(row) {
+    testingTool.value = row
+    showTestModal.value = true
   },
   remove: handleRemoveTool,
 })
@@ -400,8 +410,10 @@ function handleToolPageSizeChange(pageSize: number) {
 </script>
 
 <template>
+  <div class="chaite-page">
+    <header class="chaite-page-header" data-tour="tools"><div><h1>工具与分组</h1><p>维护模型可调用的能力，并通过工具组快速关联到预设。</p></div><NButton type="primary" @click="handleAddTool"><template #icon><icon-park-outline-add-one /></template>创建工具</NButton></header>
   <NSpace vertical size="large">
-    <n-card>
+    <n-card class="chaite-panel" :bordered="false">
       <n-form :model="searchModel" label-placement="left" inline :show-feedback="false">
         <NGrid cols="1 s:2 m:3 l:6" :x-gap="12" :y-gap="16" responsive="screen" item-responsive>
           <NFormItemGridItem span="1" label="名称" path="name">
@@ -426,7 +438,7 @@ function handleToolPageSizeChange(pageSize: number) {
         </NGrid>
       </n-form>
     </n-card>
-    <n-card>
+    <n-card class="chaite-panel" :bordered="false">
       <n-tabs v-model:value="activeTab" type="line" animated>
         <n-tab-pane name="tools" tab="工具管理">
           <NSpace vertical size="large">
@@ -473,6 +485,7 @@ function handleToolPageSizeChange(pageSize: number) {
       :initial-data="currentTool"
       @submit="handleSubmitTool"
     />
+    <ToolTestModal v-model:show="showTestModal" :tool="testingTool" />
 
     <ToolGroupFormModal
       v-model:show="showGroupModal"
@@ -482,4 +495,5 @@ function handleToolPageSizeChange(pageSize: number) {
       @submit="handleSubmitToolGroup"
     />
   </NSpace>
+  </div>
 </template>

@@ -2,6 +2,7 @@
 import { useAppStore, useRouteStore } from '@/store'
 import {
   BackTop,
+  Docs,
   FullScreen,
   Logo,
   Menu,
@@ -30,6 +31,7 @@ const appStore = useAppStore()
             <FullScreen />
             <DarkModeSwitch />
             <LangsSwitch />
+            <Docs />
             <Setting />
             <UserCenter />
           </div>

@@ -1,5 +1,6 @@
 import express, { Router, Request, Response } from 'express'
-import { Chaite, ChaiteResponse, ToolDTO, Filter, SearchOption } from '../index'
+import { Chaite, ChaiteContext, ChaiteResponse, ToolDTO, Filter, SearchOption } from '../index'
+import { asyncLocalStorage, extractClassName } from '../utils'
 
 const router: Router = express.Router()
 
@@ -32,6 +33,42 @@ router.get('/list', (req: Request, res: Response) => {
     const name = req.query['name'] as string | undefined
     if (name) items = items.filter(t => t.name.includes(name))
     return paginate(items, req)
+  })
+})
+
+/** GET /api/tools/:id/test-schema — schema from the actually loaded tool instance. */
+router.get('/:id/test-schema', (req: Request<{ id: string }>, res: Response) => {
+  wrap(res, async () => {
+    const mgr = Chaite.getInstance().getToolsManager()
+    const dto = await mgr.getInstanceT(req.params.id)
+    if (!dto) throw new Error('Tool not found')
+    const instanceName = extractClassName(dto.code || '') || dto.name
+    const tool = instanceName ? await mgr.getInstance(instanceName) : undefined
+    if (!tool) throw new Error(`工具“${dto.name}”尚未被运行时加载，请保存后稍候再试`)
+    return { name: tool.function.name, description: tool.function.description, parameters: tool.function.parameters }
+  })
+})
+
+/** POST /api/tools/:id/test — execute through the live Chaite/plugin runtime. */
+router.post('/:id/test', (req: Request<{ id: string }, object, { args?: Record<string, unknown>; userId?: string; groupId?: string }>, res: Response) => {
+  wrap(res, async () => {
+    const chaite = Chaite.getInstance()
+    const mgr = chaite.getToolsManager()
+    const dto = await mgr.getInstanceT(req.params.id)
+    if (!dto) throw new Error('Tool not found')
+    const instanceName = extractClassName(dto.code || '') || dto.name
+    const tool = instanceName ? await mgr.getInstance(instanceName) : undefined
+    if (!tool) throw new Error(`工具“${dto.name}”尚未被运行时加载`)
+    const context = new ChaiteContext(chaite.getLogger())
+    context.setChaite(chaite)
+    context.setEvent({
+      sender: { user_id: req.body.userId || 'console-test', nickname: 'Console Test' },
+      group: req.body.groupId ? { group_id: req.body.groupId } : undefined,
+      raw_message: '[管理面板工具测试]',
+    } as any)
+    const startedAt = Date.now()
+    const result = await asyncLocalStorage.run(context, () => tool.run((req.body.args || {}) as any, context))
+    return { result: typeof result === 'string' ? result : JSON.stringify(result), durationMs: Date.now() - startedAt }
   })
 })
 

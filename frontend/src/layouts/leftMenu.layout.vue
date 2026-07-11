@@ -4,6 +4,7 @@ import {
   BackTop,
   Breadcrumb,
   CollapaseButton,
+  Docs,
   FullScreen,
   Logo,
   Menu,
@@ -56,6 +57,7 @@ const appStore = useAppStore()
             <FullScreen />
             <DarkModeSwitch />
             <LangsSwitch />
+            <Docs />
             <Setting />
             <UserCenter />
           </div>

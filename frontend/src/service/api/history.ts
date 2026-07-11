@@ -31,7 +31,7 @@ export interface UserState {
   }
 }
 export function listUserStates() {
-  return request.Get<Service.ResponseResult<UserState[]>>('/api/state/list')
+  return request.Get<Service.ResponseResult<{ items: UserState[]; total: number; page: number; pageSize: number }>>('/api/state/list', { params: { pageSize: 100 } })
 }
 
 export function getUserState(userId: string) {

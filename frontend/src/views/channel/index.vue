@@ -2,6 +2,7 @@
 import type { DataTableColumns } from 'naive-ui'
 import { NButton, NCheckbox, NDropdown, NFlex, NGrid, NModal, NPopover, NSpace, NTag, NText, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import IconLinkCloudSuccess from '~icons/icon-park-outline/cloudy'
 import type { ListChannels } from '@/service/api/channels'
 import { createChanel, deleteChanel, fetchChannelList, updateChannel, testChannel, autoDetectFeatures, type TestChannelResult } from '@/service/api/channels'
@@ -11,13 +12,18 @@ import ChannelModel = Shareable.ChannelModel
 function createColumns({
   play,
   edit,
+  clone,
+  continueSetup,
   remove,
 }: {
   play: (row: ChannelModel, model?: string) => void
   edit: (row: ChannelModel) => void
+  clone: (row: ChannelModel) => void
+  continueSetup: (row: ChannelModel) => void
   remove: (row: ChannelModel) => void
 }): DataTableColumns<ChannelModel> {
   return [
+    { type: 'selection' },
     {
       title: 'ID',
       key: 'id',
@@ -150,8 +156,10 @@ function createColumns({
               size: 'small',
               onClick: () => edit(row),
             },
-            { default: () => '修改' },
+              { default: () => '修改' },
           ),
+          h(NButton, { strong: true, tertiary: true, size: 'small', onClick: () => clone(row) }, { default: () => '复制' }),
+          h(NButton, { strong: true, tertiary: true, size: 'small', type: 'success', onClick: () => continueSetup(row) }, { default: () => '创建预设' }),
           h(
             NButton,
             {
@@ -170,9 +178,11 @@ function createColumns({
 }
 
 const message = useMessage()
+const router = useRouter()
 const data = reactive({ value: [] as ChannelModel[] })
 const filter = reactive({ value: {} as ListChannels })
 const loading = ref(false)
+const checkedRowKeys = ref<Array<string | number>>([])
 const showModal = ref(false)
 const editMode = ref(false)
 const defaultChannel = {
@@ -206,7 +216,7 @@ const searchModel = reactive({
 
 function fetchChannels(filter: ListChannels) {
   loading.value = true
-  fetchChannelList(filter).then((res) => {
+  fetchChannelList({ ...filter, pageSize: 100 }).then((res) => {
     data.value = res.data.items || res.data
     loading.value = false
   }).catch((err) => {
@@ -233,6 +243,15 @@ function handleEditChannel(row: ChannelModel) {
   editMode.value = true
   console.error(row)
   currentChannel.value = { ...row }
+  showModal.value = true
+}
+
+function handleCloneChannel(row: ChannelModel) {
+  editMode.value = false
+  const copy = JSON.parse(JSON.stringify(row)) as ChannelModel
+  delete copy.id
+  copy.name = `${row.name} 副本`
+  currentChannel.value = copy
   showModal.value = true
 }
 
@@ -293,6 +312,12 @@ const columns = createColumns({
   edit(row) {
     handleEditChannel(row)
   },
+  clone(row) {
+    handleCloneChannel(row)
+  },
+  continueSetup(row) {
+    router.push({ path: '/quick-setup', query: { channelId: row.id } })
+  },
   remove(row) {
     handleRemoveChannel(row)
   },
@@ -320,6 +345,35 @@ async function handleTestChannel(row: ChannelModel, model: string) {
   } finally {
     testLoading.value = false
   }
+}
+
+async function handleBatchTest() {
+  const selected = data.value.filter(row => row.id && checkedRowKeys.value.includes(row.id))
+  if (!selected.length) { message.warning('请先选择渠道'); return }
+  loading.value = true
+  let passed = 0
+  let cursor = 0
+  const worker = async () => {
+    while (cursor < selected.length) {
+      const row = selected[cursor++]
+      const model = row.models[0]?.name
+      if (!model || !row.id) continue
+      try { const rsp = await testChannel({ id: row.id, model }); if (rsp.data?.success) passed++ } catch {}
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(3, selected.length) }, worker))
+  loading.value = false
+  message[passed === selected.length ? 'success' : 'warning'](`测试完成：${passed}/${selected.length} 个渠道可用`)
+}
+
+async function handleBatchStatus(status: 'enabled' | 'disabled') {
+  const selected = data.value.filter(row => row.id && checkedRowKeys.value.includes(row.id))
+  if (!selected.length) { message.warning('请先选择渠道'); return }
+  loading.value = true
+  await Promise.all(selected.map(row => updateChannel(row.id as string, { ...row, status })))
+  checkedRowKeys.value = []
+  await fetchChannels(searchModel)
+  message.success(`已${status === 'enabled' ? '启用' : '停用'} ${selected.length} 个渠道`)
 }
 
 // ─── Auto-detect features ───
@@ -396,9 +450,13 @@ const filterStatusOptions = computed(() => {
 </script>
 
 <template>
-  <div>
+  <div class="chaite-page">
+    <header class="chaite-page-header" data-tour="channels">
+      <div><h1>渠道池</h1><p>集中管理模型连接、优先级、权重和可用状态。</p></div>
+      <NButton type="primary" size="large" @click="handleAddChannel"><template #icon><icon-park-outline-add-one /></template>添加渠道</NButton>
+    </header>
     <NSpace vertical size="large">
-      <n-card>
+      <n-card class="chaite-panel" :bordered="false">
         <n-form ref="formRef" :model="searchModel" label-placement="left" inline :show-feedback="false">
           <NGrid cols="1 s:2 m:3 l:6" :x-gap="12" :y-gap="16" responsive="screen" item-responsive>
             <NFormItemGridItem span="1" label="名称" path="name">
@@ -432,7 +490,7 @@ const filterStatusOptions = computed(() => {
           </NGrid>
         </n-form>
       </n-card>
-      <n-card>
+      <n-card class="chaite-panel" :bordered="false">
         <NSpace vertical size="large">
           <div class="flex gap-4">
             <NButton type="primary" @click="handleAddChannel">
@@ -441,6 +499,9 @@ const filterStatusOptions = computed(() => {
               </template>
               新建渠道
             </NButton>
+            <NButton secondary :disabled="!checkedRowKeys.length" @click="handleBatchTest">批量测试</NButton>
+            <NButton secondary type="success" :disabled="!checkedRowKeys.length" @click="handleBatchStatus('enabled')">批量启用</NButton>
+            <NButton secondary type="warning" :disabled="!checkedRowKeys.length" @click="handleBatchStatus('disabled')">批量停用</NButton>
             <NButton strong secondary type="info">
               <template #icon>
                 <icon-park-outline-thunderstorm />
@@ -454,7 +515,7 @@ const filterStatusOptions = computed(() => {
               删除禁用渠道
             </NButton>
           </div>
-          <n-data-table :columns="columns" :data="data.value" :loading="loading" />
+          <n-data-table v-model:checked-row-keys="checkedRowKeys" :row-key="row => row.id" :columns="columns" :data="data.value" :loading="loading" :pagination="{ pageSize: 20, showSizePicker: true, pageSizes: [20, 50, 100] }" />
         </NSpace>
       </n-card>
     </NSpace>

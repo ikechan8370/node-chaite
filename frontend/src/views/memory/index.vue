@@ -455,8 +455,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="memory-container">
-    <NCard title="记忆管理">
+  <div class="chaite-page memory-container">
+    <header class="chaite-page-header"><div><h1>记忆</h1><p>按群和用户查询、检索与维护聊天记忆。</p></div></header>
+    <NCard class="chaite-panel" :bordered="false">
       <NTabs v-model:value="activeTab" type="line" animated>
         <!-- Group Facts Tab -->
         <NTabPane name="group-facts" tab="群组事实记忆">
@@ -683,6 +684,6 @@ onMounted(() => {
 
 <style scoped>
 .memory-container {
-  padding: 16px;
+  max-width: 1600px;
 }
 </style>

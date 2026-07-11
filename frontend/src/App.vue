@@ -4,6 +4,7 @@ import { darkTheme } from 'naive-ui'
 import { useAppStore } from './store'
 import hljs from 'highlight.js/lib/core'
 import javascript from 'highlight.js/lib/languages/javascript'
+import ProductTour from '@/components/common/ProductTour.vue'
 
 const appStore = useAppStore()
 
@@ -24,6 +25,7 @@ hljs.registerLanguage('javascript', javascript)
     <naive-provider>
       <router-view />
       <Watermark :show-watermark="appStore.showWatermark" />
+      <ProductTour />
     </naive-provider>
   </n-config-provider>
 </template>

@@ -87,9 +87,9 @@ export class ClaudeClient extends AbstractClient {
       toolCalls: iMessage.toolCalls,
     } as HistoryMessage
     const usage = {
-      promptTokens: result.usage.output_tokens,
+      promptTokens: result.usage.input_tokens,
       completionTokens: result.usage.output_tokens,
-      totalTokens: result.usage.output_tokens + result.usage.output_tokens,
+      totalTokens: result.usage.input_tokens + result.usage.output_tokens,
       cachedTokens: (result.usage.cache_read_input_tokens || 0) + (result.usage.cache_creation_input_tokens || 0),
       reasoningTokens: 0,
     }

@@ -70,7 +70,7 @@ function handleSelect(key: string | number) {
     window.open('https://gitee.com/ikechan/chatgpt-plugin')
 
   if (key === 'docs')
-    window.open('https://www.yunzai.chat/')
+    window.open('https://docs.chaite.cloud/', '_blank', 'noopener,noreferrer')
 }
 </script>
 

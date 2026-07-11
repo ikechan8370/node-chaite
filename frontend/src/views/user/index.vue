@@ -41,7 +41,7 @@ async function loadUserStates() {
   try {
     const res = await listUserStates()
     if (res.code === 0) {
-      userStates.value = res.data
+      userStates.value = Array.isArray(res.data) ? res.data : (res.data.items || [])
     }
     else {
       message.error(res.message || '加载用户状态失败')
@@ -186,14 +186,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <NCard title="用户状态管理">
-      <template #header-extra>
-        <NButton type="primary" @click="loadUserStates">
-          刷新
-        </NButton>
-      </template>
-
+  <div class="chaite-page">
+    <header class="chaite-page-header"><div><h1>用户与会话</h1><p>查看用户当前模型、预设和历史对话。</p></div><NButton type="primary" @click="loadUserStates">刷新</NButton></header>
+    <NCard class="chaite-panel" :bordered="false">
       <NSpin :show="loading">
         <NDataTable
           :columns="columns"

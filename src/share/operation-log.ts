@@ -72,6 +72,13 @@ export class OperationLogManager {
       type,
       level,
       userId,
+      groupId,
+      channelId,
+      model,
+      presetId,
+      toolName,
+      processorName,
+      triggerName,
       from,
       to,
       keyword,
@@ -93,6 +100,13 @@ export class OperationLogManager {
     if (type) items = items.filter(l => l.type === type)
     if (level) items = items.filter(l => l.level === level)
     if (userId) items = items.filter(l => l.userId === userId)
+    if (groupId) items = items.filter(l => l.groupId === groupId)
+    if (channelId) items = items.filter(l => l.channelId === channelId)
+    if (model) items = items.filter(l => l.model === model)
+    if (presetId) items = items.filter(l => l.presetId === presetId)
+    if (toolName) items = items.filter(l => l.toolName === toolName)
+    if (processorName) items = items.filter(l => l.processorName === processorName)
+    if (triggerName) items = items.filter(l => l.triggerName === triggerName)
     if (from) items = items.filter(l => l.timestamp >= from)
     if (to) items = items.filter(l => l.timestamp <= to)
     if (keyword) {
@@ -101,7 +115,11 @@ export class OperationLogManager {
         l.summary.toLowerCase().includes(kw)
         || (l.detail ?? '').toLowerCase().includes(kw)
         || (l.toolName ?? '').toLowerCase().includes(kw)
-        || (l.model ?? '').toLowerCase().includes(kw),
+        || (l.model ?? '').toLowerCase().includes(kw)
+        || (l.channelName ?? '').toLowerCase().includes(kw)
+        || (l.presetName ?? '').toLowerCase().includes(kw)
+        || (l.processorName ?? '').toLowerCase().includes(kw)
+        || (l.triggerName ?? '').toLowerCase().includes(kw)
       )
     }
 
@@ -133,17 +151,38 @@ export class OperationLogManager {
     let llmDurationSum = 0
     let llmDurationCount = 0
     let totalTokens = 0
+    let inputTokens = 0
+    let outputTokens = 0
+    let cachedTokens = 0
+    let reasoningTokens = 0
+    let errorCount = 0
+    const byChannel: Record<string, number> = {}
+    const byModel: Record<string, number> = {}
+    const byPreset: Record<string, number> = {}
 
     for (const l of items) {
       byType[l.type] = (byType[l.type] ?? 0) + 1
       byLevel[l.level] = (byLevel[l.level] ?? 0) + 1
+      if (l.level === 'error') errorCount++
       if (l.timestamp >= h24ago) last24h++
       if (l.type === 'llm.call' && l.durationMs != null) {
         llmDurationSum += l.durationMs
         llmDurationCount++
       }
-      if (l.inputTokens) totalTokens += l.inputTokens
-      if (l.outputTokens) totalTokens += l.outputTokens
+      inputTokens += l.inputTokens ?? 0
+      outputTokens += l.outputTokens ?? 0
+      cachedTokens += l.cachedTokens ?? 0
+      reasoningTokens += l.reasoningTokens ?? 0
+      totalTokens += l.totalTokens ?? ((l.inputTokens ?? 0) + (l.outputTokens ?? 0))
+      if (l.channelId || l.channelName) {
+        const key = l.channelName || l.channelId!
+        byChannel[key] = (byChannel[key] ?? 0) + 1
+      }
+      if (l.model) byModel[l.model] = (byModel[l.model] ?? 0) + 1
+      if (l.presetId || l.presetName) {
+        const key = l.presetName || l.presetId!
+        byPreset[key] = (byPreset[key] ?? 0) + 1
+      }
     }
 
     return {
@@ -153,6 +192,14 @@ export class OperationLogManager {
       last24h,
       avgLlmDurationMs: llmDurationCount > 0 ? Math.round(llmDurationSum / llmDurationCount) : 0,
       totalTokens,
+      inputTokens,
+      outputTokens,
+      cachedTokens,
+      reasoningTokens,
+      errorRate: items.length ? errorCount / items.length : 0,
+      byChannel,
+      byModel,
+      byPreset,
     }
   }
 

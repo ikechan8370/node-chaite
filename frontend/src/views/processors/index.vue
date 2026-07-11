@@ -5,15 +5,18 @@ import { h, onMounted, reactive, ref } from 'vue'
 import type { ListProcessorDTO } from '@/service/api/processors'
 import { createProcessor, deleteProcessor, fetchProcessorList, updateProcessor, uploadProcessorToCloud } from '@/service/api/processors'
 import ProcessorFormModal from './ProcessorFormModal.vue'
+import ProcessorTestModal from './ProcessorTestModal.vue'
 import type { Shareable } from '@/typings/entities/shareable'
 
 function createColumns({
   upload,
   edit,
+  test,
   remove,
 }: {
   upload: (row: Shareable.ProcessorModel) => void
   edit: (row: Shareable.ProcessorModel) => void
+  test: (row: Shareable.ProcessorModel) => void
   remove: (row: Shareable.ProcessorModel) => void
 }): DataTableColumns<Shareable.ProcessorModel> {
   return [
@@ -72,6 +75,7 @@ function createColumns({
             },
             { default: () => '修改' },
           ),
+          h(NButton, { type: 'success', strong: true, tertiary: true, size: 'small', onClick: () => test(row) }, { default: () => '测试' }),
           h(
             NButton,
             {
@@ -102,6 +106,8 @@ const defaultProcessor = {
 } as Shareable.ProcessorModel
 const currentProcessor = ref<Shareable.ProcessorModel>(JSON.parse(JSON.stringify(defaultProcessor)))
 const loading = ref(false)
+const showTestModal = ref(false)
+const testingProcessor = ref<Shareable.ProcessorModel>()
 const processorPage = ref(1)
 const processorPageSize = ref(20)
 const processorTotal = ref(0)
@@ -170,6 +176,10 @@ const columns = createColumns({
     currentProcessor.value = { ...row }
     showModal.value = true
   },
+  test(row) {
+    testingProcessor.value = row
+    showTestModal.value = true
+  },
   remove: handleRemoveProcessor,
 })
 
@@ -212,8 +222,10 @@ function handleProcessorPageSizeChange(pageSize: number) {
 </script>
 
 <template>
+  <div class="chaite-page">
+    <header class="chaite-page-header"><div><h1>处理器管线</h1><p>管理进入模型前和回复发送前的消息处理逻辑。</p></div><NButton type="primary" @click="handleAddProcessor"><template #icon><icon-park-outline-add-one /></template>创建处理器</NButton></header>
   <NSpace vertical size="large">
-    <n-card>
+    <n-card class="chaite-panel" :bordered="false">
       <n-form :model="searchModel" label-placement="left" inline :show-feedback="false">
         <NGrid cols="1 s:2 m:3 l:6" :x-gap="12" :y-gap="16" responsive="screen" item-responsive>
           <NFormItemGridItem span="1" label="名称" path="name">
@@ -238,7 +250,7 @@ function handleProcessorPageSizeChange(pageSize: number) {
         </NGrid>
       </n-form>
     </n-card>
-    <n-card>
+    <n-card class="chaite-panel" :bordered="false">
       <NSpace vertical size="large">
         <div class="flex gap-4">
           <NButton type="primary" @click="handleAddProcessor">
@@ -267,5 +279,7 @@ function handleProcessorPageSizeChange(pageSize: number) {
       :initial-data="currentProcessor"
       @submit="handleSubmitProcessor"
     />
+    <ProcessorTestModal v-model:show="showTestModal" :processor="testingProcessor" />
   </NSpace>
+  </div>
 </template>

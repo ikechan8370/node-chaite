@@ -5,6 +5,8 @@ export interface ListChannels {
   type?: 'openai' | 'gemini' | 'claude'
   status?: 'enabled' | 'disabled'
   model?: string
+  page?: number
+  pageSize?: number
 }
 
 export function fetchChannelList(query: ListChannels) {

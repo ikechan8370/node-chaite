@@ -4,6 +4,7 @@ import Setting from './common/Setting.vue'
 import SettingDrawer from './common/SettingDrawer.vue'
 import Breadcrumb from './header/Breadcrumb.vue'
 import CollapaseButton from './header/CollapaseButton.vue'
+import Docs from './header/Docs.vue'
 import FullScreen from './header/FullScreen.vue'
 // import Notices from './header/Notices.vue'
 import Search from './header/Search.vue'
@@ -18,6 +19,7 @@ export {
   BackTop,
   Breadcrumb,
   CollapaseButton,
+  Docs,
   FullScreen,
   Logo,
   Menu,

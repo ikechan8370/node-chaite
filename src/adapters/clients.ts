@@ -219,14 +219,26 @@ export class AbstractClient implements IClient {
       if (message) {
         // 前处理器
         for (const preProcessors of this.preProcessors || []) {
+          const processorStartedAt = Date.now()
           try {
             if (debug) {
               this.logger.debug(`into preProcessor ${preProcessors.name}}`)
             }
             message = await preProcessors.process(message)
+            this.context.chaite.getOperationLogManager()?.addSync({
+              type: 'processor.call', level: 'info', summary: `前处理器：${preProcessors.name}`,
+              processorName: preProcessors.name, durationMs: Date.now() - processorStartedAt,
+              ...this.getUsageLogContext(options as SendMessageOption),
+            })
           } catch (err) {
             if (err instanceof Error) {
               this.logger.warn(`error happened with preProcessor ${preProcessors.name}: ${err.message}`)
+              this.context.chaite.getOperationLogManager()?.addSync({
+                type: 'processor.error', level: 'error', summary: `前处理器失败：${preProcessors.name}`,
+                detail: err.message, processorName: preProcessors.name,
+                durationMs: Date.now() - processorStartedAt,
+                ...this.getUsageLogContext(options as SendMessageOption),
+              })
             }
           }
         }
@@ -244,22 +256,31 @@ export class AbstractClient implements IClient {
         }
       }
       const _llmCallStart = Date.now()
-      const modelResponse = await this._sendMessage(histories, apiKey, options as SendMessageOption)
+      let modelResponse: HistoryMessage & { usage: ModelUsage }
+      try {
+        modelResponse = await this._sendMessage(histories, apiKey, options as SendMessageOption)
+      } catch (error) {
+        this.context.chaite.getOperationLogManager()?.addSync({
+          type: 'llm.call', level: 'error', summary: `模型调用失败${options.model ? ` [${options.model}]` : ''}`,
+          detail: error instanceof Error ? error.message : String(error),
+          durationMs: Date.now() - _llmCallStart,
+          ...this.getUsageLogContext(options as SendMessageOption),
+        })
+        throw error
+      }
       const _llmCallDuration = Date.now() - _llmCallStart
       // ── Operation log: LLM call ──────────────────────────────────────────────
       asyncLocalStorage.getStore()?.chaite?.getOperationLogManager?.()?.addSync({
         type: 'llm.call',
         level: 'info',
         summary: `LLM call${options.model ? ` [${options.model}]` : ''}`,
-        model: options.model,
-        conversationId: options.conversationId,
-        userId: (this.context.getEvent?.()?.sender?.user_id ?? this.context.jobId ?? undefined)?.toString(),
-        skillName: this.context.skillName,
-        jobId: this.context.jobId,
-        planId: this.context.planId,
+        ...this.getUsageLogContext(options as SendMessageOption),
         durationMs: _llmCallDuration,
         inputTokens: (modelResponse.usage as any)?.promptTokens ?? (modelResponse.usage as any)?.inputTokens,
         outputTokens: (modelResponse.usage as any)?.completionTokens ?? (modelResponse.usage as any)?.outputTokens,
+        totalTokens: modelResponse.usage?.totalTokens,
+        cachedTokens: modelResponse.usage?.cachedTokens,
+        reasoningTokens: modelResponse.usage?.reasoningTokens,
       })
 
       // 后处理器
@@ -269,6 +290,7 @@ export class AbstractClient implements IClient {
           role: 'assistant',
         } as AssistantMessage
         for (const postProcessor of this.postProcessors || []) {
+          const processorStartedAt = Date.now()
           try {
             if (debug) {
               this.logger.debug(`into postProcessor ${postProcessor.name}}`)
@@ -277,9 +299,20 @@ export class AbstractClient implements IClient {
             if (posted) {
               tempResponse = posted
             }
+            this.context.chaite.getOperationLogManager()?.addSync({
+              type: 'processor.call', level: 'info', summary: `后处理器：${postProcessor.name}`,
+              processorName: postProcessor.name, durationMs: Date.now() - processorStartedAt,
+              ...this.getUsageLogContext(options as SendMessageOption),
+            })
           } catch (error) {
             if (error instanceof Error) {
               this.logger.warn(`error happened with postProcessor ${postProcessor.name}: ${error.message}`)
+              this.context.chaite.getOperationLogManager()?.addSync({
+                type: 'processor.error', level: 'error', summary: `后处理器失败：${postProcessor.name}`,
+                detail: error.message, processorName: postProcessor.name,
+                durationMs: Date.now() - processorStartedAt,
+                ...this.getUsageLogContext(options as SendMessageOption),
+              })
             }
           }
         }
@@ -362,6 +395,12 @@ export class AbstractClient implements IClient {
                 skillName: this.context.skillName,
                 jobId: this.context.jobId,
                 planId: this.context.planId,
+                groupId: this.context.getEvent?.()?.group?.group_id?.toString(),
+                channelId: this.context.channelId,
+                channelName: this.context.channelName,
+                model: options.model,
+                presetId: this.context.presetId,
+                presetName: this.context.presetName,
               })
             } catch (err: unknown) {
               toolResult = (err as Error).message
@@ -378,6 +417,12 @@ export class AbstractClient implements IClient {
                 skillName: this.context.skillName,
                 jobId: this.context.jobId,
                 planId: this.context.planId,
+                groupId: this.context.getEvent?.()?.group?.group_id?.toString(),
+                channelId: this.context.channelId,
+                channelName: this.context.channelName,
+                model: options.model,
+                presetId: this.context.presetId,
+                presetName: this.context.presetName,
               })
             }
           } else {
@@ -390,6 +435,12 @@ export class AbstractClient implements IClient {
               detail: toolResult,
               userId: _toolUserId,
               conversationId: options.conversationId,
+              groupId: this.context.getEvent?.()?.group?.group_id?.toString(),
+              channelId: this.context.channelId,
+              channelName: this.context.channelName,
+              model: options.model,
+              presetId: this.context.presetId,
+              presetName: this.context.presetName,
             })
           }
 
@@ -448,6 +499,23 @@ export class AbstractClient implements IClient {
       return this.hasMeaningfulContent(message) || (message.toolCalls?.length ?? 0) > 0
     }
     return true
+  }
+
+  private getUsageLogContext(options: SendMessageOption) {
+    const event = this.context.getEvent?.()
+    return {
+      userId: (event?.sender?.user_id ?? this.context.jobId ?? undefined)?.toString(),
+      groupId: event?.group?.group_id?.toString(),
+      conversationId: options.conversationId,
+      channelId: this.context.channelId,
+      channelName: this.context.channelName,
+      model: options.model,
+      presetId: this.context.presetId,
+      presetName: this.context.presetName,
+      skillName: this.context.skillName,
+      jobId: this.context.jobId,
+      planId: this.context.planId,
+    }
   }
 
   protected isEffectivelyEmptyMessage(message?: IMessage): boolean {

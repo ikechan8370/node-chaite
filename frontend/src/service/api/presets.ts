@@ -3,6 +3,8 @@ import { request } from '../http'
 export interface ListPresets {
   name?: string
   prompt?: string
+  page?: number
+  pageSize?: number
 }
 
 export function fetchPresetList(query: ListPresets) {

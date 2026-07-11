@@ -28,7 +28,9 @@ router.get('/list', (req: Request, res: Response) => {
   wrap(res, async () => {
     let items = await Chaite.getInstance().getChatPresetManager().listInstances()
     const name = req.query['name'] as string | undefined
+    const prompt = req.query['prompt'] as string | undefined
     if (name) items = items.filter(p => p.name.includes(name))
+    if (prompt) items = items.filter(p => (p.sendMessageOption.systemOverride || '').includes(prompt))
     return paginate(items, req)
   })
 })

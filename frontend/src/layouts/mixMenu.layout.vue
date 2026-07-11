@@ -4,6 +4,7 @@ import { useAppStore, useRouteStore } from '@/store'
 import {
   BackTop,
   CollapaseButton,
+  Docs,
   FullScreen,
   Logo,
   // Notices,
@@ -116,6 +117,7 @@ function updateTopMenu(key: string) {
             <FullScreen />
             <DarkModeSwitch />
             <LangsSwitch />
+            <Docs />
             <Setting />
             <UserCenter />
           </div>

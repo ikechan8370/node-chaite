@@ -6,6 +6,10 @@
 export type OperationLogType =
   // LLM calls
   | 'llm.call'
+  | 'processor.call'
+  | 'processor.error'
+  | 'trigger.call'
+  | 'trigger.error'
   // Tool execution
   | 'tool.call'
   | 'tool.error'
@@ -38,11 +42,19 @@ export interface OperationLog {
   /** Extended detail, error message or result snippet */
   detail?: string
   userId?: string
+  /** QQ group id; omitted for private conversations and system tasks */
+  groupId?: string
   conversationId?: string
+  channelId?: string
+  channelName?: string
   /** Model name for LLM calls */
   model?: string
+  presetId?: string
+  presetName?: string
   /** Tool name for tool.call / tool.error */
   toolName?: string
+  processorName?: string
+  triggerName?: string
   skillName?: string
   jobId?: string
   planId?: string
@@ -53,6 +65,9 @@ export interface OperationLog {
   inputTokens?: number
   /** Output tokens produced (LLM calls) */
   outputTokens?: number
+  totalTokens?: number
+  cachedTokens?: number
+  reasoningTokens?: number
   /** Arbitrary extra metadata */
   metadata?: Record<string, unknown>
 }
@@ -61,6 +76,13 @@ export interface ListLogsFilter {
   type?: OperationLogType
   level?: OperationLogLevel
   userId?: string
+  groupId?: string
+  channelId?: string
+  model?: string
+  presetId?: string
+  toolName?: string
+  processorName?: string
+  triggerName?: string
   /** Unix ms — only logs at or after this time */
   from?: number
   /** Unix ms — only logs at or before this time */
@@ -88,4 +110,12 @@ export interface LogsStats {
   avgLlmDurationMs: number
   /** Total tokens (input + output) */
   totalTokens: number
+  inputTokens: number
+  outputTokens: number
+  cachedTokens: number
+  reasoningTokens: number
+  errorRate: number
+  byChannel: Record<string, number>
+  byModel: Record<string, number>
+  byPreset: Record<string, number>
 }

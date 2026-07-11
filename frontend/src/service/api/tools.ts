@@ -37,6 +37,18 @@ export function deleteTool(id: string) {
   return request.Delete<Service.ResponseResult<any>>(`/api/tools/${id}`)
 }
 
+export interface ToolTestSchema {
+  name: string
+  description: string
+  parameters: { type: 'object'; properties: Record<string, { type: string; description?: string | null }>; required?: string[] }
+}
+export function fetchToolTestSchema(id: string) {
+  return request.Get<Service.ResponseResult<ToolTestSchema>>(`/api/tools/${id}/test-schema`)
+}
+export function testTool(id: string, data: { args: Record<string, unknown>; userId?: string; groupId?: string }) {
+  return request.Post<Service.ResponseResult<{ result: string; durationMs: number }>>(`/api/tools/${id}/test`, data)
+}
+
 export function uploadToolToCloud(data: { id: string }) {
   return request.Post<Service.ResponseResult<Shareable.ToolModel>>('/api/tools/upload', data)
 }
