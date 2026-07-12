@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/ikechan8370/node-chaite/compare/v1.12.0...v1.13.0) (2026-07-12)
+
+
+### Features
+
+* decouple management panel delivery ([e3c7a13](https://github.com/ikechan8370/node-chaite/commit/e3c7a1340d73322e6fd66dad6890fa76894e43d1))
+
 ## [1.12.0](https://github.com/ikechan8370/node-chaite/compare/v1.11.1...v1.12.0) (2026-07-12)
 
 
