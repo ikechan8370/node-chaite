@@ -245,6 +245,7 @@ export class Chaite extends EventEmitter {
         const client = createClient(channel.adapterType, clientOptions, context)
         const newOptions = {
           ...options.chatPreset.sendMessageOption,
+          builtinToolCategories: options.chatPreset.builtinToolCategories,
           ...Object.fromEntries(
             Object.entries(options)
               .filter(([_, value]) => value !== undefined),

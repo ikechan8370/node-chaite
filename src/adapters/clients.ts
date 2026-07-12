@@ -135,16 +135,21 @@ export class AbstractClient implements IClient {
     const toolsGroupManager = this.context.chaite.getToolsGroupManager()
     const toolManager = this.context.chaite.getToolsManager()
     const groupIds = toolGroupIds ? [...toolGroupIds] : []
+    const builtinCategories = new Set(this.context.getOptions()?.builtinToolCategories ?? ['mcp-discovery', 'mcp-management', 'skill-management'])
     // These compact MCP discovery tools are always available, but real MCP
     // schemas are only loaded after the model selects the required tools.
-    if (this.context.chaite?.getMcpCapabilityManager?.()) {
+    if (builtinCategories.has('mcp-discovery') && this.context.chaite?.getMcpCapabilityManager?.()) {
       for (const tool of createMcpCapabilityTools()) pushUnique(tool)
     }
     // Configuration-changing tools are never exposed in normal group chats.
     // The host application decides who is the owner through this guard.
     if (this.context.chaite?.canManageMcp?.(this.context)) {
-      for (const tool of createMcpManagementTools()) pushUnique(tool)
-      for (const tool of createSelfTools()) pushUnique(tool)
+      if (builtinCategories.has('mcp-management')) {
+        for (const tool of createMcpManagementTools()) pushUnique(tool)
+      }
+      if (builtinCategories.has('skill-management')) {
+        for (const tool of createSelfTools()) pushUnique(tool)
+      }
     }
     if (groupIds.includes('default_local')) {
       const toolDTOS = await toolManager.listInstances()

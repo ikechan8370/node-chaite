@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { NButton, NCard, NCheckbox, NCollapse, NCollapseItem, NForm, NFormItemGridItem, NGrid, NIcon, NInput, NInputNumber, NModal, NPopover, NSelect, NSpace, NTooltip } from 'naive-ui'
+import { NButton, NCard, NCheckbox, NCheckboxGroup, NCollapse, NCollapseItem, NForm, NFormItemGridItem, NGrid, NIcon, NInput, NInputNumber, NModal, NPopover, NSelect, NSpace, NTooltip } from 'naive-ui'
 import { InformationCircleOutline } from '@vicons/ionicons5'
 import type { SelectMixedOption } from 'naive-ui/es/select/src/interface'
 import type { FormInst } from 'naive-ui'
@@ -131,6 +131,7 @@ const addPreset = ref<Partial<Shareable.PresetModel>>({
   local: true,
   groupContext: 'use_system',
   dynamicContextHistory: 'use_system',
+  builtinToolCategories: ['mcp-discovery', 'mcp-management', 'skill-management'],
   disableSystemInstructions: false,
 })
 
@@ -148,6 +149,9 @@ watch(() => props.initialData, (newVal) => {
     }
     if (!data.dynamicContextHistory) {
       data.dynamicContextHistory = 'use_system'
+    }
+    if (!Array.isArray(data.builtinToolCategories)) {
+      data.builtinToolCategories = ['mcp-discovery', 'mcp-management', 'skill-management']
     }
 
     addPreset.value = data
@@ -217,6 +221,7 @@ watch(showModal, (val) => {
       local: true,
       groupContext: 'use_system',
       dynamicContextHistory: 'use_system',
+      builtinToolCategories: ['mcp-discovery', 'mcp-management', 'skill-management'],
     }
   }
 })
@@ -310,6 +315,22 @@ watch(showModal, (val) => {
                     :options="dynamicContextHistoryOptions"
                     placeholder="选择是否保留旧的群聊上下文和时间"
                   />
+                </NFormItemGridItem>
+
+                <NFormItemGridItem span="24" label="内置工具" path="builtinToolCategories">
+                  <NCheckboxGroup v-model:value="addPreset.builtinToolCategories">
+                    <NSpace>
+                      <NCheckbox value="mcp-discovery">
+                        MCP 发现与按需激活（2 个）
+                      </NCheckbox>
+                      <NCheckbox value="mcp-management">
+                        MCP 管理（仅主人，2 个）
+                      </NCheckbox>
+                      <NCheckbox value="skill-management">
+                        Skill/工作流管理（仅主人，6 个）
+                      </NCheckbox>
+                    </NSpace>
+                  </NCheckboxGroup>
                 </NFormItemGridItem>
 
                 <!-- 禁止系统prompt -->

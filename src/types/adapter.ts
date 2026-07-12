@@ -47,6 +47,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.jobId = option.jobId
     this.planId = option.planId
     this.skillName = option.skillName
+    this.builtinToolCategories = option.builtinToolCategories
   }
 
   static create(options?: SendMessageOption | Partial<SendMessageOption>): SendMessageOption {
@@ -124,6 +125,9 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
   planId?: string
   skillName?: string
 
+  /** Preset-selected categories of built-in tools. Undefined keeps compatibility by enabling all. */
+  builtinToolCategories?: Array<'mcp-discovery' | 'mcp-management' | 'skill-management'>
+
   /**
      * 流模式的回调
      * @param chunk
@@ -162,6 +166,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       responseModalities: this.responseModalities,
       safetySettings: this.safetySettings,
       toolCallLimit: this.toolCallLimit,
+      builtinToolCategories: this.builtinToolCategories,
     }
     return JSON.stringify(json)
   }

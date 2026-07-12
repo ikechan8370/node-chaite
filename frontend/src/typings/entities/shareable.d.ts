@@ -210,6 +210,8 @@ namespace Shareable {
     groupContext?: 'disable' | 'enabled' | 'use_system'
     /** Whether older dynamic group-context messages remain in normal chat history. */
     dynamicContextHistory?: 'use_system' | 'retain' | 'discard'
+    /** Built-in tool categories enabled for this preset. */
+    builtinToolCategories?: Array<'mcp-discovery' | 'mcp-management' | 'skill-management'>
     /**
      * 禁止系统prompt
      */

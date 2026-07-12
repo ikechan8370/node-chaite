@@ -15,6 +15,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       this.namespace = params.namespace
       this.groupContext = params.groupContext
       this.dynamicContextHistory = params.dynamicContextHistory
+      this.builtinToolCategories = params.builtinToolCategories
       this.disableSystemInstructions = params.disableSystemInstructions
     }
   }
@@ -31,6 +32,8 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
   groupContext?: 'disable' | 'enabled' | 'use_system'
   /** Whether dynamic context from older turns is kept in normal chat history. */
   dynamicContextHistory?: 'use_system' | 'retain' | 'discard'
+  /** Built-in tool categories enabled for this preset. Undefined enables all for compatibility. */
+  builtinToolCategories?: Array<'mcp-discovery' | 'mcp-management' | 'skill-management'>
   /**
    * 禁止系统prompt
    */
@@ -53,6 +56,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       sendMessageOption: this.sendMessageOption?.toString(), // 嵌套序列化
       groupContext: this.groupContext,
       dynamicContextHistory: this.dynamicContextHistory,
+      builtinToolCategories: this.builtinToolCategories,
       disableSystemInstructions: this.disableSystemInstructions,
     })
   }
@@ -75,6 +79,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     preset.modelType = raw.modelType
     preset.groupContext = raw.groupContext
     preset.dynamicContextHistory = raw.dynamicContextHistory
+    preset.builtinToolCategories = raw.builtinToolCategories
     preset.disableSystemInstructions = raw.disableSystemInstructions
 
     if (raw.sendMessageOption) {
