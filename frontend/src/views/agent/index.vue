@@ -39,7 +39,6 @@ import type {
   UpdateSkillDTO,
 } from '@/service/api/agent'
 import { fetchPresetList } from '@/service/api/presets'
-import { fetchToolGroupList } from '@/service/api/toolGroup'
 import McpServerFormModal from './McpServerFormModal.vue'
 import SkillFormModal from './SkillFormModal.vue'
 
@@ -56,7 +55,6 @@ const skillEditMode = ref(false)
 const currentSkillDetail = ref<Partial<SkillDetail>>({})
 const skillReloading = ref(false)
 const presetOptions = ref<Array<{ label: string; value: string }>>([])
-const toolGroupOptions = ref<Array<{ label: string; value: string }>>([])
 
 const skillSearchName = ref('')
 
@@ -533,18 +531,10 @@ function loadPresets() {
   }).catch(() => {})
 }
 
-function loadToolGroups() {
-  fetchToolGroupList({ pageSize: 100 }).then((res) => {
-    const groups = res.data.items || res.data
-    toolGroupOptions.value = groups.map(group => ({ label: group.name, value: group.id }))
-  }).catch(() => {})
-}
-
 onMounted(() => {
   fetchSkills()
   fetchMcpServers()
   loadPresets()
-  loadToolGroups()
 })
 
 function handleTabChange(tab: string) {
@@ -712,7 +702,6 @@ function handleTabChange(tab: string) {
       v-model:show="showMcpModal"
       :edit-mode="mcpEditMode"
       :initial-data="currentMcp"
-      :tool-group-options="toolGroupOptions"
       @submit="handleSubmitMcp"
     />
   </NSpace>

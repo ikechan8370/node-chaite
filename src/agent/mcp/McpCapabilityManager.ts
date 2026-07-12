@@ -11,7 +11,7 @@ export interface ActiveMcpTools {
 /**
  * Ephemeral, conversation-scoped MCP capability grants.
  * They deliberately contain only tool names: schemas are fetched from the
- * cached server manifest only after the LLM has asked to activate a skill.
+ * cached server manifest only after the LLM has selected matching MCP tools.
  */
 export class McpCapabilityManager {
   private readonly active = new Map<string, ActiveMcpTools[]>()
@@ -22,10 +22,9 @@ export class McpCapabilityManager {
   async activate(context: ChaiteContext, serverRef: string, toolNames: string[]): Promise<ActiveMcpTools> {
     const manager = this.servers()
     if (!manager) throw new Error('MCP server manager is not configured')
-    const groupIds = context.getOptions()?.toolGroupId ?? []
-    const candidates = await manager.listEnabledForToolGroups(groupIds)
+    const candidates = await manager.listEnabled()
     const server = candidates.find(item => item.id === serverRef || item.name === serverRef)
-    if (!server) throw new Error(`MCP server "${serverRef}" is not enabled for this preset's tool groups`)
+    if (!server) throw new Error(`MCP server "${serverRef}" is not enabled or does not exist`)
     const manifest = server.tools ?? []
     if (manifest.length === 0) throw new Error(`MCP server "${server.name}" has no cached tools. Test it in the panel first.`)
     const selected = [...new Set(toolNames)].slice(0, this.maxToolsPerServer)

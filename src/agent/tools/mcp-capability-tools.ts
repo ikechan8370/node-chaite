@@ -1,63 +1,63 @@
 import type { ChaiteContext } from '../../types/common'
 import type { Tool } from '../../types/tools'
 
-/** Small always-visible tools. They are an index, not the MCP tool schemas. */
+/** Small always-visible MCP discovery tools. They are not MCP tool schemas. */
 export function createMcpCapabilityTools(): Tool[] {
-  return [searchSkillsTool(), activateSkillToolsTool()]
+  return [searchMcpToolsTool(), activateMcpToolsTool()]
 }
 
-function searchSkillsTool(): Tool {
+function searchMcpToolsTool(): Tool {
   return {
-    name: 'search_skills', type: 'function',
+    name: 'search_mcp_tools', type: 'function',
     function: {
-      name: 'search_skills',
-      description: 'Search the compact skill catalogue. Use before activating MCP tools for a specialised task.',
+      name: 'search_mcp_tools',
+      description: 'Search tools from configured MCP servers. Use when an external capability may help; it returns matching server and tool names without loading all schemas.',
       parameters: { type: 'object', properties: { query: { type: 'string', description: 'User intent or capability to search for' } }, required: ['query'] },
     },
     async run(args, context?: ChaiteContext) {
-      const registry = context?.getChaite()?.getSkillRegistry()
-      if (!registry) return JSON.stringify({ skills: [], message: 'Skill registry is not configured' })
+      const manager = context?.getChaite()?.getMcpServerManager()
+      if (!manager) return JSON.stringify({ servers: [], message: 'MCP server manager is not configured' })
       const query = String(args.query ?? '').toLowerCase()
-      const skills = registry.listSkillMetas()
-        .filter(skill => `${skill.id} ${skill.frontmatter.description} ${(skill.frontmatter.keywords ?? []).join(' ')}`.toLowerCase().includes(query))
-        .slice(0, 12)
-        .map(skill => ({ name: skill.id, description: skill.frontmatter.description, keywords: skill.frontmatter.keywords ?? [], hasMcpTools: Boolean(skill.frontmatter.mcpServer && skill.frontmatter.mcpTools?.length) }))
-      return JSON.stringify({ skills })
+      const servers = await manager.listEnabled()
+      const matches = servers.map(server => {
+        const serverText = `${server.name} ${server.description ?? ''}`.toLowerCase()
+        const tools = (server.tools ?? [])
+          .filter(tool => !query || `${tool.name} ${tool.description ?? ''} ${serverText}`.toLowerCase().includes(query))
+          .slice(0, 12)
+          .map(tool => ({ name: tool.name, description: tool.description ?? '' }))
+        return { id: server.id, name: server.name, description: server.description ?? '', toolCount: server.tools?.length ?? 0, tools }
+      }).filter(server => server.tools.length > 0 || (!query && server.toolCount > 0))
+      return JSON.stringify({ servers: matches })
     },
   }
 }
 
-function activateSkillToolsTool(): Tool {
+function activateMcpToolsTool(): Tool {
   return {
-    name: 'activate_skill_tools', type: 'function',
+    name: 'activate_mcp_tools', type: 'function',
     function: {
-      name: 'activate_skill_tools',
-      description: 'Activate only the MCP tools required by one skill. The selected tool schemas become available immediately in the next internal model turn.',
+      name: 'activate_mcp_tools',
+      description: 'Activate only selected tools from one configured MCP server. The real tool schemas become available immediately in the next internal model turn.',
       parameters: {
         type: 'object',
         properties: {
-          skill_name: { type: 'string', description: 'Skill name returned by search_skills' },
+          server: { type: 'string', description: 'MCP server ID or name returned by search_mcp_tools' },
           tools: {
             type: 'array',
-            description: 'Optional subset of the skill MCP tools. Omit to use the skill default set.',
+            description: 'One or more MCP tool names returned by search_mcp_tools',
             items: { type: 'string', description: 'One MCP tool name' },
           },
         },
-        required: ['skill_name'],
+        required: ['server', 'tools'],
       },
     },
     async run(args, context?: ChaiteContext) {
       const chaite = context?.getChaite()
-      const registry = chaite?.getSkillRegistry()
       const capabilities = chaite?.getMcpCapabilityManager()
-      const skillName = String(args.skill_name ?? '')
-      const skill = registry?.getSkillByName(skillName)
-      if (!skill) return JSON.stringify({ error: `Skill "${skillName}" not found` })
-      if (!skill.frontmatter.mcpServer) return JSON.stringify({ error: `Skill "${skillName}" has no MCP server binding` })
-      const tools = Array.isArray(args.tools) && args.tools.length ? args.tools.map(String) : (skill.frontmatter.mcpTools ?? [])
+      const server = String(args.server ?? '')
+      const tools = Array.isArray(args.tools) ? args.tools.map(String) : []
       if (!capabilities || !context) return JSON.stringify({ error: 'MCP capabilities are not configured' })
-      const active = await capabilities.activate(context, skill.frontmatter.mcpServer, tools)
-      context.skillName = skill.id
+      const active = await capabilities.activate(context, server, tools)
       return JSON.stringify({ activated: true, server: active.server.name, tools: active.toolNames, expiresAt: active.expiresAt, refreshTools: true })
     },
   }

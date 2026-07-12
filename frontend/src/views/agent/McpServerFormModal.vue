@@ -19,7 +19,6 @@ const props = defineProps<{
   show: boolean
   editMode: boolean
   initialData: Partial<McpServerConfig>
-  toolGroupOptions?: Array<{ label: string; value: string }>
 }>()
 
 const emit = defineEmits<{
@@ -137,10 +136,6 @@ function handleSubmit() {
             show-password-on="click"
             @update:value="value => form.headers = { ...(form.headers || {}), Authorization: value }"
           />
-        </NFormItemGridItem>
-
-        <NFormItemGridItem :span="24" label="关联工具组">
-          <NSelect v-model:value="form.toolGroupIds" multiple :options="toolGroupOptions || []" placeholder="预设选中这些工具组时，才会启用此 MCP 的工具" />
         </NFormItemGridItem>
 
         <NFormItemGridItem :span="12" label="超时 (ms)" path="timeoutMs">

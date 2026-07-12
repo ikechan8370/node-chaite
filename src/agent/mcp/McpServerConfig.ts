@@ -29,7 +29,7 @@ export interface McpServerConfig {
   args?: string[]
   env?: Record<string, string>
   cwd?: string
-  /** Existing tool groups that expose this server's tools to a preset. */
+  /** Legacy tool-group binding. MCP discovery is global for enabled servers. */
   toolGroupIds?: string[]
   /** Cached on a successful connection test; avoids discovering tools per chat. */
   tools?: McpToolManifest[]
@@ -91,8 +91,6 @@ export class McpServerManager {
 
   async listEnabledForToolGroups(toolGroupIds: string[]): Promise<McpServerConfig[]> {
     const selected = new Set(toolGroupIds)
-    return (await this.listEnabled()).filter(server =>
-      (server.toolGroupIds ?? []).some(id => selected.has(id)),
-    )
+    return (await this.listEnabled()).filter(server => (server.toolGroupIds ?? []).some(id => selected.has(id)))
   }
 }

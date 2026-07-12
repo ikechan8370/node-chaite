@@ -250,14 +250,16 @@ export class Chaite extends EventEmitter {
               .filter(([_, value]) => value !== undefined),
           ),
         }
-        if (this.skillRegistry && this.mcpCapabilityManager) {
-          const catalogue = this.skillRegistry.listSkillMetas()
-            .filter(skill => skill.frontmatter.mcpServer)
+        // Keep only a compact server catalogue in the prompt. Actual MCP tool
+        // schemas stay hidden until the model searches and selects tools.
+        if (this.mcpServerManager) {
+          const servers = await this.mcpServerManager.listEnabled()
+          const catalogue = servers
             .slice(0, 20)
-            .map(skill => `- ${skill.id}: ${skill.frontmatter.description}`)
+            .map(server => `- ${server.name}（${server.tools?.length ?? 0} 个工具）${server.description ? `：${server.description}` : ''}`)
             .join('\n')
           if (catalogue) {
-            newOptions.systemOverride = [newOptions.systemOverride, `# 可按需启用的 Skill\n${catalogue}\n遇到需要专业外部能力的任务，先使用 search_skills；确认后使用 activate_skill_tools。不要猜测或直接调用未启用的 MCP 工具。`]
+            newOptions.systemOverride = [newOptions.systemOverride, `# 已配置的 MCP 服务\n${catalogue}\n当用户需要其中的外部能力时，先调用 search_mcp_tools 搜索所需工具，再调用 activate_mcp_tools 选择少量工具。不要一次加载全部 MCP 工具。`]
               .filter(Boolean)
               .join('\n\n')
           }

@@ -135,8 +135,8 @@ export class AbstractClient implements IClient {
     const toolsGroupManager = this.context.chaite.getToolsGroupManager()
     const toolManager = this.context.chaite.getToolsManager()
     const groupIds = toolGroupIds ? [...toolGroupIds] : []
-    // These two tiny schemas provide progressive disclosure for MCP skills.
-    // They replace sending an entire MCP server's tool schemas every turn.
+    // These compact MCP discovery tools are always available, but real MCP
+    // schemas are only loaded after the model selects the required tools.
     if (this.context.chaite?.getMcpCapabilityManager?.()) {
       for (const tool of createMcpCapabilityTools()) pushUnique(tool)
     }
@@ -203,9 +203,8 @@ export class AbstractClient implements IClient {
       }
     }
 
-    // Only MCP tools explicitly activated by a skill are exposed. We reconnect
-    // and list tools at activation time so execution uses the live server view;
-    // the same response refreshes the persisted manifest used by management.
+    // Only the small subset selected through MCP discovery is exposed. We
+    // reconnect here so the actual execution uses the server's live tool view.
     const capabilityManager = this.context.chaite?.getMcpCapabilityManager?.()
     const mcpManager = this.context.chaite?.getMcpServerManager?.()
     if (capabilityManager) {
@@ -223,8 +222,7 @@ export class AbstractClient implements IClient {
         })
         try {
           const liveSchemas = await executor.listAvailableTools(execCtxBuilder())
-          const schemas = liveSchemas
-            .filter(schema => active.toolNames.includes(schema.name))
+          const schemas = liveSchemas.filter(schema => active.toolNames.includes(schema.name))
           await mcpManager?.update(server.id, { tools: liveSchemas, toolsDiscoveredAt: Date.now() })
           for (const schema of schemas) {
             // A local tool, or an earlier MCP server, wins on duplicate names.
