@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.12.0](https://github.com/ikechan8370/node-chaite/compare/v1.11.1...v1.12.0) (2026-07-12)
+
+
+### Features
+
+* auto discover MCP tools ([1cc886f](https://github.com/ikechan8370/node-chaite/commit/1cc886fde4f19fafbdb1b4b2dacca48d4800c37f))
+* control built-in tools per preset ([e261fb7](https://github.com/ikechan8370/node-chaite/commit/e261fb76ff2c47003ab5eb8bc77d6a1c655a5234))
+
+
+### Reverts
+
+* remove image compression settings ([2c1956e](https://github.com/ikechan8370/node-chaite/commit/2c1956e64da7d0d3f9c49dbf999131a34498d572))
+
 ## [1.11.1](https://github.com/ikechan8370/node-chaite/compare/v1.11.0...v1.11.1) (2026-07-11)
 
 
