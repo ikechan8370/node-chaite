@@ -15,13 +15,13 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "frontend/build",
     "LICENSE",
     "README.md",
     "package.json"
   ],
   "scripts": {
     "build": "tsc --noEmit && tsdown",
+    "build:plugin-frontend": "node scripts/build-plugin-frontend.mjs",
     "dev": "nodemon --exec ts-node src/index.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

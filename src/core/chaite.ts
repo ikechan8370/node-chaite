@@ -24,7 +24,7 @@ import {
 import { Channel, ChatPreset } from '../channels'
 import { RAGManager } from '../rag'
 import EventEmitter from 'node:events'
-import { runServer } from '../controllers'
+import { ApiServerOptions, runServer } from '../controllers'
 import { ToolsGroupManager } from '../share'
 import { TriggerManager } from '../share'
 import type { Application } from 'express'
@@ -610,11 +610,12 @@ export class Chaite extends EventEmitter {
     return this.expressApp
   }
 
-  runApiServer(configureApp?: (app: Application) => void): Application {
+  runApiServer(configureApp?: (app: Application) => void, options: ApiServerOptions = {}): Application {
     const { app } = runServer(
       this.globalConfig?.getHost() || DEFAULT_HOST,
       this.globalConfig?.getPort() || DEFAULT_PORT,
       configureApp,
+      options,
     )
     this.expressApp = app
     return app

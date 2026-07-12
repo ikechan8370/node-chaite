@@ -16,10 +16,16 @@ import cors from 'cors'
 import { authenticateToken } from './middlewares'
 import { getLogger } from '../utils'
 import path from 'path'
+import fs from 'node:fs'
 import type { Server } from 'node:http'
 import { __dirname } from '../__dirname'
 
-export function createApp (configure?: (app: Application) => void): Application {
+export interface ApiServerOptions {
+  /** Directory containing the built management panel (index.html + assets). */
+  frontendDir?: string
+}
+
+export function createApp (configure?: (app: Application) => void, options: ApiServerOptions = {}): Application {
   const app = express()
   app.use(express.json())
   app.use(cors())
@@ -37,15 +43,27 @@ export function createApp (configure?: (app: Application) => void): Application 
   app.use('/api/logs', authenticateToken, LogsRouter)
   app.use('/v1', authenticateToken, OpenAIRouter)
   configure?.(app)
-  app.use(express.static(path.join(__dirname, '../frontend/build')))
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build/index.html'))
-  })
+  const frontendDir = options.frontendDir
+    ? path.resolve(options.frontendDir)
+    : path.join(__dirname, '../frontend/build')
+  const frontendEntry = path.join(frontendDir, 'index.html')
+  if (fs.existsSync(frontendEntry)) {
+    app.use(express.static(frontendDir))
+    app.get('*', (_req, res) => {
+      res.sendFile(frontendEntry)
+    })
+  }
+  else {
+    getLogger().warn(`Chaite management panel not found at ${frontendDir}`)
+    app.get('*', (_req, res) => {
+      res.status(404).json({ code: -1, data: null, message: 'Management panel is not installed' })
+    })
+  }
   return app
 }
 
-export function runServer (host: string, port: number, configure?: (app: Application) => void): { app: Application, server: Server } {
-  const app = createApp(configure)
+export function runServer (host: string, port: number, configure?: (app: Application) => void, options: ApiServerOptions = {}): { app: Application, server: Server } {
+  const app = createApp(configure, options)
   const server = app.listen(port, host, () => {
     getLogger().info(`Chaite server is running at http://${host}:${port}`)
   })

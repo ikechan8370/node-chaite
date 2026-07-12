@@ -99,6 +99,8 @@ const config = reactive({
    *   enable: boolean,
    *   hit: string[],
    *   probability: number,
+   *   speakingMode: 'reply' | 'contextual',
+   *   contextualPrompt: string,
    *   defaultPreset: string,
    *   presetPrefix?: string,
    *   presetMap: Array<{
@@ -117,6 +119,8 @@ const config = reactive({
     enable: false,
     hit: ['bym'],
     probability: 0.02,
+    speakingMode: 'reply',
+    contextualPrompt: '你现在不是在回复某一条特定消息，而是作为这个群里的一名普通群友自然参与当前聊天。请阅读前面的群聊上下文，选择一个自然的切入点发言，可以接续话题、补充信息、吐槽、提问或表达态度。不要解释任务，不要提及“上下文”“指令”“AI”或“机器人”，不要强行引用、@或逐句回答触发你的那条消息。直接输出一段适合发到群里的自然发言。',
     defaultPreset: '',
     presetPrefix: '',
     presetMap: [],
@@ -127,6 +131,8 @@ const config = reactive({
     enable: boolean
     hit: string[]
     probability: number
+    speakingMode: 'reply' | 'contextual'
+    contextualPrompt: string
     defaultPreset: string
     presetPrefix?: string
     presetMap: Array<{
@@ -320,10 +326,14 @@ async function getConfig(): Promise<CustomConfig> {
   else {
     message.error('配置加载失败')
   }
-  // Keep defaults introduced by newer plugin versions when loading an older
-  // persisted vision object that does not yet contain them.
+  // Keep defaults introduced by newer plugin versions when loading older
+  // persisted nested config objects that do not yet contain them.
   Object.assign(config, {
     ...data.data,
+    bym: {
+      ...config.bym,
+      ...(data.data?.bym || {}),
+    },
     llm: {
       ...config.llm,
       ...(data.data?.llm || {}),
@@ -645,6 +655,31 @@ onMounted(async () => {
                     <!-- 开关 -->
                     <NFormItemGridItem span="24 s:24 m:12" label="启用伪人模式" path="enable">
                       <NSwitch v-model:value="config.bym.enable" />
+                    </NFormItemGridItem>
+
+                    <NFormItemGridItem span="24 s:24 m:12" label="发言策略" path="speakingMode" :span-feedback="24">
+                      <NSelect
+                        v-model:value="config.bym.speakingMode"
+                        :options="[
+                          { label: '回复触发消息（原有模式）', value: 'reply' },
+                          { label: '自主融入群聊（结合上下文）', value: 'contextual' },
+                        ]"
+                      />
+                      <template #feedback>
+                        <span class="form-hint">自主模式仅在群聊上下文开启时生效，否则自动使用原有模式</span>
+                      </template>
+                    </NFormItemGridItem>
+
+                    <NFormItemGridItem v-if="config.bym.speakingMode === 'contextual'" span="24" label="自主发言指令" path="contextualPrompt" :span-feedback="24">
+                      <NInput
+                        v-model:value="config.bym.contextualPrompt"
+                        type="textarea"
+                        :autosize="{ minRows: 4, maxRows: 10 }"
+                        placeholder="告诉模型如何作为普通群友结合上下文自然发言"
+                      />
+                      <template #feedback>
+                        <span class="form-hint">该指令会替代触发者本轮消息作为 user prompt；群聊上下文仍在其前方</span>
+                      </template>
                     </NFormItemGridItem>
 
                     <!-- 伪人必定触发词 -->
