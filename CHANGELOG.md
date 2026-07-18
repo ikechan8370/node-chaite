@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/ikechan8370/node-chaite/compare/v1.13.0...v1.13.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* pin compatible Zod for MCP SDK ([540fb22](https://github.com/ikechan8370/node-chaite/commit/540fb2275962dee5c292b9f1470b0d89e3a727a9))
+
 ## [1.13.0](https://github.com/ikechan8370/node-chaite/compare/v1.12.0...v1.13.0) (2026-07-12)
 
 
