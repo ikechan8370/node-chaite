@@ -4,12 +4,12 @@ import { NButton, NFlex, NGrid, NPopover, NSpace, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
 import IconLinkCloudSuccess from '~icons/icon-park-outline/cloudy'
 import type { ListPresets } from '@/service/api/presets'
-import { createPreset, deletePreset, fetchPresetList, updatePreset } from '@/service/api/presets'
+import { createPreset, deletePreset, fetchAllPresetList, updatePreset } from '@/service/api/presets'
 import PresetFormModal from './PresetFormModal.vue'
 import PresetModel = Shareable.PresetModel
-import { fetchProcessorList } from '@/service/api/processors'
+import { fetchAllProcessorList } from '@/service/api/processors'
 import type { SelectMixedOption } from 'naive-ui/es/select/src/interface'
-import { fetchToolGroupList } from '@/service/api/toolGroup'
+import { fetchAllToolGroupList } from '@/service/api/toolGroup'
 import { fetchConfig, saveConfig } from '@/service/api/config'
 import { fetchChannelModels } from '@/service/api/channels'
 
@@ -142,8 +142,8 @@ const searchModel = reactive({
 
 function fetchPresets(filter: ListPresets) {
   loading.value = true
-  fetchPresetList({ ...filter, pageSize: 100 }).then((res) => {
-    data.value = res.data.items || res.data
+  fetchAllPresetList(filter).then((items) => {
+    data.value = items
     loading.value = false
   }).catch((err) => {
     console.error(err)
@@ -256,14 +256,14 @@ const columns = createColumns({
 
 async function getProcessors() {
   try {
-    const res = await fetchProcessorList({})
-    preProcessorOptions.value = (res.data.items || res.data).filter(p => p.type === 'pre').map((pre) => {
+    const processors = await fetchAllProcessorList()
+    preProcessorOptions.value = processors.filter(p => p.type === 'pre').map((pre) => {
       return {
         label: pre.name,
         value: pre.id,
       }
     })
-    postProcessorOptions.value = (res.data.items || res.data).filter(p => p.type === 'post').map((post) => {
+    postProcessorOptions.value = processors.filter(p => p.type === 'post').map((post) => {
       return {
         label: post.name,
         value: post.id,
@@ -291,8 +291,8 @@ async function getProcessors() {
 // }
 
 function fetchToolGroups(filter?: any) {
-  fetchToolGroupList(filter).then((res) => {
-    toolsOptions.value = (res.data.items || res.data).map((tool) => {
+  fetchAllToolGroupList(filter).then((items) => {
+    toolsOptions.value = items.map((tool) => {
       return {
         label: tool.name,
         value: tool.id,

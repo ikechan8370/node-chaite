@@ -4,10 +4,10 @@ const router = useRouter()
 import { NButton, NFlex, NGrid, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
 import type { ListToolModels } from '@/service/api/tools'
-import { createTool, deleteTool, fetchToolList, updateTool, uploadToolToCloud } from '@/service/api/tools'
+import { createTool, deleteTool, fetchAllToolList, fetchToolList, updateTool, uploadToolToCloud } from '@/service/api/tools'
 import ToolFormModal from './ToolFormModal.vue'
 import ToolTestModal from './ToolTestModal.vue'
-import { createToolGroup, deleteToolGroup, fetchToolGroupList, updateToolGroup } from '@/service/api/toolGroup'
+import { createToolGroup, deleteToolGroup, fetchAllToolGroupList, updateToolGroup } from '@/service/api/toolGroup'
 import ToolGroupFormModal from '@/views/tools/ToolGroupFormModal.vue'
 import IconLinkCloudSuccess from '~icons/icon-park-outline/cloudy'
 import type { Shareable } from '@/typings/entities/shareable'
@@ -200,6 +200,7 @@ function createGroupColumns({
 
 const message = useMessage()
 const data = reactive({ value: [] as Shareable.ToolModel[] })
+const availableTools = ref([] as Shareable.ToolModel[])
 const showModal = ref(false)
 const editMode = ref(false)
 const defaultTool = {
@@ -271,6 +272,12 @@ function fetchTools(filter?: any) {
   })
 }
 
+function fetchAvailableTools() {
+  fetchAllToolList().then((items) => {
+    availableTools.value = items
+  }).catch(() => {})
+}
+
 function handleRemoveTool(row: Shareable.ToolModel) {
   window.$dialog.warning({
     title: '确认删除',
@@ -337,8 +344,8 @@ function handleAddTool() {
 function fetchToolGroups(filter?: any) {
   groupLoading.value = true
   // 这里替换为实际的API调用
-  fetchToolGroupList(filter).then((res) => {
-    groupData.value = res.data.items || res.data
+  fetchAllToolGroupList(filter).then((items) => {
+    groupData.value = items
     groupLoading.value = false
   }).catch(() => {
     groupLoading.value = false
@@ -388,6 +395,7 @@ function handleSubmitToolGroup(gData: Shareable.ToolsGroupModel) {
 const groupColumns = createGroupColumns({
   upload: handleViewToolGroup,
   edit(row) {
+    fetchAvailableTools()
     editGroupMode.value = true
     currentGroup.value = { ...row }
     showGroupModal.value = true
@@ -396,6 +404,7 @@ const groupColumns = createGroupColumns({
 })
 
 function handleAddToolGroup() {
+  fetchAvailableTools()
   editGroupMode.value = false
   currentGroup.value = JSON.parse(JSON.stringify(defaultGroup)) as Shareable.ToolsGroupModel
   showGroupModal.value = true
@@ -403,6 +412,7 @@ function handleAddToolGroup() {
 
 onMounted(() => {
   fetchTools()
+  fetchAvailableTools()
   fetchToolGroups()
 })
 
@@ -524,7 +534,7 @@ function handleToolPageSizeChange(pageSize: number) {
       v-model:show="showGroupModal"
       :edit-mode="editGroupMode"
       :initial-data="currentGroup"
-      :available-tools="data.value"
+      :available-tools="availableTools"
       @submit="handleSubmitToolGroup"
     />
   </NSpace>

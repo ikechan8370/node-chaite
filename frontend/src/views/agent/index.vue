@@ -18,6 +18,7 @@ import {
   createSkill,
   deleteMcpServer,
   deleteSkill,
+  fetchAllMcpServerList,
   fetchJobList,
   fetchMcpServerList,
   fetchScheduledTaskList,
@@ -38,7 +39,7 @@ import type {
   SkillMeta,
   UpdateSkillDTO,
 } from '@/service/api/agent'
-import { fetchPresetList } from '@/service/api/presets'
+import { fetchAllPresetList } from '@/service/api/presets'
 import McpServerFormModal from './McpServerFormModal.vue'
 import SkillFormModal from './SkillFormModal.vue'
 
@@ -240,6 +241,7 @@ const skillColumns: DataTableColumns<SkillMeta> = [
 // ─── MCP Servers ──────────────────────────────────────────────────────────────
 
 const mcpData = ref<McpServerConfig[]>([])
+const mcpOptionData = ref<McpServerConfig[]>([])
 const mcpLoading = ref(false)
 const showMcpModal = ref(false)
 const mcpEditMode = ref(false)
@@ -248,6 +250,7 @@ const mcpTestingId = ref<string | null>(null)
 
 function fetchMcpServers() {
   mcpLoading.value = true
+  fetchAllMcpServerList().then(items => (mcpOptionData.value = items)).catch(() => {})
   fetchMcpServerList({ pageSize: 100 })
     .then((res) => {
       if (res.code === 0)
@@ -524,10 +527,8 @@ const taskColumns: DataTableColumns<ScheduledTask> = [
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 function loadPresets() {
-  fetchPresetList({}).then((res) => {
-    if (res.code === 0) {
-      presetOptions.value = res.data.map(p => ({ label: p.name, value: p.name }))
-    }
+  fetchAllPresetList().then((items) => {
+    presetOptions.value = items.map(p => ({ label: p.name, value: p.name }))
   }).catch(() => {})
 }
 
@@ -694,7 +695,7 @@ function handleTabChange(tab: string) {
       :edit-mode="skillEditMode"
       :initial-data="currentSkillDetail"
       :preset-options="presetOptions"
-      :mcp-server-options="mcpData.map(server => ({ label: server.name, value: server.id }))"
+      :mcp-server-options="mcpOptionData.map(server => ({ label: server.name, value: server.id }))"
       @submit="handleSubmitSkill"
     />
 

@@ -1,4 +1,6 @@
 import { request } from '../http'
+import { fetchAllLocalItems } from './pagination'
+import type { LocalPageResult } from './pagination'
 
 export interface ListPresets {
   name?: string
@@ -8,9 +10,13 @@ export interface ListPresets {
 }
 
 export function fetchPresetList(query: ListPresets) {
-  return request.Get<Service.ResponseResult<Shareable.PresetModel[]>>('/api/preset/list', {
+  return request.Get<Service.ResponseResult<LocalPageResult<Shareable.PresetModel>>>('/api/preset/list', {
     params: query,
   })
+}
+
+export function fetchAllPresetList(query: ListPresets = {}) {
+  return fetchAllLocalItems<Shareable.PresetModel, ListPresets>(fetchPresetList, query)
 }
 
 export function fetchPresetDetail(id: string) {

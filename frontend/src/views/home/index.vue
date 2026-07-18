@@ -4,8 +4,8 @@ import { AddOutline, ChatbubblesOutline, FlashOutline, PulseOutline, ServerOutli
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchSystemInfo } from '@/service'
-import { fetchChannelList } from '@/service/api/channels'
-import { fetchPresetList } from '@/service/api/presets'
+import { fetchAllChannelList } from '@/service/api/channels'
+import { fetchAllPresetList } from '@/service/api/presets'
 import { fetchLogs, fetchLogsStats } from '@/service/api/logs'
 import type { LogsStats, OperationLog } from '@/service/api/logs'
 
@@ -29,15 +29,13 @@ async function load() {
   loading.value = true
   try {
     const [sys, channels, presets, logStats, logs] = await Promise.all([
-      fetchSystemInfo(), fetchChannelList({ pageSize: 100 }), fetchPresetList({ pageSize: 100 }), fetchLogsStats(), fetchLogs({ pageSize: 8 }),
+      fetchSystemInfo(), fetchAllChannelList(), fetchAllPresetList(), fetchLogsStats(), fetchLogs({ pageSize: 8 }),
     ])
     if (sys.isSuccess) systemInfo.value = sys.data
-    const channelPayload: any = channels.data
-    const channelItems: any[] = channelPayload?.items || channelPayload || []
+    const channelItems = channels
     channelTotal.value = channelItems.length
     enabledChannels.value = channelItems.filter((item: any) => item.status === 'enabled').length
-    const presetPayload: any = presets.data
-    const presetItems: any[] = presetPayload?.items || presetPayload || []
+    const presetItems = presets
     presetTotal.value = presetItems.length
     if (logStats.code === 0) stats.value = logStats.data
     if (logs.code === 0) recentLogs.value = logs.data.items

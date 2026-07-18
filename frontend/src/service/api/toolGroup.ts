@@ -1,14 +1,22 @@
 import { request } from '../http'
+import { fetchAllLocalItems } from './pagination'
+import type { LocalPageResult } from './pagination'
 import PaginationResult = Shareable.PaginationResult
 
 export interface ListToolGroupModels {
   name?: string
+  page?: number
+  pageSize?: number
 }
 
 export function fetchToolGroupList(query: ListToolGroupModels) {
-  return request.Get<Service.ResponseResult<Shareable.ToolsGroupModel[]>>('/api/toolGroups/list', {
+  return request.Get<Service.ResponseResult<LocalPageResult<Shareable.ToolsGroupModel>>>('/api/toolGroups/list', {
     params: query,
   })
+}
+
+export function fetchAllToolGroupList(query: ListToolGroupModels = {}) {
+  return fetchAllLocalItems<Shareable.ToolsGroupModel, ListToolGroupModels>(fetchToolGroupList, query)
 }
 
 export function fetchToolGroupDetail(id: string) {

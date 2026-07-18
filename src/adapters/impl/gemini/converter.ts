@@ -97,7 +97,7 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
       case 'image': {
         let mimeType = t.mimeType
         // @see https://ai.google.dev/gemini-api/docs/vision?lang=rest#technical-details-image
-        const allowMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif']
+        const allowMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif', 'image/gif']
         if (mimeType && !allowMimeTypes.includes(mimeType)) {
           mimeType = 'image/jpeg'
         }

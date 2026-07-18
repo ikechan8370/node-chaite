@@ -1,4 +1,5 @@
 import { request } from '../http'
+import { fetchAllLocalItems } from './pagination'
 
 interface LocalListResult<T> {
   items: T[]
@@ -18,6 +19,10 @@ export function fetchProcessorList(query: ListProcessorDTO = {}) {
   return request.Get<Service.ResponseResult<LocalListResult<Shareable.ProcessorModel>>>('/api/processors/list', {
     params: query,
   })
+}
+
+export function fetchAllProcessorList(query: ListProcessorDTO = {}) {
+  return fetchAllLocalItems<Shareable.ProcessorModel, ListProcessorDTO>(fetchProcessorList, query)
 }
 
 export function fetchProcessorDetail(id: string) {

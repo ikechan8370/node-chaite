@@ -1,4 +1,5 @@
 import { request } from '../http'
+import { fetchAllLocalItems } from './pagination'
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
@@ -225,6 +226,10 @@ export interface McpTestResult {
 
 export function fetchMcpServerList(query: AgentPageQuery = {}) {
   return request.Get<Service.ResponseResult<AgentPage<McpServerConfig>>>('/api/agent/mcp-servers', { params: query })
+}
+
+export function fetchAllMcpServerList(query: AgentPageQuery = {}) {
+  return fetchAllLocalItems<McpServerConfig, AgentPageQuery>(fetchMcpServerList, query)
 }
 
 export function fetchMcpServerDetail(id: string) {

@@ -1,4 +1,5 @@
 import { request } from '../http'
+import { fetchAllLocalItems } from './pagination'
 
 import PaginationResult = Shareable.PaginationResult
 
@@ -19,6 +20,10 @@ export function fetchToolList(query: ListToolModels) {
   return request.Get<Service.ResponseResult<LocalListResult<Shareable.ToolModel>>>('/api/tools/list', {
     params: query,
   })
+}
+
+export function fetchAllToolList(query: ListToolModels = {}) {
+  return fetchAllLocalItems<Shareable.ToolModel, ListToolModels>(fetchToolList, query)
 }
 
 export function fetchToolDetail(id: string) {

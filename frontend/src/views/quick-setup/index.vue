@@ -5,8 +5,8 @@ import { useRouter } from 'vue-router'
 import { useRoute } from 'vue-router'
 import { createChanel, fetchChannelDetail, testChannel } from '@/service/api/channels'
 import { createPreset, deletePreset } from '@/service/api/presets'
-import { fetchProcessorList } from '@/service/api/processors'
-import { fetchToolGroupList } from '@/service/api/toolGroup'
+import { fetchAllProcessorList } from '@/service/api/processors'
+import { fetchAllToolGroupList } from '@/service/api/toolGroup'
 import { fetchConfig, saveConfig } from '@/service/api/config'
 
 const message = useMessage()
@@ -96,9 +96,9 @@ async function finish() {
 
 onMounted(async () => {
   defaultsForAdapter('openai')
-  const [processorRsp, toolRsp] = await Promise.all([fetchProcessorList({ pageSize: 100 } as any), fetchToolGroupList({ pageSize: 100 } as any)])
-  processors.value = (processorRsp.data as any)?.items || processorRsp.data || []
-  toolGroups.value = (toolRsp.data as any)?.items || toolRsp.data || []
+  const [allProcessors, allToolGroups] = await Promise.all([fetchAllProcessorList(), fetchAllToolGroupList()])
+  processors.value = allProcessors
+  toolGroups.value = allToolGroups
   if (typeof route.query.channelId === 'string') {
     const rsp = await fetchChannelDetail(route.query.channelId)
     if (rsp.code === 0) {

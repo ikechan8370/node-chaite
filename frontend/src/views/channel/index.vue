@@ -5,7 +5,7 @@ import { h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import IconLinkCloudSuccess from '~icons/icon-park-outline/cloudy'
 import type { ListChannels } from '@/service/api/channels'
-import { createChanel, deleteChanel, fetchChannelList, updateChannel, testChannel, autoDetectFeatures, type TestChannelResult } from '@/service/api/channels'
+import { createChanel, deleteChanel, fetchAllChannelList, updateChannel, testChannel, autoDetectFeatures, type TestChannelResult } from '@/service/api/channels'
 import ChannelFormModal from './ChannelFormModal.vue'
 import ChannelModel = Shareable.ChannelModel
 
@@ -216,8 +216,8 @@ const searchModel = reactive({
 
 function fetchChannels(filter: ListChannels) {
   loading.value = true
-  fetchChannelList({ ...filter, pageSize: 100 }).then((res) => {
-    data.value = res.data.items || res.data
+  fetchAllChannelList(filter).then((items) => {
+    data.value = items
     loading.value = false
   }).catch((err) => {
     console.error(err)

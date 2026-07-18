@@ -29,7 +29,7 @@ import IconLinkMemory from '~icons/icon-park-outline/brain'
 import IconLinkVision from '~icons/icon-park-outline/preview-open'
 import type { CustomConfig } from '@/service/api/config'
 import { fetchConfig, saveConfig } from '@/service/api/config'
-import { fetchPresetList } from '@/service/api/presets'
+import { fetchAllPresetList } from '@/service/api/presets'
 import { fetchVisionChannelModels } from '@/service/api/channels'
 import type { DownloadSimpleExtensionParams, MemoryConfig, SimpleExtensionStatus } from '@/service/api/memory'
 import {
@@ -453,8 +453,8 @@ async function handleDownloadSimpleExtension() {
 
 const presets = ref([] as Array<Shareable.PresetModel>)
 function fetchPresets() {
-  fetchPresetList({}).then((res) => {
-    presets.value = res.data.items || res.data
+  fetchAllPresetList().then((items) => {
+    presets.value = items
   }).catch((err) => {
     console.error(err)
   })

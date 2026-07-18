@@ -1,4 +1,6 @@
 import { request } from '../http'
+import { fetchAllLocalItems } from './pagination'
+import type { LocalPageResult } from './pagination'
 
 export interface ListChannels {
   name?: string
@@ -10,9 +12,13 @@ export interface ListChannels {
 }
 
 export function fetchChannelList(query: ListChannels) {
-  return request.Get<Service.ResponseResult<Shareable.ChannelModel[]>>('/api/channels/list', {
+  return request.Get<Service.ResponseResult<LocalPageResult<Shareable.ChannelModel>>>('/api/channels/list', {
     params: query,
   })
+}
+
+export function fetchAllChannelList(query: ListChannels = {}) {
+  return fetchAllLocalItems<Shareable.ChannelModel, ListChannels>(fetchChannelList, query)
 }
 
 export interface ChannelModelSummary {
