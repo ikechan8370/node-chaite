@@ -17,6 +17,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       this.dynamicContextHistory = params.dynamicContextHistory
       this.builtinToolCategories = params.builtinToolCategories
       this.disableSystemInstructions = params.disableSystemInstructions
+      this.disableConversationContext = params.disableConversationContext
     }
   }
 
@@ -34,6 +35,8 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
   dynamicContextHistory?: 'use_system' | 'retain' | 'discard'
   /** Built-in tool categories enabled for this preset. Undefined enables all for compatibility. */
   builtinToolCategories?: Array<'mcp-discovery' | 'mcp-management' | 'skill-management'>
+  /** Whether to start each turn from a detached history branch. */
+  disableConversationContext?: boolean
   /**
    * 禁止系统prompt
    */
@@ -58,6 +61,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
       dynamicContextHistory: this.dynamicContextHistory,
       builtinToolCategories: this.builtinToolCategories,
       disableSystemInstructions: this.disableSystemInstructions,
+      disableConversationContext: this.disableConversationContext,
     })
   }
 
@@ -81,6 +85,7 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     preset.dynamicContextHistory = raw.dynamicContextHistory
     preset.builtinToolCategories = raw.builtinToolCategories
     preset.disableSystemInstructions = raw.disableSystemInstructions
+    preset.disableConversationContext = raw.disableConversationContext
 
     if (raw.sendMessageOption) {
       preset.sendMessageOption = typeof raw.sendMessageOption === 'string'
@@ -147,7 +152,11 @@ export class ChatPreset extends AbstractShareable<ChatPreset> {
     } else if (this.groupContext === 'enabled') {
       base += '\n携带群聊上下文'
     } else if (this.groupContext === 'use_system') {
-      base += '\n群聊上下文使用系统预设'
+      base += '\n群聊上下文使用全局配置'
+    }
+
+    if (this.disableConversationContext) {
+      base += '\n禁止对话上下文'
     }
 
     if (this.disableSystemInstructions) {

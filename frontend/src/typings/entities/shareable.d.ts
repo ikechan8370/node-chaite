@@ -185,6 +185,8 @@ namespace Shareable {
     safetySettings?: SafetySetting[]
 
     toolCallLimit?: ToolCallLimitConfig
+    /** Gemini Generate Content built-in tools enabled by the preset. */
+    geminiBuiltinTools?: Array<'googleSearch' | 'googleMaps' | 'codeExecution' | 'urlContext'>
   }
 
   interface SafetySetting {
@@ -212,6 +214,8 @@ namespace Shareable {
     dynamicContextHistory?: 'use_system' | 'retain' | 'discard'
     /** Built-in tool categories enabled for this preset. */
     builtinToolCategories?: Array<'mcp-discovery' | 'mcp-management' | 'skill-management'>
+    /** Whether to start each turn without previous user/assistant conversation context. */
+    disableConversationContext?: boolean
     /**
      * 禁止系统prompt
      */

@@ -56,6 +56,18 @@ export class GeminiClient extends AbstractClient {
       }
       messages.push(geminiContent)
     }
+    const normalizedBaseUrl = this.baseUrl.replace(/\/+$/, '')
+    const hasExplicitApiVersion = /\/v1(?:alpha|beta)?$/i.test(normalizedBaseUrl)
+    const isGoogleApi = /:\/\/(?:generativelanguage|[a-z0-9-]+-aiplatform)\.googleapis\.com(?:\/|$)/i.test(normalizedBaseUrl)
+    const hasBuiltinTools = (options.geminiBuiltinTools?.length || 0) > 0
+    let apiVersion: string | undefined
+    if (hasBuiltinTools) {
+      if (hasExplicitApiVersion) {
+        apiVersion = ''
+      } else if (!isGoogleApi) {
+        apiVersion = 'v1'
+      }
+    }
     const ai = new GoogleGenAI({
       apiKey,
       httpOptions: {
@@ -63,13 +75,38 @@ export class GeminiClient extends AbstractClient {
         headers: {
           'x-request-from': 'node-chaite/' + VERSION,
         },
+        // GoogleGenAI defaults to v1beta. GCLI2API exposes its native Gemini
+        // endpoint under /v1; opt into that only for custom endpoints when a
+        // Gemini built-in tool is explicitly enabled, preserving the default
+        // request path when the new feature is disabled.
+        ...(apiVersion !== undefined ? { apiVersion } : {}),
       },
     })
 
     const functionDeclarations = this.tools.map(toolConverter)
-    const tools: Tool[] | undefined = functionDeclarations.length > 0 ? [{
+    const functionTools: Tool[] = functionDeclarations.length > 0 ? [{
       functionDeclarations,
-    }] : undefined
+    }] : []
+    const builtinTools: Tool[] = []
+    for (const builtinTool of options.geminiBuiltinTools || []) {
+      switch (builtinTool) {
+        case 'googleSearch':
+          builtinTools.push({ googleSearch: {} })
+          break
+        case 'googleMaps':
+          builtinTools.push({ googleMaps: {} })
+          break
+        case 'codeExecution':
+          builtinTools.push({ codeExecution: {} })
+          break
+        case 'urlContext':
+          builtinTools.push({ urlContext: {} })
+          break
+      }
+    }
+    const tools: Tool[] | undefined = functionTools.length > 0 || builtinTools.length > 0
+      ? [...functionTools, ...builtinTools]
+      : undefined
 
     const modeMap = {
       'none': FunctionCallingConfigMode.NONE,

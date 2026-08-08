@@ -44,7 +44,14 @@ const showModal = computed({
 const groupContextOptions = [
   { label: '禁用', value: 'disable' },
   { label: '启用', value: 'enabled' },
-  { label: '使用系统提示词', value: 'use_system' },
+  { label: '使用全局配置', value: 'use_system' },
+]
+
+const geminiBuiltinToolOptions = [
+  { label: 'Google Search', value: 'googleSearch' },
+  { label: 'Google Maps', value: 'googleMaps' },
+  { label: '代码执行', value: 'codeExecution' },
+  { label: '网址上下文', value: 'urlContext' },
 ]
 
 const dynamicContextHistoryOptions = [
@@ -124,6 +131,7 @@ const addPreset = ref<Partial<Shareable.PresetModel>>({
       tools: [],
     } as Shareable.ToolChoice,
     toolGroupId: ['default_local'],
+    geminiBuiltinTools: [],
     responseModalities: undefined,
     safetySettings: undefined,
   } as Shareable.SendMessageOption,
@@ -133,6 +141,7 @@ const addPreset = ref<Partial<Shareable.PresetModel>>({
   dynamicContextHistory: 'use_system',
   builtinToolCategories: ['mcp-discovery', 'mcp-management', 'skill-management'],
   disableSystemInstructions: false,
+  disableConversationContext: false,
 })
 
 // Initialize form when in edit mode
@@ -152,6 +161,12 @@ watch(() => props.initialData, (newVal) => {
     }
     if (!Array.isArray(data.builtinToolCategories)) {
       data.builtinToolCategories = ['mcp-discovery', 'mcp-management', 'skill-management']
+    }
+    if (!Array.isArray(data.sendMessageOption.geminiBuiltinTools)) {
+      data.sendMessageOption.geminiBuiltinTools = []
+    }
+    if (data.disableConversationContext === undefined) {
+      data.disableConversationContext = false
     }
 
     addPreset.value = data
@@ -214,6 +229,7 @@ watch(showModal, (val) => {
           tools: [],
         },
         toolGroupId: ['default_local'],
+        geminiBuiltinTools: [],
         responseModalities: undefined,
         safetySettings: undefined,
       },
@@ -222,6 +238,8 @@ watch(showModal, (val) => {
       groupContext: 'use_system',
       dynamicContextHistory: 'use_system',
       builtinToolCategories: ['mcp-discovery', 'mcp-management', 'skill-management'],
+      disableSystemInstructions: false,
+      disableConversationContext: false,
     }
   }
 })
@@ -290,6 +308,9 @@ watch(showModal, (val) => {
                     <NCheckbox v-model:checked="addPreset.sendMessageOption!!.disableHistorySave">
                       禁用历史记录保存
                     </NCheckbox>
+                    <NCheckbox v-model:checked="addPreset.disableConversationContext">
+                      禁用对话上下文
+                    </NCheckbox>
                   </NSpace>
                 </NFormItemGridItem>
 
@@ -331,6 +352,29 @@ watch(showModal, (val) => {
                       </NCheckbox>
                     </NSpace>
                   </NCheckboxGroup>
+                </NFormItemGridItem>
+
+                <!-- Gemini 内置工具 -->
+                <NFormItemGridItem span="24" label="Gemini 内置工具" path="sendMessageOption.geminiBuiltinTools">
+                  <NCheckboxGroup v-model:value="addPreset.sendMessageOption!!.geminiBuiltinTools">
+                    <NSpace>
+                      <NCheckbox
+                        v-for="option in geminiBuiltinToolOptions"
+                        :key="option.value"
+                        :value="option.value"
+                      >
+                        {{ option.label }}
+                      </NCheckbox>
+                    </NSpace>
+                  </NCheckboxGroup>
+                  <NTooltip placement="top" trigger="hover">
+                    <template #trigger>
+                      <NIcon size="18" class="ml-2" style="margin-left: 8px; cursor: pointer;">
+                        <InformationCircleOutline />
+                      </NIcon>
+                    </template>
+                    <span>仅 Gemini Generate Content API 生效；留空时不会改变原有请求。</span>
+                  </NTooltip>
                 </NFormItemGridItem>
 
                 <!-- 禁止系统prompt -->
