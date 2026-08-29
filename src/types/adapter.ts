@@ -48,6 +48,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.planId = option.planId
     this.skillName = option.skillName
     this.builtinToolCategories = option.builtinToolCategories
+    this.geminiBuiltinTools = option.geminiBuiltinTools
   }
 
   static create(options?: SendMessageOption | Partial<SendMessageOption>): SendMessageOption {
@@ -128,6 +129,9 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
   /** Preset-selected categories of built-in tools. Undefined keeps compatibility by enabling all. */
   builtinToolCategories?: Array<'mcp-discovery' | 'mcp-management' | 'skill-management'>
 
+  /** Gemini Generate Content built-in tools enabled by the preset. */
+  geminiBuiltinTools?: Array<'googleSearch' | 'googleMaps' | 'codeExecution' | 'urlContext'>
+
   /**
      * 流模式的回调
      * @param chunk
@@ -167,6 +171,7 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       safetySettings: this.safetySettings,
       toolCallLimit: this.toolCallLimit,
       builtinToolCategories: this.builtinToolCategories,
+      geminiBuiltinTools: this.geminiBuiltinTools,
     }
     return JSON.stringify(json)
   }

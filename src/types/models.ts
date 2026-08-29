@@ -14,8 +14,18 @@ export interface ModelConfig {
 export type Role = 'system' | 'user' | 'assistant' | 'tool' | 'developer'
 
 export interface MessageContent {
-  type: 'text' | 'image' | 'audio' | 'video' | 'tool' | 'reasoning'
+  type: 'text' | 'image' | 'audio' | 'video' | 'tool' | 'reasoning' | 'provider_context'
   thoughtSignature?: string
+}
+
+/**
+ * Opaque provider-specific content that must survive a history round trip.
+ * It is not intended for display or cross-provider conversion.
+ */
+export interface ProviderContextContent extends MessageContent {
+  type: 'provider_context'
+  provider: 'gemini'
+  data: Record<string, unknown>
 }
 
 export interface TextContent extends MessageContent {
