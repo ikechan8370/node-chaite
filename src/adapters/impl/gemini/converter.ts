@@ -8,6 +8,7 @@ import {
   ImageContent,
   IMessage,
   MessageContent,
+  ProviderContextContent,
   ReasoningContent,
   TextContent,
   ToolCall,
@@ -57,6 +58,13 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
         parts.push(part)
         break
       }
+      case 'provider_context': {
+        const context = c as ProviderContextContent
+        if (context.provider === 'gemini') {
+          parts.push(context.data as Part)
+        }
+        break
+      }
       default: {
         break
       }
@@ -65,6 +73,7 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
     msg.toolCalls?.forEach(tc => {
       const part: Part = {
         functionCall: {
+          id: tc.id,
           name: tc.function.name,
           args: tc.function.arguments,
         } as FunctionCall,
@@ -126,6 +135,7 @@ registerFromChaiteConverter<Content>('gemini', (source: IMessage) => {
       parts: msg.content.map(tcr => {
         return {
           functionResponse: {
+            id: tcr.tool_call_id,
             name: tcr.name as string,
             response: {
               name: tcr.name,
@@ -182,9 +192,9 @@ registerIntoChaiteConverter<GenerateContentResponse>('gemini', msg => {
 
       // Handle Tool Call
       if (part.functionCall) {
-        const randomString = Math.random().toString(36).substring(2, 15)
+        const toolCallId = part.functionCall.id || Math.random().toString(36).substring(2, 15)
         toolCalls.push({
-          id: randomString,
+          id: toolCallId,
           type: 'function',
           function: {
             name: part.functionCall.name,
@@ -192,6 +202,17 @@ registerIntoChaiteConverter<GenerateContentResponse>('gemini', msg => {
           },
           thoughtSignature: part.thoughtSignature,
         } as ToolCall)
+      }
+
+      // Gemini 3 returns server-side tool context as opaque parts. Echoing
+      // these parts unchanged is required when a later custom function call
+      // continues the same tool-combination turn.
+      if (part.toolCall || part.toolResponse || part.executableCode || part.codeExecutionResult) {
+        content.push({
+          type: 'provider_context',
+          provider: 'gemini',
+          data: part as unknown as Record<string, unknown>,
+        } as ProviderContextContent)
       }
     })
   })

@@ -8,10 +8,8 @@ import {
 } from '../../../types'
 import {
   Content,
-  FunctionCallingConfig,
-  FunctionCallingConfigMode,
   GenerateContentParameters,
-  GoogleGenAI, Tool, ToolConfig,
+  GoogleGenAI,
 } from '@google/genai'
 import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
 import './converter'
@@ -19,6 +17,7 @@ import { asyncLocalStorage, getKey } from '../../../utils'
 import { SendMessageOption } from '../../../types'
 import * as crypto from 'node:crypto'
 import { VERSION } from '../../../index'
+import { buildGeminiTooling } from './tooling'
 
 const DEFAULT_TOOL_CALL_LIMIT: ToolCallLimitConfig = {
   maxConsecutiveCalls: 8,
@@ -28,6 +27,7 @@ const DEFAULT_TOOL_CALL_LIMIT: ToolCallLimitConfig = {
 export type GeminiClientOptions = BaseClientOptions & {
   toolCallLimit?: ToolCallLimitConfig
 }
+
 export class GeminiClient extends AbstractClient {
   constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>, context?: ChaiteContext) {
     super(options, context)
@@ -56,12 +56,21 @@ export class GeminiClient extends AbstractClient {
       }
       messages.push(geminiContent)
     }
+    const functionDeclarations = this.tools.map(toolConverter)
+    const { tools, toolConfig, suppressedBuiltinTools, hasEffectiveBuiltinTools } = buildGeminiTooling(
+      functionDeclarations,
+      options.geminiBuiltinTools || [],
+      options.toolChoice,
+      model,
+    )
+    if (suppressedBuiltinTools) {
+      this.logger.warn(`[GeminiClient] Gemini built-in tools were not combined with function tools for model "${model}"; tool combination requires Gemini 3. Existing function tools remain enabled.`)
+    }
     const normalizedBaseUrl = this.baseUrl.replace(/\/+$/, '')
     const hasExplicitApiVersion = /\/v1(?:alpha|beta)?$/i.test(normalizedBaseUrl)
     const isGoogleApi = /:\/\/(?:generativelanguage|[a-z0-9-]+-aiplatform)\.googleapis\.com(?:\/|$)/i.test(normalizedBaseUrl)
-    const hasBuiltinTools = (options.geminiBuiltinTools?.length || 0) > 0
     let apiVersion: string | undefined
-    if (hasBuiltinTools) {
+    if (hasEffectiveBuiltinTools) {
       if (hasExplicitApiVersion) {
         apiVersion = ''
       } else if (!isGoogleApi) {
@@ -83,44 +92,6 @@ export class GeminiClient extends AbstractClient {
       },
     })
 
-    const functionDeclarations = this.tools.map(toolConverter)
-    const functionTools: Tool[] = functionDeclarations.length > 0 ? [{
-      functionDeclarations,
-    }] : []
-    const builtinTools: Tool[] = []
-    for (const builtinTool of options.geminiBuiltinTools || []) {
-      switch (builtinTool) {
-        case 'googleSearch':
-          builtinTools.push({ googleSearch: {} })
-          break
-        case 'googleMaps':
-          builtinTools.push({ googleMaps: {} })
-          break
-        case 'codeExecution':
-          builtinTools.push({ codeExecution: {} })
-          break
-        case 'urlContext':
-          builtinTools.push({ urlContext: {} })
-          break
-      }
-    }
-    const tools: Tool[] | undefined = functionTools.length > 0 || builtinTools.length > 0
-      ? [...functionTools, ...builtinTools]
-      : undefined
-
-    const modeMap = {
-      'none': FunctionCallingConfigMode.NONE,
-      'any': FunctionCallingConfigMode.ANY,
-      'auto': FunctionCallingConfigMode.AUTO,
-      'specified': FunctionCallingConfigMode.ANY,
-    }
-    const toolConfig = functionDeclarations.length > 0 ? {
-      functionCallingConfig: {
-        mode: modeMap[options.toolChoice?.type || 'auto'],
-        // 只有specified才有这个
-        allowedFunctionNames: options.toolChoice?.type === 'specified' ? options.toolChoice?.tools : undefined,
-      } as FunctionCallingConfig,
-    } as ToolConfig : undefined
     // method parameter is not supported in Gemini API.
     options.safetySettings?.forEach(ss => {
       if (ss.method) {
