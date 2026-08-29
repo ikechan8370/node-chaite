@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.14.0](https://github.com/ikechan8370/node-chaite/compare/v1.13.1...v1.14.0) (2026-08-29)
+
+
+### Features
+
+* add Gemini native tools and conversation context controls ([f2478e3](https://github.com/ikechan8370/node-chaite/commit/f2478e3187bb24e0a3c851a3703fb8f2897358ea))
+* add Gemini native tools and conversation context controls ([2ee7347](https://github.com/ikechan8370/node-chaite/commit/2ee73479f98979b8583f347a1bd801b7efb7c5f0))
+
+
+### Bug Fixes
+
+* preserve Gemini tool combination context ([856ac3f](https://github.com/ikechan8370/node-chaite/commit/856ac3f408e2bd6c616262e0ba7e9d59026ceae1))
+
 ## [1.13.1](https://github.com/ikechan8370/node-chaite/compare/v1.13.0...v1.13.1) (2026-07-18)
 
 
