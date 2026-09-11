@@ -495,3 +495,140 @@ describe('SqlHistoryManager', () => {
     await manager.driver.close()
   })
 })
+
+describe('lifecycle and concurrency', () => {
+  test('a racing ensureInitialized never sees a half-built user_states', async () => {
+    const driver = await makeDriver()
+    const storage = new SqlUserStateStorage(driver)
+
+    // 三个并发调用：只要有任何一个在唯一索引建好之前就放行，后面的写入就可能
+    // 插进重复 userId
+    await Promise.all([
+      storage.initialize(),
+      storage.ensureInitialized(),
+      storage.ensureInitialized(),
+    ])
+
+    const indexes = await driver.all<{ name: string }>(
+      'SELECT name FROM sqlite_master WHERE type = ? AND tbl_name = ?', ['index', 'user_states']
+    )
+    expect(indexes.map(i => i.name)).toContain('uniq_user_states_userId')
+    await driver.close()
+  })
+
+  test('a failed afterInitialize leaves the storage retryable', async () => {
+    const driver = await makeDriver()
+    let attempts = 0
+
+    class FlakyStorage extends SqlKvStorage<Widget> {
+      protected async afterInitialize(): Promise<void> {
+        attempts++
+        if (attempts === 1) throw new Error('afterInitialize boom')
+      }
+    }
+    const storage = new FlakyStorage(driver, widgetSpec)
+
+    await expect(storage.initialize()).rejects.toThrow('afterInitialize boom')
+    // 关键在于没有被标成已就绪：下一次调用要重跑整条链路，而不是带着没建好的
+    // 模式继续用下去
+    expect(attempts).toBe(1)
+
+    // 后续任何一次访问都会触发重试，这次能成
+    await storage.setItem('w1', { name: 'ok' })
+    expect((await storage.getItem('w1'))?.name).toBe('ok')
+    expect(attempts).toBe(2)
+    await driver.close()
+  })
+
+  test('close() rejects new work instead of queueing onto a dying connection', async () => {
+    const driver = await makeDriver()
+    const storage = new SqlKvStorage<Widget>(driver, widgetSpec)
+    await storage.initialize()
+    await storage.setItem('w1', { name: 'a' })
+
+    await driver.close()
+
+    await expect(driver.run('INSERT INTO widgets (id,name) VALUES (?,?)', ['w2', 'b'])).rejects.toThrow(/closing|closed/)
+    await expect(driver.get('SELECT * FROM widgets', [])).rejects.toThrow(/closing|closed/)
+  })
+
+  test('concurrent close() calls share one shutdown', async () => {
+    const driver = await makeDriver()
+    const storage = new SqlKvStorage<Widget>(driver, widgetSpec)
+    await storage.initialize()
+
+    // 三个并发 close 不该各关一遍（第二次 close 原生连接会报错）
+    await Promise.all([driver.close(), driver.close(), driver.close()])
+    await expect(driver.get('SELECT 1', [])).rejects.toThrow(/closing|closed/)
+  })
+
+  test('in-flight writes finish before close() tears the connection down', async () => {
+    const driver = await makeDriver()
+    const storage = new SqlKvStorage<Widget>(driver, widgetSpec)
+    await storage.initialize()
+
+    // driver.run 是同步入队的，所以这三条在 close 发起前就已经在队列里了。
+    // 经由 storage.setItem 会先 await ensureInitialized，那时 close 已经开始，
+    // 属于「关闭后才到达」，应当被拒绝——那是另一个用例。
+    const writes = [
+      driver.run('INSERT INTO widgets (id,name) VALUES (?,?)', ['w1', 'a']),
+      driver.run('INSERT INTO widgets (id,name) VALUES (?,?)', ['w2', 'b']),
+      driver.run('INSERT INTO widgets (id,name) VALUES (?,?)', ['w3', 'c']),
+    ]
+    const closing = driver.close()
+    await Promise.all(writes)
+    await closing
+
+    // 重新打开，确认三条都落盘了
+    const reopened = new SqliteDriver(driver.dbPath)
+    await reopened.ready()
+    expect(await reopened.all('SELECT id FROM widgets', [])).toHaveLength(3)
+    await reopened.close()
+  })
+})
+
+describe('DriverRegistry', () => {
+  test('concurrent init() opens exactly one set of drivers', async () => {
+    const { DriverRegistry } = await import('./driver/registry')
+    const registry = new DriverRegistry()
+    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reg-'))
+
+    await Promise.all([
+      registry.init({ dialect: 'sqlite', dataDir }),
+      registry.init({ dialect: 'sqlite', dataDir }),
+      registry.init({ dialect: 'sqlite', dataDir }),
+    ])
+
+    // 三个逻辑库、三个文件，绝不能因为并发多开一套
+    expect(registry.listUnique()).toHaveLength(3)
+    await registry.close()
+  })
+
+  test('a failed init() leaves nothing open and stays retryable', async () => {
+    const { DriverRegistry } = await import('./driver/registry')
+    const registry = new DriverRegistry()
+
+    await expect(
+      registry.init({ dialect: 'mysql' } as never)
+    ).rejects.toThrow(/不支持的数据库方言/)
+
+    expect(registry.isInitialized()).toBe(false)
+    expect(registry.listUnique()).toHaveLength(0)
+
+    // 修好之后应该还能正常初始化
+    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reg-retry-'))
+    await registry.init({ dialect: 'sqlite', dataDir })
+    expect(registry.isInitialized()).toBe(true)
+    await registry.close()
+  })
+
+  test('close() is idempotent', async () => {
+    const { DriverRegistry } = await import('./driver/registry')
+    const registry = new DriverRegistry()
+    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reg-close-'))
+    await registry.init({ dialect: 'sqlite', dataDir })
+
+    await Promise.all([registry.close(), registry.close()])
+    expect(registry.isInitialized()).toBe(false)
+  })
+})

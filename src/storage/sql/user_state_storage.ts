@@ -60,45 +60,46 @@ export class SqlUserStateStorage extends SqlKvStorage<UserState> {
    * 两个并发请求给同一个新用户写状态时可以各插一行。所以建唯一索引之前先去重，
    * 每个 userId 只留 updatedAt 最新的那行。
    */
-  async initialize(): Promise<void> {
-    if (this.initialized) return
-    await super.initialize()
-    await this.dedupeUserIds()
-    await this.driver.exec(
-      this.dialect.createIndex(this.table, ['userId'], { name: 'uniq_user_states_userId', unique: true }),
-    )
-  }
+  protected async afterInitialize(): Promise<void> {
+    // 去重和建唯一索引必须是一个原子步骤：中间一旦放行并发写入，就可能又插进
+    // 一行重复 userId，随后 CREATE UNIQUE INDEX 直接失败。放在同一个事务里，
+    // SQLite 靠 writer 队列串行化，Postgres 靠事务本身。
+    await this.driver.transaction(async transaction => {
+      const table = this.q(this.table)
+      const duplicates = await transaction.all<{ userId: string, count: number }>(
+        `SELECT ${this.q('userId')} AS "userId", COUNT(*) AS "count"
+         FROM ${table} GROUP BY ${this.q('userId')} HAVING COUNT(*) > 1`,
+        [],
+      )
 
-  private async dedupeUserIds(): Promise<void> {
-    const table = this.q(this.table)
-    const duplicates = await this.driver.all<{ userId: string, count: number }>(
-      `SELECT ${this.q('userId')} AS "userId", COUNT(*) AS "count"
-       FROM ${table} GROUP BY ${this.q('userId')} HAVING COUNT(*) > 1`,
-      [],
-    )
-    if (duplicates.length === 0) return
+      if (duplicates.length > 0) {
+        const total = duplicates.reduce((sum, row) => sum + Number(row.count) - 1, 0)
+        log().warn(
+          `[Storage] user_states 有 ${duplicates.length} 个 userId 存在重复行，` +
+          `清理 ${total} 行后建立唯一索引（保留 updatedAt 最新的一行）`,
+        )
+        // COALESCE 是为了绕开 NULL 排序差异：SQLite 的 DESC 把 NULL 放最后，
+        // Postgres 默认放最前
+        await transaction.run(
+          `DELETE FROM ${table} WHERE ${this.q('id')} NOT IN (
+             SELECT ${this.q('id')} FROM (
+               SELECT ${this.q('id')},
+                      ROW_NUMBER() OVER (
+                        PARTITION BY ${this.q('userId')}
+                        ORDER BY COALESCE(${this.q('updatedAt')}, 0) DESC, ${this.q('id')} DESC
+                      ) AS rn
+               FROM ${table}
+             ) ranked WHERE rn = 1
+           )`,
+          [],
+        )
+      }
 
-    const total = duplicates.reduce((sum, row) => sum + Number(row.count) - 1, 0)
-    log().warn(
-      `[Storage] user_states 有 ${duplicates.length} 个 userId 存在重复行，` +
-      `清理 ${total} 行后建立唯一索引（保留 updatedAt 最新的一行）`,
-    )
-
-    // COALESCE 是为了绕开 NULL 排序差异：SQLite 的 DESC 把 NULL 放最后，
-    // Postgres 默认放最前
-    await this.driver.run(
-      `DELETE FROM ${table} WHERE ${this.q('id')} NOT IN (
-         SELECT ${this.q('id')} FROM (
-           SELECT ${this.q('id')},
-                  ROW_NUMBER() OVER (
-                    PARTITION BY ${this.q('userId')}
-                    ORDER BY COALESCE(${this.q('updatedAt')}, 0) DESC, ${this.q('id')} DESC
-                  ) AS rn
-           FROM ${table}
-         ) ranked WHERE rn = 1
-       )`,
-      [],
-    )
+      await transaction.run(
+        this.dialect.createIndex(this.table, ['userId'], { name: 'uniq_user_states_userId', unique: true }),
+        [],
+      )
+    }, { priority: 'high', label: 'user_states unique index' })
   }
 }
 

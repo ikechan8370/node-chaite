@@ -153,6 +153,13 @@ export async function createPostgresDriver(options: PostgresConnectionOptions): 
   }) as unknown as PgPool
   pool.on('error', error => log().error(`[pg] idle client error: ${error.message}`))
   const driver = new PostgresDriver(options, pool)
-  await driver.ready()
+  try {
+    await driver.ready()
+  } catch (error) {
+    // 首次连接失败时必须把 pool 关掉，否则它的重连计时器会把进程吊住，
+    // 连接也泄漏了
+    await pool.end().catch(() => {})
+    throw error
+  }
   return driver
 }

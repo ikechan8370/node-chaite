@@ -23,30 +23,70 @@ const SQLITE_FILES: Record<LogicalDatabase, string> = {
 export class DriverRegistry {
   private readonly drivers = new Map<LogicalDatabase, SqlDriver>()
   private initialized = false
+  private initPromise: Promise<void> | null = null
+  private closePromise: Promise<void> | null = null
 
+  /**
+   * 初始化。并发调用会共用同一个 Promise——否则两个调用方都能通过
+   * `initialized === false`，各开一套连接，后完成的那个把前一套从 Map 里顶掉，
+   * 顶掉的连接就此泄漏。
+   *
+   * 中途失败会把这一轮已经建好的 driver 全部关掉再抛出，不留下半初始化状态；
+   * initialized 仍为 false，调用方可以修好配置后重试。
+   */
   async init(options: ConnectionOptions): Promise<void> {
     if (this.initialized) return
+    if (this.initPromise) return this.initPromise
 
-    if (options.dialect === 'sqlite') {
-      for (const name of Object.keys(SQLITE_FILES) as LogicalDatabase[]) {
-        const driver = new SqliteDriver(path.join(options.dataDir, SQLITE_FILES[name]), {
-          busyTimeout: options.busyTimeout,
-          slowQueryMs: options.slowQueryMs,
-        })
-        await driver.ready()
-        this.drivers.set(name, driver)
+    this.initPromise = this.doInit(options)
+      .then(() => {
+        this.initialized = true
+      })
+      .finally(() => {
+        this.initPromise = null
+      })
+
+    return this.initPromise
+  }
+
+  private async doInit(options: ConnectionOptions): Promise<void> {
+    // 先建到临时表里，全部成功才提交到 this.drivers
+    const opened: SqlDriver[] = []
+    const staged = new Map<LogicalDatabase, SqlDriver>()
+
+    try {
+      if (options.dialect === 'sqlite') {
+        for (const name of Object.keys(SQLITE_FILES) as LogicalDatabase[]) {
+          const driver = new SqliteDriver(path.join(options.dataDir, SQLITE_FILES[name]), {
+            busyTimeout: options.busyTimeout,
+            slowQueryMs: options.slowQueryMs,
+          })
+          opened.push(driver)
+          await driver.ready()
+          staged.set(name, driver)
+        }
+      } else if (options.dialect === 'postgres') {
+        const shared = await createPostgresDriver(options)
+        opened.push(shared)
+        for (const name of Object.keys(SQLITE_FILES) as LogicalDatabase[]) {
+          staged.set(name, shared)
+        }
+      } else {
+        const dialect = (options as { dialect?: string }).dialect
+        throw new Error(`不支持的数据库方言：${dialect}，可选值：sqlite、postgres`)
       }
-    } else if (options.dialect === 'postgres') {
-      const shared = await createPostgresDriver(options)
-      for (const name of Object.keys(SQLITE_FILES) as LogicalDatabase[]) {
-        this.drivers.set(name, shared)
+    } catch (error) {
+      // 已经打开的别留着——尤其 SQLite 是逐个文件打开的，第二个失败时第一个
+      // 还握着文件句柄
+      for (const driver of new Set(opened)) {
+        await driver.close().catch(() => {})
       }
-    } else {
-      const dialect = (options as { dialect?: string }).dialect
-      throw new Error(`不支持的数据库方言：${dialect}，可选值：sqlite、postgres`)
+      throw error
     }
 
-    this.initialized = true
+    for (const [name, driver] of staged) {
+      this.drivers.set(name, driver)
+    }
   }
 
   get(name: LogicalDatabase): SqlDriver {
@@ -66,12 +106,21 @@ export class DriverRegistry {
     return [...new Set(this.drivers.values())]
   }
 
+  /** 关闭全部连接。重复调用共用同一个 Promise。 */
   async close(): Promise<void> {
-    for (const driver of this.listUnique()) {
-      await driver.close()
-    }
-    this.drivers.clear()
-    this.initialized = false
+    if (this.closePromise) return this.closePromise
+
+    this.closePromise = (async () => {
+      for (const driver of this.listUnique()) {
+        await driver.close()
+      }
+      this.drivers.clear()
+      this.initialized = false
+    })().finally(() => {
+      this.closePromise = null
+    })
+
+    return this.closePromise
   }
 
   /** 仅供测试：注入一个现成的 driver。 */

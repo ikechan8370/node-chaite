@@ -61,7 +61,14 @@ export class SqlKvStorage<T> extends ChaiteStorage<T> {
     return this.driver.dialect
   }
 
-  /** 建表与索引。重复调用是安全的。 */
+  /**
+   * 建表与索引。重复调用是安全的。
+   *
+   * **子类不要覆盖这个方法**，要加初始化步骤请覆盖 afterInitialize()。
+   * 覆盖 initialize() 并在里面 `await super.initialize()` 会有竞态：基类返回时
+   * initialized 已经是 true，此时另一个并发的 ensureInitialized() 会立刻放行，
+   * 而子类那部分（建唯一索引之类）还没跑完。
+   */
   async initialize(): Promise<void> {
     if (this.initialized) return
     if (this.initPromise) return this.initPromise
@@ -71,16 +78,24 @@ export class SqlKvStorage<T> extends ChaiteStorage<T> {
       for (const index of this.spec.indexes || []) {
         await this.driver.exec(this.dialect.createIndex(this.table, index.columns, index))
       }
+      // 子类的补充步骤必须在置位之前完成，否则并发调用会看到一个只做了一半的表
+      await this.afterInitialize()
       this.initialized = true
     })().catch((error: unknown) => {
       // 不要把失败的 promise 留在字段里，否则一次偶发失败会让这张表到重启为止
-      // 都初始化不了
+      // 都初始化不了。initialized 也仍然是 false，下次会重试整条链路。
       this.initPromise = null
       throw error
     })
 
     return this.initPromise
   }
+
+  /**
+   * 建表之后、标记就绪之前的钩子。子类在这里做额外的模式调整。
+   * 抛错会让整次 initialize 失败并允许重试。
+   */
+  protected async afterInitialize(): Promise<void> {}
 
   async ensureInitialized(): Promise<void> {
     if (!this.initialized) await this.initialize()

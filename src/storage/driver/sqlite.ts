@@ -67,6 +67,10 @@ export interface SqliteDriverOptions {
  * 串起来：一个专用的 writer 连接 + 三档优先级队列，读取走另一条连接绕开队列。
  * 这套东西 chatgpt-plugin 里已经跑了很久，karin 那份拷贝没有——收进 chaite
  * 就是为了让两边都拿到。
+ *
+ * **串行化只在单个实例内生效。** 同一个文件被构造出两个 SqliteDriver 时，两个
+ * 队列互不知情，最终还是退回 WAL + busy_timeout 去扛。DriverRegistry 每个文件
+ * 只建一个实例，走注册表就没问题；绕过注册表自己 new 的话，这一层保证就没了。
  */
 export class SqliteDriver implements SqlDriver {
   readonly dialect: Dialect = createDialect('sqlite')
@@ -80,7 +84,15 @@ export class SqliteDriver implements SqlDriver {
   private readonly readyPromise: Promise<unknown>
   private writerActive = false
   private busyCount = 0
-  private closed = false
+  /**
+   * open -> closing -> closed。
+   *
+   * 只有一个布尔量不够：close() 先置位再等队列排空，中间这段时间里新的
+   * run()/get() 如果不被拦下，就会排到一个即将被关掉的连接上，或者留下一个
+   * 永远不会完成的 Promise。
+   */
+  private state: 'open' | 'closing' | 'closed' = 'open'
+  private closePromise: Promise<void> | null = null
 
   constructor(dbPath: string, options: SqliteDriverOptions = {}) {
     this.dbPath = path.resolve(dbPath)
@@ -103,7 +115,20 @@ export class SqliteDriver implements SqlDriver {
     await this.readyPromise
   }
 
+  /**
+   * 关闭中/已关闭就别再收活了，早失败好过半路连接被抽走。
+   *
+   * 返回 Error 而不是直接抛：driver 的其他方法一律以 rejected promise 报错，
+   * 这里同步抛会让调用方要写两种错误处理。
+   */
+  private closedError(operation: string): Error | null {
+    if (this.state === 'open') return null
+    return new Error(`[SQLite:${this.name}] driver is ${this.state}, refusing ${operation}`)
+  }
+
   private enqueue<T>(task: (db: NativeDatabase) => Promise<T>, options: WriteOptions = {}): Promise<T> {
+    const refused = this.closedError(options.label || 'write')
+    if (refused) return Promise.reject(refused)
     const { priority = 'normal', label = 'write' } = options
     const queuedAt = Date.now()
     return new Promise<T>((resolve, reject) => {
@@ -146,6 +171,8 @@ export class SqliteDriver implements SqlDriver {
 
   /** 读取直接打在 reader 连接上，绕开写入队列。 */
   private async read<T>(method: 'get' | 'all', sql: string, params: unknown[]): Promise<T> {
+    const refused = this.closedError(method)
+    if (refused) throw refused
     const db = await this.readerReady
     const startedAt = Date.now()
     try {
@@ -319,19 +346,31 @@ export class SqliteDriver implements SqlDriver {
     return { name: this.name, path: this.dbPath, freePages, before, after, ms }
   }
 
+  /**
+   * 关闭连接。重复调用会等同一个 Promise，而不是第二个调用方立刻拿到 resolve
+   * 却其实还没关完。
+   */
   async close(): Promise<void> {
-    if (this.closed) return
-    this.closed = true
-    // 等队列排空，否则正在写的事务会被切断
-    while (this.writerActive || this.queueDepth > 0) {
-      await new Promise(resolve => setTimeout(resolve, 10))
-    }
-    const writer = await this.writerReady
-    const reader = await this.readerReady
-    await new Promise<void>((resolve, reject) => reader.close(error => (error ? reject(error) : resolve())))
-    await new Promise<void>((resolve, reject) =>
-      writer.run('PRAGMA wal_checkpoint(PASSIVE)', [], error => (error ? reject(error) : resolve())),
-    )
-    await new Promise<void>((resolve, reject) => writer.close(error => (error ? reject(error) : resolve())))
+    if (this.closePromise) return this.closePromise
+    if (this.state === 'closed') return
+
+    this.state = 'closing'
+    this.closePromise = (async () => {
+      // 等队列排空，否则正在写的事务会被切断。此时 closedError 已经挡住新任务，
+      // 所以这个循环一定会收敛。
+      while (this.writerActive || this.queueDepth > 0) {
+        await new Promise(resolve => setTimeout(resolve, 10))
+      }
+      const writer = await this.writerReady
+      const reader = await this.readerReady
+      await new Promise<void>((resolve, reject) => reader.close(error => (error ? reject(error) : resolve())))
+      await new Promise<void>((resolve, reject) =>
+        writer.run('PRAGMA wal_checkpoint(PASSIVE)', [], error => (error ? reject(error) : resolve())),
+      )
+      await new Promise<void>((resolve, reject) => writer.close(error => (error ? reject(error) : resolve())))
+      this.state = 'closed'
+    })()
+
+    return this.closePromise
   }
 }
