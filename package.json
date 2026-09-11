@@ -40,6 +40,7 @@
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20.17.24",
+    "@types/pg": "^8.23.1",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "axios": "^1.8.1",
@@ -55,18 +56,28 @@
     "mammoth": "^1.9.0",
     "openai": "^5.20.1",
     "pdf-parse": "^2.4.5",
+    "pg": "^8.23.0",
     "prettier": "^3.5.2",
     "reflect-metadata": "^0.2.2",
+    "sqlite3": "^6.0.1",
     "ts-jest": "^29.2.6",
     "tsdown": "^0.16.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.25.0"
   },
   "peerDependencies": {
-    "pdf-parse": "^2.4.5"
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.0.0",
+    "sqlite3": ">=5 <7"
   },
   "peerDependenciesMeta": {
     "pdf-parse": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "sqlite3": {
       "optional": true
     }
   },

@@ -4,7 +4,9 @@ import { HistoryManager, SendMessageOption } from './adapter'
 import { PostProcessor, PreProcessor } from './processors'
 import { DeSerializable, Serializable, Wait } from './cloud'
 import { EventMessage } from './external'
-import { AbstractClient } from '../adapters'
+// 只作类型使用。写成值导入会形成 types -> adapters -> types 的运行时环，
+// 并把 PdfParser 之类用了 import.meta 的模块一并拖进任何 import 了 types 的地方。
+import type { AbstractClient } from '../adapters'
 import type { Chaite } from '../core'
 import type { ToolExecutor } from '../agent/contracts'
 
