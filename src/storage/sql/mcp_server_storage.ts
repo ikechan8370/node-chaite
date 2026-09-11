@@ -1,20 +1,15 @@
 import { McpServerConfig } from '../../agent/mcp/McpServerConfig'
 import { SqlDriver } from '../driver/types'
 import { SqlKvStorage, TableSpec, parseJson } from '../sql_storage'
+import { MCP_SERVERS } from './tables'
 
 /**
  * MCP 连接配置。里面有凭据（headers 里的 Authorization、env 里的 API key），
  * 所以整条记录只落本地库，不上传云端。
  */
 const spec: TableSpec<McpServerConfig> = {
-  table: 'mcp_servers',
-  columns: {
-    id: { type: 'text', pk: true },
-    name: { type: 'text', notNull: true },
-    enabled: { type: 'bool', notNull: true, default: 1 },
-    updatedAt: { type: 'bigint', notNull: true },
-    payload: { type: 'json', notNull: true },
-  },
+  table: MCP_SERVERS.table,
+  columns: MCP_SERVERS.columns,
   indexes: [{ columns: ['name'], name: 'idx_mcp_servers_name' }],
   filterable: ['id', 'name', 'enabled'],
   boolean: ['enabled'],

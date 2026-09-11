@@ -2,21 +2,12 @@ import { ChatPreset } from '../../channels/preset'
 import { SendMessageOption } from '../../types'
 import { SqlDriver } from '../driver/types'
 import { SqlKvStorage, TableSpec, parseJson, stringifyJson } from '../sql_storage'
-import { SHAREABLE_COLUMNS, stampTimestamps } from './shareable'
+import { stampTimestamps } from './shareable'
+import { CHAT_PRESETS } from './tables'
 
 const spec: TableSpec<ChatPreset> = {
-  table: 'chat_presets',
-  columns: {
-    id: { type: 'text', pk: true },
-    name: { type: 'text', notNull: true },
-    description: { type: 'text' },
-    prefix: { type: 'text', notNull: true },
-    local: { type: 'bool', default: 1 },
-    namespace: { type: 'text' },
-    sendMessageOption: { type: 'json', notNull: true },
-    ...SHAREABLE_COLUMNS,
-    extraData: { type: 'json' },
-  },
+  table: CHAT_PRESETS.table,
+  columns: CHAT_PRESETS.columns,
   indexes: [{ columns: ['prefix'] }, { columns: ['name'] }],
   filterable: ['id', 'name', 'description', 'prefix', 'namespace', 'cloudId', 'local', 'embedded'],
   boolean: ['local', 'embedded'],

@@ -3,6 +3,7 @@ import { Conversation, UserSettings, UserState } from '../../types/storage'
 import { SqlDriver } from '../driver/types'
 import { SqlKvStorage, TableSpec, parseJson } from '../sql_storage'
 import { log } from '../logger'
+import { USER_STATES } from './tables'
 
 /**
  * user_states 的业务主键是 userId，不是 id——id 只是个随机 UUID 代理键。
@@ -10,19 +11,10 @@ import { log } from '../logger'
  * 代理键不应该跟着变。
  */
 const spec: TableSpec<UserState> = {
-  table: 'user_states',
-  keyColumn: 'userId',
+  table: USER_STATES.table,
+  keyColumn: USER_STATES.keyColumn,
   immutableColumns: ['id'],
-  columns: {
-    id: { type: 'text', pk: true },
-    userId: { type: 'text', notNull: true },
-    nickname: { type: 'text' },
-    card: { type: 'text' },
-    conversations: { type: 'json', notNull: true },
-    settings: { type: 'json', notNull: true },
-    current: { type: 'json', notNull: true },
-    updatedAt: { type: 'bigint' },
-  },
+  columns: USER_STATES.columns,
   indexes: [{ columns: ['userId'], name: 'idx_user_states_userId' }],
   filterable: ['userId', 'nickname', 'card'],
   toRecord(userState, userId) {

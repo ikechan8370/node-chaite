@@ -2,18 +2,11 @@ import { ToolsGroupDTO } from '../../types/tools'
 import { SqlDriver } from '../driver/types'
 import { SqlKvStorage, TableSpec, parseJson } from '../sql_storage'
 import { stampTimestamps } from './shareable'
+import { TOOLS_GROUPS } from './tables'
 
 const spec: TableSpec<ToolsGroupDTO> = {
-  table: 'tools_groups',
-  columns: {
-    id: { type: 'text', pk: true },
-    name: { type: 'text', notNull: true },
-    description: { type: 'text' },
-    toolIds: { type: 'json', notNull: true },
-    isDefault: { type: 'bool', default: 0 },
-    createdAt: { type: 'text' },
-    updatedAt: { type: 'text' },
-  },
+  table: TOOLS_GROUPS.table,
+  columns: TOOLS_GROUPS.columns,
   indexes: [{ columns: ['name'], name: 'idx_tools_groups_name' }],
   filterable: ['id', 'name', 'description', 'isDefault'],
   boolean: ['isDefault'],

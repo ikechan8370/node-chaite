@@ -1,19 +1,12 @@
 import { ProcessorDTO } from '../../types/processors'
 import { SqlDriver } from '../driver/types'
 import { SqlKvStorage, TableSpec, parseJson, stringifyJson } from '../sql_storage'
-import { SHAREABLE_COLUMNS, stampTimestamps } from './shareable'
+import { stampTimestamps } from './shareable'
+import { PROCESSORS } from './tables'
 
 const spec: TableSpec<ProcessorDTO> = {
-  table: 'processors',
-  columns: {
-    id: { type: 'text', pk: true },
-    name: { type: 'text', notNull: true },
-    description: { type: 'text' },
-    type: { type: 'text', notNull: true },
-    code: { type: 'text' },
-    ...SHAREABLE_COLUMNS,
-    extraData: { type: 'json' },
-  },
+  table: PROCESSORS.table,
+  columns: PROCESSORS.columns,
   indexes: [{ columns: ['type'] }],
   filterable: ['id', 'name', 'description', 'type', 'cloudId', 'md5', 'embedded'],
   boolean: ['embedded'],

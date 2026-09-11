@@ -1,24 +1,14 @@
 import { ToolDTO } from '../../types/tools'
 import { TriggerDTO } from '../../types/trigger'
-import { ColumnSpec, ColumnTypeName, SqlDriver } from '../driver/types'
+import { SqlDriver } from '../driver/types'
 import { SqlKvStorage, TableSpec, parseJson, stringifyJson } from '../sql_storage'
-import { SHAREABLE_COLUMNS, stampTimestamps } from './shareable'
+import { stampTimestamps } from './shareable'
+import { TOOLS, TRIGGERS } from './tables'
 
 /**
  * 工具和触发器的表结构除了 isOneTime 之外完全一样，序列化逻辑也一样。
  * 与其抄两遍，不如把共同部分参数化——这正是整个改造要消灭的那种重复。
  */
-const EXECUTABLE_COLUMNS: Record<string, ColumnSpec | ColumnTypeName> = {
-  id: { type: 'text', pk: true },
-  name: { type: 'text', notNull: true },
-  description: { type: 'text' },
-  modelType: { type: 'text' },
-  code: { type: 'text' },
-  status: { type: 'text' },
-  permission: { type: 'text' },
-  ...SHAREABLE_COLUMNS,
-}
-
 const EXECUTABLE_FILTERABLE = [
   'id', 'name', 'description', 'modelType', 'cloudId', 'md5', 'status', 'permission', 'embedded',
 ]
@@ -86,8 +76,8 @@ function readExecutable(record: Record<string, unknown>) {
 }
 
 const toolsSpec: TableSpec<ToolDTO> = {
-  table: 'tools',
-  columns: { ...EXECUTABLE_COLUMNS, extraData: { type: 'json' } },
+  table: TOOLS.table,
+  columns: TOOLS.columns,
   indexes: [
     { columns: ['name'], name: 'idx_tools_name' },
     { columns: ['status'], name: 'idx_tools_status' },
@@ -106,8 +96,8 @@ const toolsSpec: TableSpec<ToolDTO> = {
 }
 
 const triggerSpec: TableSpec<TriggerDTO> = {
-  table: 'triggers',
-  columns: { ...EXECUTABLE_COLUMNS, isOneTime: { type: 'bool' }, extraData: { type: 'json' } },
+  table: TRIGGERS.table,
+  columns: TRIGGERS.columns,
   indexes: [
     { columns: ['name'], name: 'idx_triggers_name' },
     { columns: ['status'], name: 'idx_triggers_status' },

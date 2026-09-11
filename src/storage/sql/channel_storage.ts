@@ -1,26 +1,12 @@
 import { Channel } from '../../channels/channels'
 import { SqlDriver } from '../driver/types'
 import { SqlKvStorage, TableSpec, parseJson, stringifyJson } from '../sql_storage'
-import { SHAREABLE_COLUMNS, stampTimestamps } from './shareable'
+import { stampTimestamps } from './shareable'
+import { CHANNELS } from './tables'
 
 const spec: TableSpec<Channel> = {
-  table: 'channels',
-  columns: {
-    id: { type: 'text', pk: true },
-    name: { type: 'text', notNull: true },
-    description: { type: 'text' },
-    adapterType: { type: 'text', notNull: true },
-    type: { type: 'text', notNull: true },
-    weight: { type: 'int', default: 1 },
-    priority: { type: 'int', default: 0 },
-    status: { type: 'text', default: 'enabled' },
-    disabledReason: { type: 'text' },
-    models: { type: 'json' },
-    options: { type: 'json' },
-    statistics: { type: 'json' },
-    ...SHAREABLE_COLUMNS,
-    extra: { type: 'json' },
-  },
+  table: CHANNELS.table,
+  columns: CHANNELS.columns,
   indexes: [{ columns: ['type'] }, { columns: ['status'] }],
   filterable: [
     'id', 'name', 'description', 'adapterType', 'type', 'status', 'cloudId', 'weight', 'priority', 'embedded',

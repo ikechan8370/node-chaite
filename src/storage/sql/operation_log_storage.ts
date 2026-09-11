@@ -2,24 +2,14 @@ import { OperationLog } from '../../types/operation-log'
 import { SqlDriver } from '../driver/types'
 import { SqlKvStorage, TableSpec, parseJson } from '../sql_storage'
 import { log } from '../logger'
+import { OPERATION_LOGS } from './tables'
 
 /** 能下推到 SQL 的列。其余字段都在 payload 里，只能读出来再过滤。 */
 const FILTERABLE = ['id', 'timestamp', 'type', 'level', 'userId', 'groupId', 'channelId', 'model', 'presetId']
 
 const spec: TableSpec<OperationLog> = {
-  table: 'operation_logs',
-  columns: {
-    id: { type: 'text', pk: true },
-    timestamp: { type: 'bigint', notNull: true },
-    type: { type: 'text', notNull: true },
-    level: { type: 'text', notNull: true },
-    userId: { type: 'text' },
-    groupId: { type: 'text' },
-    channelId: { type: 'text' },
-    model: { type: 'text' },
-    presetId: { type: 'text' },
-    payload: { type: 'json', notNull: true },
-  },
+  table: OPERATION_LOGS.table,
+  columns: OPERATION_LOGS.columns,
   indexes: [
     { columns: [{ column: 'timestamp', order: 'DESC' }], name: 'idx_operation_logs_time' },
     { columns: ['userId', { column: 'timestamp', order: 'DESC' }], name: 'idx_operation_logs_user' },

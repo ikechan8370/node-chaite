@@ -6,6 +6,7 @@ import { HistoryMessage } from '../../types/models'
 import { SqlDriver } from '../driver/types'
 import { isBase64Image } from './base64_image'
 import { log } from '../logger'
+import { HISTORY } from './tables'
 
 interface HistoryRecord {
   id: string
@@ -39,6 +40,14 @@ const MIME_EXTENSIONS: Record<string, string> = {
 }
 
 const IMAGE_REF = /^\$image:([a-f0-9]+):(\.[a-z]+)$/
+
+/**
+ * 消息链回溯的深度上限。
+ *
+ * 正常会话远达不到这个数；设上限是为了让一条成环的 parentId 不至于把递归查询
+ * 拖死。超过上限会告警并截断。
+ */
+const MAX_CHAIN_DEPTH = 10000
 
 /**
  * 前缀的下一个字符串，用于把「以 prefix 开头」表达成范围比较。
@@ -102,14 +111,7 @@ export class SqlHistoryManager extends AbstractHistoryManager {
       fs.mkdirSync(this.imagesDir, { recursive: true })
 
       await this.driver.exec(
-        dialect.createTable(this.table, {
-          id: { type: 'text', pk: true },
-          parentId: { type: 'text' },
-          conversationId: { type: 'text' },
-          role: { type: 'text' },
-          messageData: { type: 'json' },
-          createdAt: { type: 'text' },
-        }),
+        dialect.createTable(this.table, HISTORY.columns),
       )
       await this.driver.exec(
         dialect.createIndex(this.table, ['conversationId'], { name: 'idx_history_conversation' }),
@@ -314,29 +316,59 @@ export class SqlHistoryManager extends AbstractHistoryManager {
     return []
   }
 
-  /** 从指定消息沿 parentId 追溯到根。 */
+  /**
+   * 从指定消息沿 parentId 追溯到根。
+   *
+   * 用递归 CTE 一次查完，而不是每条消息发一次查询。原来那种逐条回溯是典型的
+   * N+1：链有多长就要多少次往返。本机 SQLite 上一次往返约 0.022ms，一条 3000
+   * 条的链就要 65ms；换成走网络的 Postgres，按单次往返 0.3ms 算会变成近 1 秒。
+   * 而且这是每条消息进对话时都要做一次的事。
+   *
+   * 递归 CTE 两种方言都支持（SQLite 3.8.3+、Postgres 一直有）。
+   *
+   * depth 上限同时兼作防环措施：parentId 理论上不该成环，但一条坏数据就足以
+   * 让递归停不下来。
+   */
   private async getMessageChain(messageId: string): Promise<HistoryMessage[]> {
-    const messages: HistoryMessage[] = []
-    // parentId 理论上不该成环，但一条坏数据就能让这里无限循环，所以带个访问集合
-    const visited = new Set<string>()
-    let currentId: string | null = messageId
+    const table = this.q(this.table)
+    const id = this.q('id')
+    const parentId = this.q('parentId')
 
-    while (currentId && !visited.has(currentId)) {
-      visited.add(currentId)
-      const row: Record<string, unknown> | undefined = await this.driver.get(
-        `SELECT * FROM ${this.q(this.table)} WHERE ${this.q('id')} = ?`,
-        [currentId],
-      )
-      if (!row) break
+    const rows = await this.driver.all<Record<string, unknown>>(
+      `WITH RECURSIVE ${this.q('chain')} AS (
+         SELECT ${table}.*, 0 AS ${this.q('depth')} FROM ${table} WHERE ${id} = ?
+         UNION ALL
+         SELECT ${table}.*, ${this.q('chain')}.${this.q('depth')} + 1
+         FROM ${table}
+         JOIN ${this.q('chain')} ON ${table}.${id} = ${this.q('chain')}.${parentId}
+         WHERE ${this.q('chain')}.${this.q('depth')} < ?
+       )
+       SELECT * FROM ${this.q('chain')} ORDER BY ${this.q('depth')} ASC`,
+      [messageId, MAX_CHAIN_DEPTH],
+    )
+
+    // 按 depth 升序拿回来（目标消息 -> 父 -> 祖父 …），遇到重复 id 就停：
+    // 这和改造前逐条回溯 + visited 集合的语义完全一致。深度上限只保证成环时
+    // 递归一定会停，真正判环还是靠这里。
+    const chain: HistoryMessage[] = []
+    const seen = new Set<string>()
+    for (const row of rows) {
+      const id = String(row.id)
+      if (seen.has(id)) {
+        log().warn(`[History] detected a parentId cycle at ${id}, truncating the chain`)
+        break
+      }
+      seen.add(id)
       const message = this.recordToMessage(row)
-      if (message) messages.unshift(message)
-      currentId = (row.parentId as string) || null
+      if (message) chain.push(message)
     }
 
-    if (currentId && visited.has(currentId)) {
-      log().warn(`[History] detected a parentId cycle at ${currentId}, truncating the chain`)
+    if (rows.length >= MAX_CHAIN_DEPTH) {
+      log().warn(`[History] chain from ${messageId} hit the depth cap (${MAX_CHAIN_DEPTH}) and was truncated`)
     }
-    return messages
+
+    // 调用方要的是从根到目标的顺序
+    return chain.reverse()
   }
 
   private async getConversationMessages(conversationId: string): Promise<HistoryMessage[]> {
