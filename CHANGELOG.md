@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.15.0](https://github.com/ikechan8370/node-chaite/compare/v1.14.0...v1.15.0) (2026-09-12)
+
+
+### Features
+
+* **storage:** reconcile columns on upgrade, add real-Postgres tests and CI ([a89efe5](https://github.com/ikechan8370/node-chaite/commit/a89efe5b99b51b4a86e1e60f1edb034148f6d7db))
+* **storage:** ship a SQL storage layer with sqlite and postgres drivers ([1792642](https://github.com/ikechan8370/node-chaite/commit/17926427771db0ceadc3e7a275e466b3f89decdc))
+* **storage:** 内置 SQL 存储层，支持 sqlite 与 postgres ([dfb55b8](https://github.com/ikechan8370/node-chaite/commit/dfb55b88d60fd2892380a8becc9b17a059471f55))
+
+
+### Bug Fixes
+
+* **storage:** close two initialisation and shutdown races found in review ([c20816a](https://github.com/ikechan8370/node-chaite/commit/c20816ac472f6a15310b8b883db77739d6508153))
+
+
+### Performance Improvements
+
+* **history:** walk the parent chain in one query; add cross-engine migration ([ee9a2b9](https://github.com/ikechan8370/node-chaite/commit/ee9a2b90379c93e6c2d6bf56dcdc4387b46860a2))
+
 ## [1.14.0](https://github.com/ikechan8370/node-chaite/compare/v1.13.1...v1.14.0) (2026-08-29)
 
 
