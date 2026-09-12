@@ -28,10 +28,14 @@
     "prebuild": "node scripts/generate-version.js",
     "prepublishOnly": "npm run build",
     "pub": "npm publish --access public",
-    "test": "jest"
+    "test": "jest",
+    "test:pg": "NODE_OPTIONS=--experimental-vm-modules jest --testPathIgnorePatterns=/node_modules/ --testPathPattern=\"(postgres|migrate\\.pg)\\.test\\.ts\"",
+    "test:pg:integration": "jest --testPathIgnorePatterns=/node_modules/ --testPathPattern=\"postgres\\.integration\\.test\\.ts\" --runInBand"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-pgvector": "^0.0.9",
     "@eslint/js": "^9.21.0",
     "@google/genai": "^2.19.0",
     "@karinjs/node-schedule": "^1.1.2",
@@ -40,6 +44,7 @@
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20.17.24",
+    "@types/pg": "^8.23.1",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "axios": "^1.8.1",
@@ -55,23 +60,38 @@
     "mammoth": "^1.9.0",
     "openai": "^5.20.1",
     "pdf-parse": "^2.4.5",
+    "pg": "^8.23.0",
     "prettier": "^3.5.2",
     "reflect-metadata": "^0.2.2",
+    "sqlite3": "^6.0.1",
     "ts-jest": "^29.2.6",
     "tsdown": "^0.16.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.25.0"
   },
   "peerDependencies": {
-    "pdf-parse": "^2.4.5"
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.0.0",
+    "sqlite3": ">=5 <7"
   },
   "peerDependenciesMeta": {
     "pdf-parse": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "sqlite3": {
       "optional": true
     }
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.25.76"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sqlite3"
+    ]
   }
 }

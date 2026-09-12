@@ -91,6 +91,11 @@ export class ToolsGroupDTO extends AbstractShareable<ToolsGroupDTO> implements T
   constructor(params: Partial<ToolsGroupDTO>) {
     super(params)
     this.modelType = 'settings'
+    // AbstractShareable 只搬它自己认识的字段，这两个是 ToolsGroupDTO 独有的。
+    // 漏掉的话 new ToolsGroupDTO({ toolIds }) 出来的对象 toolIds 永远是 undefined，
+    // 工具组等于形同虚设。
+    this.toolIds = params.toolIds || []
+    this.isDefault = params.isDefault
   }
 
   toolIds: string[]

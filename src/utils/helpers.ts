@@ -1,9 +1,12 @@
+// 从 types/common 直接取，不走 types 桶文件：桶文件会把 trigger（依赖只发 ESM
+// 的 node-schedule）和 adapters（PdfParser 里用了 import.meta）一并拉进来，
+// 任何 import 到 helpers 的模块都会被连累。
 import {
   ChaiteContext, DefaultLogger,
   ILogger,
   MultipleKeyStrategy,
   MultipleKeyStrategyChoice,
-} from '../types'
+} from '../types/common'
 import { AsyncLocalStorage } from 'async_hooks'
 import fs from 'fs/promises'
 import path from 'path'
