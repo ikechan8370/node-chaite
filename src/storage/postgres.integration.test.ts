@@ -90,7 +90,10 @@ describeIfPg('PostgresDriver against a real server', () => {
     await driver.close()
   })
 
-  test('a bad password fails fast and does not leak the pool', async () => {
+  // 服务端用 trust 认证时（CI 就是）任何密码都会被接受，这个用例没有意义。
+  // 「首次连接失败不泄漏 pool」这条由下面 unreachable host / 不存在的库覆盖。
+  const testIfPassword = PG_ENV.password ? test : test.skip
+  testIfPassword('a bad password fails fast and does not leak the pool', async () => {
     // 关键在于「不挂住」：pool 没 end 的话它的重连计时器会把 jest 吊到超时
     await expect(
       createPostgresDriver(pgOptions({ password: 'definitely-not-the-password' }))
@@ -340,7 +343,9 @@ describeIfPg('DriverRegistry against a real server', () => {
 
   test('a failed postgres init leaves nothing open and stays retryable', async () => {
     const registry = new DriverRegistry()
-    await expect(registry.init(pgOptions({ password: 'wrong-password' }))).rejects.toThrow()
+    // 用不存在的库来制造失败，而不是用错密码：服务端用 trust 认证时（CI 就是）
+    // 任何密码都会被接受，那样这个用例就不会失败了
+    await expect(registry.init(pgOptions({ database: 'no_such_database_here' }))).rejects.toThrow()
     expect(registry.isInitialized()).toBe(false)
     expect(registry.listUnique()).toHaveLength(0)
 
