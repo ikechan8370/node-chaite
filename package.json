@@ -29,7 +29,8 @@
     "prepublishOnly": "npm run build",
     "pub": "npm publish --access public",
     "test": "jest",
-    "test:pg": "NODE_OPTIONS=--experimental-vm-modules jest --testPathIgnorePatterns=/node_modules/ --testPathPattern=\"(postgres|migrate\\.pg)\\.test\\.ts\""
+    "test:pg": "NODE_OPTIONS=--experimental-vm-modules jest --testPathIgnorePatterns=/node_modules/ --testPathPattern=\"(postgres|migrate\\.pg)\\.test\\.ts\"",
+    "test:pg:integration": "jest --testPathIgnorePatterns=/node_modules/ --testPathPattern=\"postgres\\.integration\\.test\\.ts\" --runInBand"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

@@ -632,3 +632,53 @@ describe('DriverRegistry', () => {
     expect(registry.isInitialized()).toBe(false)
   })
 })
+
+describe('column reconciliation on upgrade', () => {
+  test('adds columns that an older table is missing', async () => {
+    const driver = await makeDriver()
+    // 造一张「老版本」表：只有主键和 name，其余列都还不存在
+    await driver.exec('CREATE TABLE widgets (id TEXT PRIMARY KEY, name TEXT NOT NULL)')
+    await driver.run('INSERT INTO widgets (id, name) VALUES (?, ?)', ['old', 'legacy row'])
+
+    const storage = new SqlKvStorage<Widget>(driver, widgetSpec)
+    await storage.initialize()
+
+    const columns = await driver.all<{ name: string }>('PRAGMA table_info("widgets")', [])
+    expect(columns.map(c => c.name).sort()).toEqual(['enabled', 'id', 'kind', 'name', 'payload', 'weight'])
+
+    // 老行还在，而且现在能按当前 schema 正常写入——补列之前这里会报
+    // "table widgets has no column named kind"
+    await storage.setItem('new', { name: 'fresh', kind: 'a', weight: 3, enabled: true })
+    expect(await storage.listItems()).toHaveLength(2)
+    expect((await storage.getItem('old'))?.name).toBe('legacy row')
+    expect((await storage.getItem('new'))?.kind).toBe('a')
+    await driver.close()
+  })
+
+  test('a defaulted column keeps its default for pre-existing rows', async () => {
+    const driver = await makeDriver()
+    await driver.exec('CREATE TABLE widgets (id TEXT PRIMARY KEY, name TEXT NOT NULL)')
+    await driver.run('INSERT INTO widgets (id, name) VALUES (?, ?)', ['old', 'legacy'])
+
+    const storage = new SqlKvStorage<Widget>(driver, widgetSpec)
+    await storage.initialize()
+
+    // weight 的 spec 默认值是 1，老行补列后应当拿到它
+    const row = await driver.get<{ weight: number }>('SELECT weight FROM widgets WHERE id = ?', ['old'])
+    expect(Number(row?.weight)).toBe(1)
+    await driver.close()
+  })
+
+  test('reconciliation is a no-op on an already current table', async () => {
+    const driver = await makeDriver()
+    const storage = new SqlKvStorage<Widget>(driver, widgetSpec)
+    await storage.initialize()
+    await storage.setItem('w1', { name: 'a', kind: 'x' })
+
+    // 第二个实例对着同一张表初始化，不该动任何东西
+    const again = new SqlKvStorage<Widget>(driver, widgetSpec)
+    await again.initialize()
+    expect(await again.listItems()).toHaveLength(1)
+    await driver.close()
+  })
+})

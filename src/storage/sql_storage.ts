@@ -1,5 +1,7 @@
 import { ChaiteStorage } from '../types/storage'
 import { ColumnSpec, ColumnTypeName, IndexColumn, IndexOptions, SqlDriver } from './driver/types'
+import { listColumns } from './driver/introspect'
+import { log } from './logger'
 
 /**
  * 和宿主插件里原有的 generateId 保持同样的形状，避免迁移后新旧 id 风格不一致。
@@ -75,6 +77,7 @@ export class SqlKvStorage<T> extends ChaiteStorage<T> {
 
     this.initPromise = (async () => {
       await this.driver.exec(this.dialect.createTable(this.table, this.spec.columns))
+      await this.reconcileColumns()
       for (const index of this.spec.indexes || []) {
         await this.driver.exec(this.dialect.createIndex(this.table, index.columns, index))
       }
@@ -96,6 +99,53 @@ export class SqlKvStorage<T> extends ChaiteStorage<T> {
    * 抛错会让整次 initialize 失败并允许重试。
    */
   protected async afterInitialize(): Promise<void> {}
+
+  /**
+   * 给老表补上新增的列。
+   *
+   * CREATE TABLE IF NOT EXISTS 对已存在的表是空操作，不会补列。于是从更早版本
+   * 升上来的库里，表可能缺某几列，而写入路径会把当前全部列都列进 INSERT，
+   * 运行时直接报 "no column named ..." / "column does not exist"。
+   *
+   * 这里对比实际列和 spec，把缺的 ALTER TABLE ADD COLUMN 补回去。
+   *
+   * 两个做不到的情况会告警而不是硬失败——继续跑总比因为一次模式差异起不来好：
+   * - 主键列缺失：两种方言都不允许事后加主键，通常意味着这张表根本不是我们的
+   * - NOT NULL 且没有默认值：已有行无法填充，只能降级成可空
+   */
+  private async reconcileColumns(): Promise<void> {
+    const existing = await listColumns(this.driver, this.table)
+    if (existing.size === 0) return
+
+    for (const [name, raw] of Object.entries(this.spec.columns)) {
+      if (existing.has(name)) continue
+      const opts: ColumnSpec = typeof raw === 'string' ? { type: raw } : raw
+
+      if (opts.pk || opts.autoIncrement) {
+        log().error(
+          `[Storage] ${this.table} 缺少主键列 ${name}，无法通过 ALTER TABLE 补上。` +
+          '这张表大概不是本存储层创建的，请人工核对。',
+        )
+        continue
+      }
+
+      let definition = `${this.dialect.quoteId(name)} ${this.dialect.columnType(opts.type ?? 'text')}`
+      if (opts.default !== undefined) {
+        definition += ` DEFAULT ${typeof opts.default === 'number' ? opts.default : `'${String(opts.default).replace(/'/g, '\'\'')}'`}`
+      }
+      if (opts.notNull && opts.default === undefined) {
+        log().warn(
+          `[Storage] ${this.table}.${name} 声明为 NOT NULL 但没有默认值，` +
+          '已有行无法填充，补列时降级为可空',
+        )
+      } else if (opts.notNull) {
+        definition += ' NOT NULL'
+      }
+
+      await this.driver.exec(`ALTER TABLE ${this.dialect.quoteId(this.table)} ADD COLUMN ${definition}`)
+      log().info(`[Storage] ${this.table}: 补上缺失的列 ${name}`)
+    }
+  }
 
   async ensureInitialized(): Promise<void> {
     if (!this.initialized) await this.initialize()

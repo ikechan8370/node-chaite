@@ -1,0 +1,112 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    name: typecheck / lint / unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # src/version.ts 是 prebuild 生成的，typecheck 之前必须先有
+      - run: node scripts/generate-version.js
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm lint
+      - run: pnpm test
+
+  pglite:
+    name: postgres semantics (PGlite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/generate-version.js
+      # PGlite 是编译成 WASM 的 Postgres，用来验证生成的 SQL 在 Postgres 上确实
+      # 跑得通；不需要服务端，所以比下面那个 job 快得多
+      - run: pnpm test:pg
+
+  postgres:
+    name: postgres integration (real server)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # 用 pgvector 镜像：记忆子系统后续要用到，顺带把扩展可用性也固定下来
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: chaite
+          POSTGRES_PASSWORD: chaite_test_pw
+          POSTGRES_DB: chaite_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chaite -d chaite_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/generate-version.js
+      # 这一组测的是 PGlite 覆盖不到的东西：TCP、认证、连接池超时与上限、
+      # 多 client 并发事务、pool.end()、以及 SQLite -> Postgres 整体迁移
+      - run: pnpm test:pg:integration
+        env:
+          CHAITE_PG_HOST: 127.0.0.1
+          CHAITE_PG_PORT: 5432
+          CHAITE_PG_DB: chaite_test
+          CHAITE_PG_USER: chaite
+          CHAITE_PG_PASSWORD: chaite_test_pw
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # 确认打出来的包真的能被 import，且存储层的导出都在
+      - name: smoke test the built package
+        run: |
+          node -e "
+          import('./dist/index.mjs').then(m => {
+            const want = ['SqlKvStorage','SqliteDriver','PostgresDriver','DriverRegistry','drivers',
+              'SqlChannelStorage','SqlChatPresetStorage','SqlToolsStorage','SqlTriggerStorage',
+              'SqlProcessorsStorage','SqlToolsGroupStorage','SqlUserStateStorage','SqlMcpServerStorage',
+              'SqlOperationLogStorage','SqlHistoryManager','migrateSqlStorage','getChaiteTables']
+            const missing = want.filter(n => !(n in m))
+            if (missing.length) { console.error('missing exports: ' + missing.join(', ')); process.exit(1) }
+            console.log('all ' + want.length + ' storage exports present')
+          }).catch(e => { console.error(e); process.exit(1) })
+          "

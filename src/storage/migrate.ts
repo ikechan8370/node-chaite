@@ -1,6 +1,7 @@
 import { SqlDriver } from './driver/types'
 import { log } from './logger'
 import { CHAITE_TABLES, TableShape } from './sql/tables'
+import { listColumns, tableExists } from './driver/introspect'
 import { ColumnSpec, ColumnTypeName, LogicalDatabase } from './driver/types'
 
 /**
@@ -67,22 +68,6 @@ export interface MigrateResult {
   total: number
 }
 
-/** 源端有没有这张表。两种方言的探测方式不同。 */
-async function tableExists(driver: SqlDriver, table: string): Promise<boolean> {
-  if (driver.dialect.isPostgres) {
-    const row = await driver.get<{ count: number }>(
-      'SELECT COUNT(*) AS "count" FROM information_schema.tables WHERE table_schema = \'public\' AND table_name = ?',
-      [table],
-    )
-    return Number(row?.count || 0) > 0
-  }
-  const row = await driver.get<{ name: string }>(
-    'SELECT name FROM sqlite_master WHERE type = \'table\' AND name = ?',
-    [table],
-  )
-  return Boolean(row)
-}
-
 /**
  * 把一批表从源端复制到目标端。
  *
@@ -128,7 +113,7 @@ async function migrateTable(
   const cursorColumn = definition.cursorColumn || keyColumn
 
   // 源库可能是更早的版本，少几列；只搬两边都有的列
-  const available = await sourceColumns(source, table)
+  const available = await listColumns(source, table)
   const copyColumns = columnNames.filter(name => available.has(name))
   if (copyColumns.length === 0) {
     return { table, copied: 0, skipped: true, reason: '源端与目标端没有共同列' }
@@ -163,16 +148,4 @@ async function migrateTable(
 
   log().info(`[Migrate] ${table}: 复制了 ${copied} 行`)
   return { table, copied, skipped: false }
-}
-
-async function sourceColumns(driver: SqlDriver, table: string): Promise<Set<string>> {
-  if (driver.dialect.isPostgres) {
-    const rows = await driver.all<{ column_name: string }>(
-      'SELECT column_name FROM information_schema.columns WHERE table_schema = \'public\' AND table_name = ?',
-      [table],
-    )
-    return new Set(rows.map(r => r.column_name))
-  }
-  const rows = await driver.all<{ name: string }>(`PRAGMA table_info(${driver.dialect.quoteId(table)})`, [])
-  return new Set(rows.map(r => r.name))
 }

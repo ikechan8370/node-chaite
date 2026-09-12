@@ -21,7 +21,7 @@ module.exports = {
     },
     // Postgres 那套要 PGlite（WASM），而 PGlite 的动态 import 需要
     // --experimental-vm-modules。默认跑排除掉，用 pnpm test:pg 单独跑。
-    testPathIgnorePatterns: ['/node_modules/', '/frontend/', 'postgres\\.test\\.ts$', 'migrate\\.pg\\.test\\.ts$'],
+    testPathIgnorePatterns: ['/node_modules/', '/frontend/', 'postgres\\.test\\.ts$', 'migrate\\.pg\\.test\\.ts$', 'postgres\\.integration\\.test\\.ts$'],
     transformIgnorePatterns: [
         // 默认 Jest 会忽略掉所有 node_modules 里的文件
         // 我们需要修改这个默认行为，允许 Jest 转换 @karinjs/node-schedule
