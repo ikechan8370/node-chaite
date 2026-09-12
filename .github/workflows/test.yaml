@@ -19,6 +19,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # sqlite3 是原生模块，没有 .node 绑定的话所有碰 SQLite 的测试都会挂。
+      # 允许它跑 build 脚本的名单在 package.json 的 pnpm.onlyBuiltDependencies，
+      # 这里 pnpm 固定在 10 所以读得到。
+      # 注意：这个位置从 pnpm 11 起被忽略（只会给个警告），届时要把设置搬到
+      # pnpm-workspace.yaml 再一起升 pnpm 版本，否则 SQLite 相关测试会整片失败。
       # src/version.ts 是 prebuild 生成的，typecheck 之前必须先有
       - run: node scripts/generate-version.js
       - run: pnpm exec tsc --noEmit
@@ -51,6 +56,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # sqlite3 是原生模块，没有 .node 绑定的话所有碰 SQLite 的测试都会挂。
+      # 允许它跑 build 脚本的名单在 package.json 的 pnpm.onlyBuiltDependencies，
+      # 这里 pnpm 固定在 10 所以读得到。
+      # 注意：这个位置从 pnpm 11 起被忽略（只会给个警告），届时要把设置搬到
+      # pnpm-workspace.yaml 再一起升 pnpm 版本，否则 SQLite 相关测试会整片失败。
       - run: node scripts/generate-version.js
       # PGlite 是编译成 WASM 的 Postgres，用来验证生成的 SQL 在 Postgres 上确实
       # 跑得通；不需要服务端，所以比下面那个 job 快得多
@@ -87,6 +97,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # sqlite3 是原生模块，没有 .node 绑定的话所有碰 SQLite 的测试都会挂。
+      # 允许它跑 build 脚本的名单在 package.json 的 pnpm.onlyBuiltDependencies，
+      # 这里 pnpm 固定在 10 所以读得到。
+      # 注意：这个位置从 pnpm 11 起被忽略（只会给个警告），届时要把设置搬到
+      # pnpm-workspace.yaml 再一起升 pnpm 版本，否则 SQLite 相关测试会整片失败。
       - run: node scripts/generate-version.js
       # 这一组测的是 PGlite 覆盖不到的东西：TCP、认证、连接池超时与上限、
       # 多 client 并发事务、pool.end()、以及 SQLite -> Postgres 整体迁移
@@ -110,6 +125,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # sqlite3 是原生模块，没有 .node 绑定的话所有碰 SQLite 的测试都会挂。
+      # 允许它跑 build 脚本的名单在 package.json 的 pnpm.onlyBuiltDependencies，
+      # 这里 pnpm 固定在 10 所以读得到。
+      # 注意：这个位置从 pnpm 11 起被忽略（只会给个警告），届时要把设置搬到
+      # pnpm-workspace.yaml 再一起升 pnpm 版本，否则 SQLite 相关测试会整片失败。
       - run: pnpm build
       # 确认打出来的包真的能被 import，且存储层的导出都在
       - name: smoke test the built package

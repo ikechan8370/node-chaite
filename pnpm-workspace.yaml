@@ -1,0 +1,7 @@
+# sqlite3 是原生模块，装完要跑 build 脚本才有 .node 绑定。
+# pnpm 默认不执行依赖的构建脚本，必须显式允许。
+#
+# 这个设置从 pnpm 11 起搬到了本文件；package.json 里的 pnpm.onlyBuiltDependencies
+# 在 pnpm 12 上会被忽略并给出警告。两处都留着：新版读这里，pnpm 10 读那边。
+onlyBuiltDependencies:
+  - sqlite3
