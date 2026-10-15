@@ -1,0 +1,83 @@
+name: Publish existing release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to publish (for example, v1.15.2)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish-chaite-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo '::error::Enter a stable release tag such as v1.15.2.'
+            exit 1
+          fi
+
+      # Use the exact release snapshot, even if main has moved since release.
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Check package version and npm publication status
+        id: package
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          const { name, version } = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+          if (name !== 'chaite' || process.env.RELEASE_TAG !== `v${version}`) {
+            throw new Error('The tag must match the chaite package version.')
+          }
+          const response = await fetch('https://registry.npmjs.org/chaite', {
+            signal: AbortSignal.timeout(30000)
+          })
+          if (!response.ok) throw new Error(`Cannot check npm publication status: HTTP ${response.status}`)
+          const metadata = await response.json()
+          const published = !!metadata.versions?.[version]
+          console.log(published ? `${name}@${version} is already published; skipping.` : `Ready to publish ${name}@${version}.`)
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `published=${published}\n`)
+          NODE
+
+      - name: Verify npm authentication
+        if: steps.package.outputs.published != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          test -n "$NODE_AUTH_TOKEN" || { echo '::error::NPM_TOKEN is missing.'; exit 1; }
+          npm whoami --registry=https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+        if: steps.package.outputs.published != 'true'
+
+      # publish runs prepublishOnly, which performs the typecheck and build.
+      - name: Publish to npm
+        if: steps.package.outputs.published != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public --no-git-checks
