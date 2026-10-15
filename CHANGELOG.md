@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/ikechan8370/node-chaite/compare/v1.15.0...v1.15.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* upgrade Anthropic SDK and support adaptive Claude thinking ([4719c52](https://github.com/ikechan8370/node-chaite/commit/4719c523b8e49fef606402acf4619e310551f252))
+
 ## [1.15.0](https://github.com/ikechan8370/node-chaite/compare/v1.14.0...v1.15.0) (2026-09-12)
 
 
