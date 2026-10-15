@@ -33,7 +33,7 @@
     "test:pg:integration": "jest --testPathIgnorePatterns=/node_modules/ --testPathPattern=\"postgres\\.integration\\.test\\.ts\" --runInBand"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/sdk": "^0.134.0",
     "@electric-sql/pglite": "^0.5.8",
     "@electric-sql/pglite-pgvector": "^0.0.9",
     "@eslint/js": "^9.21.0",

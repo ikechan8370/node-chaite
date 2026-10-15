@@ -31,6 +31,8 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.enableReasoning = option.enableReasoning
     this.reasoningEffort = option.reasoningEffort
     this.reasoningBudgetTokens = option.reasoningBudgetTokens
+    this.claudeThinkingMode = option.claudeThinkingMode
+    this.claudeEffort = option.claudeEffort
     this.toolChoice = option.toolChoice
     this.preProcessorIds = option.preProcessorIds
     this.postProcessorIds = option.postProcessorIds
@@ -93,6 +95,9 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
   enableReasoning?: boolean
   reasoningEffort?: 'high' | 'medium' | 'low' | 'minimal'
   reasoningBudgetTokens?: number
+  /** Override auto-detection for renamed Claude models on API gateways. */
+  claudeThinkingMode?: 'auto' | 'adaptive' | 'enabled' | 'disabled' | 'between_tools'
+  claudeEffort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max'
 
   toolChoice?: ToolChoice
 
@@ -163,6 +168,8 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       enableReasoning: this.enableReasoning,
       reasoningEffort: this.reasoningEffort,
       reasoningBudgetTokens: this.reasoningBudgetTokens,
+      claudeThinkingMode: this.claudeThinkingMode,
+      claudeEffort: this.claudeEffort,
       toolChoice: this.toolChoice,
       preProcessorIds: this.preProcessorIds,
       postProcessorIds: this.postProcessorIds,

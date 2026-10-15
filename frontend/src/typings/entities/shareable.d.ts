@@ -171,6 +171,8 @@ namespace Shareable {
     enableReasoning?: boolean
     reasoningEffort?: 'high' | 'medium' | 'low'
     reasoningBudgetTokens?: number
+    claudeThinkingMode?: 'auto' | 'adaptive' | 'enabled' | 'disabled' | 'between_tools'
+    claudeEffort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max'
 
     toolChoice?: ToolChoice
 

@@ -24,7 +24,7 @@ export interface MessageContent {
  */
 export interface ProviderContextContent extends MessageContent {
   type: 'provider_context'
-  provider: 'gemini'
+  provider: 'gemini' | 'claude'
   data: Record<string, unknown>
 }
 

@@ -9,7 +9,7 @@ import { GenerateContentResponse } from '@google/genai'
 class IntoChaiteConverterEntry {
   openai: IntoChaiteConverter<OpenAI.ChatCompletionMessageParam & ReasoningPart>
   gemini: IntoChaiteConverter<GenerateContentResponse>
-  claude: IntoChaiteConverter<Anthropic.MessageParam>
+  claude: IntoChaiteConverter<Anthropic.Message>
 }
 
 const converters = new IntoChaiteConverterEntry()
@@ -28,7 +28,7 @@ export function registerIntoChaiteConverter<T>(
     break
   }
   case 'claude': {
-    converters.claude = converter as unknown as IntoChaiteConverter<Anthropic.MessageParam>
+    converters.claude = converter as unknown as IntoChaiteConverter<Anthropic.Message>
   }
   }
 
@@ -37,8 +37,8 @@ export function registerIntoChaiteConverter<T>(
 export function getIntoChaiteConverter(_clientType: 'openai'): IntoChaiteConverter<OpenAICompatibleMessageParam>;
 export function getIntoChaiteConverter(_clientType: 'gemini'): IntoChaiteConverter<GenerateContentResponse>;
 
-export function getIntoChaiteConverter(_clientType: 'claude'): IntoChaiteConverter<Anthropic.MessageParam>;
-export function getIntoChaiteConverter(_clientType: ClientType): IntoChaiteConverter<OpenAICompatibleMessageParam> | IntoChaiteConverter<GenerateContentResponse> | IntoChaiteConverter<Anthropic.MessageParam> {
+export function getIntoChaiteConverter(_clientType: 'claude'): IntoChaiteConverter<Anthropic.Message>;
+export function getIntoChaiteConverter(_clientType: ClientType): IntoChaiteConverter<OpenAICompatibleMessageParam> | IntoChaiteConverter<GenerateContentResponse> | IntoChaiteConverter<Anthropic.Message> {
   switch (_clientType) {
   case 'openai': {
     return converters.openai
