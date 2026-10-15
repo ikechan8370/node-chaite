@@ -191,6 +191,7 @@ const config = reactive({
     imageDescriptionSystemPrompt: 'You are an image analysis assistant. Answer questions about images accurately and thoroughly.',
     defaultQuestion: '请详细描述这张图片的内容，包括场景、人物、物体、文字、颜色等所有可见细节。',
     maxImageSize: 10485760,
+    maxImageDimension: 8000,
     enableGroupContextImages: true,
   },
 })
@@ -1532,6 +1533,15 @@ onMounted(async () => {
                       <NInputNumber
                         v-model:value="config.vision.maxImageSize"
                         :min="1"
+                        style="width: 100%"
+                      />
+                    </NFormItemGridItem>
+                    <NFormItemGridItem span="24 s:12 m:6" label="图片最长边 (px)">
+                      <NInputNumber
+                        v-model:value="config.vision.maxImageDimension"
+                        :min="1"
+                        :max="8000"
+                        :precision="0"
                         style="width: 100%"
                       />
                     </NFormItemGridItem>
