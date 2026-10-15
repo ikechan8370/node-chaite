@@ -19,6 +19,11 @@ export function buildGeminiTooling(
   toolChoice: SendMessageOption['toolChoice'],
   model: string,
 ): { tools?: Tool[], toolConfig?: ToolConfig, suppressedBuiltinTools: boolean, hasEffectiveBuiltinTools: boolean } {
+  if (toolChoice?.type === 'none') return { suppressedBuiltinTools: false, hasEffectiveBuiltinTools: false }
+  if (toolChoice?.type === 'specified' && (!toolChoice.tools?.length || toolChoice.tools.some(name => !functionDeclarations.some(tool => tool.name === name)))) {
+    throw new Error('指定的 Gemini 工具必须在当前 functionDeclarations 中存在')
+  }
+  if (toolChoice?.type === 'any' && functionDeclarations.length === 0) throw new Error('toolChoice=any 至少需要一个可用函数工具')
   const functionTools: Tool[] = functionDeclarations.length > 0 ? [{ functionDeclarations }] : []
   const builtinTools: Tool[] = []
   for (const builtinTool of builtinToolNames) {
@@ -39,7 +44,7 @@ export function buildGeminiTooling(
   }
 
   const hasToolCombination = functionTools.length > 0 && builtinTools.length > 0
-  const supportsToolCombination = isGemini3Model(model)
+  const supportsToolCombination = isGemini3Model(model) || /(?:^|\/)gemini-4(?:[.-]|$)/i.test(model)
   const suppressedBuiltinTools = hasToolCombination && !supportsToolCombination
   const effectiveBuiltinTools = suppressedBuiltinTools ? [] : builtinTools
   const tools = functionTools.length > 0 || effectiveBuiltinTools.length > 0

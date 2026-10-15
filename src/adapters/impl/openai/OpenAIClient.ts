@@ -11,11 +11,13 @@ import { AbstractClient } from '../../clients'
 import { BaseClientOptions, ChaiteContext } from '../../../types'
 import OpenAI from 'openai'
 import { asyncLocalStorage, getKey } from '../../../utils'
-import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
+import { getIntoChaiteConverter } from '../../../utils/converter'
+import { buildOpenAIRequest } from './request'
+import { OpenAIStreamAccumulator } from './stream'
 import './converter'
 import { EmbeddingOption, SendMessageOption } from '../../../types'
 import * as crypto from 'node:crypto'
-import { Chaite, VERSION } from '../../../index'
+import { VERSION } from '../../../index'
 
 export type OpenAIClientOptions = BaseClientOptions
 
@@ -27,135 +29,28 @@ export class OpenAIClient extends AbstractClient {
   }
 
   async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
-    const debug = Chaite.getInstance().getGlobalConfig()?.getDebug()
+    const debug = this.context.chaite?.getGlobalConfig()?.getDebug()
     const client = new OpenAI({
       apiKey,
-      baseURL: this.baseUrl,
+      baseURL: this.baseUrl || undefined,
       defaultHeaders: {
         'x-request-from': 'node-chaite/' + VERSION,
       },
     })
-    const messages: OpenAI.ChatCompletionMessageParam[] = []
-    const model = options.model || 'gpt-4.1'
-    const isThinkingModel = options.enableReasoning || options.isThinkingModel
-    if (options.systemOverride) {
-      if (isThinkingModel) {
-        messages.push({ role: 'developer', content: options.systemOverride })
-      } else {
-        messages.push({ role: 'system', content: options.systemOverride })
-      }
-    }
-    const converter = getFromChaiteConverter('openai')
-    for (const history of histories) {
-      let openaiMsg = converter(history)
-      if (!Array.isArray(openaiMsg)) {
-        openaiMsg = [openaiMsg]
-      }
-      messages.push(...openaiMsg)
-    }
-    let chatCompletion
-    const toolConvert = getFromChaiteToolConverter('openai')
-    let toolChoice: OpenAI.ChatCompletionToolChoiceOption = 'auto'
-    if (options.toolChoice?.type) {
-      switch (options.toolChoice.type) {
-      case 'auto': {
-        break
-      }
-      case 'any': {
-        toolChoice = 'required'
-        break
-      }
-      case 'specified': {
-        if (!options.toolChoice.tools || options.toolChoice.tools.length === 0) {
-          throw new Error('`toolChoice.tools` must be set if `toolChoice.type` is set to `specified`')
-        }
-        toolChoice = {
-          type: 'function',
-          function: {
-            name: options.toolChoice.tools[0],
-          },
-        }
-      }
-      }
-    }
-    const tools = this.tools.map(toolConvert)
-    if (debug) {
-      this.logger.debug(`openai request messages: ${JSON.stringify(messages)}`)
-    }
+    const request = buildOpenAIRequest(histories, this.tools, options, this.baseUrl)
+    if (debug) this.logger.debug(`openai request: ${JSON.stringify(request)}`)
+    let chatCompletion: OpenAI.ChatCompletion
     if (options.stream) {
-      const stream = client.chat.completions.stream({
-        temperature: options.temperature,
-        max_completion_tokens: options.maxToken,
-        messages,
-        model,
-        stream: true,
-        tools: tools.length > 0 ? tools : undefined,
-        reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
-        thinking_budget_tokens: isThinkingModel && options.reasoningBudgetTokens ? options.reasoningBudgetTokens : undefined,
-        tool_choice: tools.length > 0 ? toolChoice : undefined,
-      })
-      if (options.onChunk) {
-        let incompleteToolCallChunk = {
-          name: '',
-          arguments: '',
-        }
-        for await (const chunk of stream) {
-          const delta = chunk.choices[0]?.delta
-          let toolCall = delta?.tool_calls ? delta.tool_calls.map(t => {
-            if (t.function?.name) {
-              incompleteToolCallChunk.name = t.function.name
-            }
-            if (t.function?.arguments) {
-              incompleteToolCallChunk.arguments += t.function.arguments
-            }
-            let fc: FunctionCall | null = null
-            try {
-              const args = JSON.parse(incompleteToolCallChunk.arguments)
-              // tool终于全了
-              fc = {
-                name: incompleteToolCallChunk.name,
-                arguments: args,
-              }
-              incompleteToolCallChunk = {
-                name: '',
-                arguments: '',
-              }
-            } catch (err) {
-              // do nothing
-            }
-            return fc ? {
-              id: t.id,
-              type: 'function',
-              function: fc,
-            } as ToolCall : null
-          }).filter(tc => !!tc) : null
-          if (toolCall && toolCall.length === 0) {
-            toolCall = null
-          }
-          const deltaChunk = {
-            id: chunk.id,
-            model: chunk.model,
-            delta: delta?.content ? [{ type: 'text', text: delta.content } as TextContent] : [],
-            toolCall,
-          } as ModelResponseChunk
-          // 避免空chunk太频繁，检查一下
-          if (deltaChunk.delta.find(d => (d as TextContent).text) || deltaChunk.toolCall?.find(tc => tc.function.arguments)) {
-            await options.onChunk(deltaChunk)
-          }
-        }
+      const stream = client.chat.completions.stream({ ...request, stream: true })
+      const accumulator = new OpenAIStreamAccumulator()
+      for await (const chunk of stream) {
+        const delta = accumulator.push(chunk)
+        if (delta && options.onChunk) await options.onChunk(delta)
       }
       chatCompletion = await stream.finalChatCompletion()
+      accumulator.applyReasoning(chatCompletion)
     } else {
-      chatCompletion = await client.chat.completions.create({
-        temperature: options.temperature,
-        max_completion_tokens: options.maxToken,
-        messages,
-        model,
-        tools: tools.length > 0 ? tools : undefined,
-        tool_choice: tools.length > 0 ? toolChoice : undefined,
-        reasoning_effort: isThinkingModel ? options.reasoningEffort : undefined,
-        thinking_budget_tokens: isThinkingModel && options.reasoningBudgetTokens ? options.reasoningBudgetTokens : undefined,
-      } as any)
+      chatCompletion = await client.chat.completions.create({ ...request, stream: false })
     }
     if (debug) {
       this.logger.info(`openai response: ${JSON.stringify(chatCompletion)}`)
@@ -198,7 +93,7 @@ export class OpenAIClient extends AbstractClient {
       const apiKey = await getKey(this.apiKey, this.multipleKeyStrategy)
       const client = new OpenAI({
         apiKey,
-        baseURL: this.baseUrl,
+        baseURL: this.baseUrl || undefined,
       })
       const embeddings = await client.embeddings.create({
         input: text,
@@ -209,12 +104,5 @@ export class OpenAIClient extends AbstractClient {
         embeddings: embeddings.data.map(e => e.embedding),
       } as EmbeddingResult
     })
-  }
-}
-
-// 扩展 OpenAI SDK 类型以支持 llama-server 的 thinking_budget_tokens 参数
-declare module 'openai' {
-  interface ChatCompletionCreateParamsBase {
-    thinking_budget_tokens?: number | null;
   }
 }

@@ -24,7 +24,7 @@ export interface MessageContent {
  */
 export interface ProviderContextContent extends MessageContent {
   type: 'provider_context'
-  provider: 'gemini' | 'claude'
+  provider: 'gemini' | 'claude' | 'openai'
   data: Record<string, unknown>
 }
 
@@ -83,6 +83,8 @@ export interface ToolCall {
   type: 'function'
   function: FunctionCall
   thoughtSignature?: string
+  /** null means the provider omitted an ID; id remains Chaite's local correlation ID. */
+  providerCallId?: string | null
 }
 
 export type ArgumentValue = string | number | boolean | ArgumentValue[]
@@ -141,6 +143,7 @@ export interface ToolCallResultMessage extends IMessage {
 export interface ToolCallResult extends MessageContent {
   type: 'tool'
   tool_call_id?: string
+  providerCallId?: string | null
   content: string
   name?: string
 }

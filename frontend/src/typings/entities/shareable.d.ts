@@ -173,6 +173,10 @@ namespace Shareable {
     reasoningBudgetTokens?: number
     claudeThinkingMode?: 'auto' | 'adaptive' | 'enabled' | 'disabled' | 'between_tools'
     claudeEffort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+    openaiReasoningEffort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+    openaiThinkingBudgetTokens?: number
+    openaiMaxTokenField?: 'max_tokens' | 'max_completion_tokens'
+    geminiThinkingLevel?: 'minimal' | 'low' | 'medium' | 'high'
 
     toolChoice?: ToolChoice
 

@@ -75,4 +75,17 @@ describe('Gemini tooling configuration', () => {
       },
     })
   })
+  test('none disables built-in tools as well as function tools', () => {
+    const result = buildGeminiTooling(functionDeclarations, ['googleSearch'], { type: 'none' }, 'gemini-3.8-flash')
+    expect(result.tools).toBeUndefined()
+    expect(result.toolConfig).toBeUndefined()
+  })
+
+  test('Gemini 4 supports tool combinations and specified tools must exist', () => {
+    const result = buildGeminiTooling(functionDeclarations, ['googleSearch'], undefined, 'gemini-4-argon')
+    expect(result.suppressedBuiltinTools).toBe(false)
+    expect(result.toolConfig?.includeServerSideToolInvocations).toBe(true)
+    expect(() => buildGeminiTooling(functionDeclarations, [], { type: 'specified', tools: ['missing'] }, 'gemini-3.8-flash')).toThrow(/functionDeclarations/)
+  })
+
 })

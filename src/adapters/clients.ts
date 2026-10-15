@@ -501,6 +501,7 @@ export class AbstractClient implements IClient {
           this.logger.info(`tool ${fcName} result ${toolResult}`)
           toolCallResults.push({
             tool_call_id: r.id,
+            ...(r.providerCallId !== undefined ? { providerCallId: r.providerCallId } : {}),
             content: toolResult,
             type: 'tool',
             name: r.function.name,

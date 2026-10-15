@@ -30,14 +30,15 @@
     "pub": "npm publish --access public",
     "test": "jest",
     "test:pg": "NODE_OPTIONS=--experimental-vm-modules jest --testPathIgnorePatterns=/node_modules/ --testPathPattern=\"(postgres|migrate\\.pg)\\.test\\.ts\"",
-    "test:pg:integration": "jest --testPathIgnorePatterns=/node_modules/ --testPathPattern=\"postgres\\.integration\\.test\\.ts\" --runInBand"
+    "test:pg:integration": "jest --testPathIgnorePatterns=/node_modules/ --testPathPattern=\"postgres\\.integration\\.test\\.ts\" --runInBand",
+    "test:adapters": "node scripts/test-adapter-compat.mjs"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.134.0",
     "@electric-sql/pglite": "^0.5.8",
     "@electric-sql/pglite-pgvector": "^0.0.9",
     "@eslint/js": "^9.21.0",
-    "@google/genai": "^2.19.0",
+    "@google/genai": "^2.30.0",
     "@karinjs/node-schedule": "^1.1.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -58,7 +59,7 @@
     "jest": "^29.7.0",
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.9.0",
-    "openai": "^5.20.1",
+    "openai": "^6.49.0",
     "pdf-parse": "^2.4.5",
     "pg": "^8.23.0",
     "prettier": "^3.5.2",

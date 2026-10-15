@@ -1,216 +1,111 @@
-// 将IMessage转换为OpenAI格式
 import {
   OpenAICompatibleMessageParam,
   registerFromChaiteConverter,
   registerFromChaiteToolConverter,
   registerIntoChaiteConverter,
 } from '../../../utils/converter'
-import {
-  AssistantMessage, AudioContent, DeveloperMessage, ImageContent,
-  IMessage, MessageContent, ReasoningContent,
-  ReasoningPart, SystemMessage,
-  TextContent,
-  ToolCall, ToolCallResult,
-  ToolCallResultMessage,
-  UserMessage,
+import type {
+  AssistantMessage, AudioContent, DeveloperMessage, ImageContent, IMessage, MessageContent,
+  ProviderContextContent, ReasoningContent, ReasoningPart, SystemMessage, TextContent, ToolCall,
+  ToolCallResultMessage, UserMessage,
 } from '../../../types'
-import OpenAI from 'openai'
-import FunctionDefinition = OpenAI.FunctionDefinition;
+import type OpenAI from 'openai'
+import { parseInlineImage } from '../../../utils/imageData'
+import { parseToolArguments } from '../../../utils/toolArguments'
 
-// 将消息IMessage转换为OpenAI格式
 registerFromChaiteConverter<OpenAI.ChatCompletionMessageParam | OpenAI.ChatCompletionMessageParam[]>('openai', (source: IMessage) => {
   switch (source.role) {
   case 'assistant': {
     const msg = source as AssistantMessage
-    // bym用的ephone不支持assistant是array类型的，索性全都转成字符串吧
-    const text = msg.content
-      .map(t => t as unknown as OpenAI.ChatCompletionContentPartText)
-      .filter(t => t.text)
-      .reduce((acc, cur) => {
-        return {
-          type: 'text',
-          text: acc.text + cur.text,
-        } as OpenAI.ChatCompletionContentPartText
-      }, { type: 'text', text: '' } as OpenAI.ChatCompletionContentPartText).text
+    // Keep the string form used by compatible servers, without leaking reasoning into the answer.
+    const text = msg.content.filter((part): part is TextContent => part.type === 'text').map(part => part.text).join('')
+    const context = msg.content.find(part => part.type === 'provider_context' && (part as ProviderContextContent).provider === 'openai') as ProviderContextContent | undefined
     return {
-      role: 'assistant',
-      content: text ? text : undefined,
-      tool_calls: (msg.toolCalls && msg.toolCalls?.length > 0) ? msg.toolCalls?.map(t => {
-        return {
-          id: t.id,
-          type: t.type,
-          function: {
-            arguments: JSON.stringify(t.function.arguments),
-            name: t.function.name,
-          },
-        }
-      }) : undefined,
+      role: 'assistant', content: text || null,
+      ...(typeof context?.data.reasoning_content === 'string' ? { reasoning_content: context.data.reasoning_content } : {}),
+      ...(msg.toolCalls?.length ? { tool_calls: msg.toolCalls.map(call => ({
+        id: call.id, type: 'function', function: { name: call.function.name, arguments: JSON.stringify(parseToolArguments(call.function.arguments, call.function.name)) },
+      })) } : {}),
     } as OpenAI.ChatCompletionAssistantMessageParam
   }
   case 'user': {
-    const msg = source as UserMessage
-    return {
-      role: 'user',
-      content: msg.content.map(t => {
-        switch (t.type) {
-        case 'text': {
-          return { type: 'text', text: t.text } as OpenAI.ChatCompletionContentPartText
+    const parts: OpenAI.ChatCompletionContentPart[] = []
+    for (const part of (source as UserMessage).content) {
+      if (part.type === 'text' && part.text) parts.push({ type: 'text', text: part.text })
+      else if (part.type === 'audio' && part.data) parts.push({ type: 'input_audio', input_audio: { data: part.data, format: part.format } })
+      else if (part.type === 'image' && part.image) {
+        let url = part.image
+        if (!/^https?:\/\//i.test(url)) {
+          const { data, mimeType } = parseInlineImage(url, part.mimeType)
+          url = `data:${mimeType};base64,${data}`
         }
-        case 'audio': {
-          return {
-            type: 'input_audio',
-            input_audio: { data: t.data, format: t.format },
-          } as OpenAI.ChatCompletionContentPartInputAudio
-        }
-        case 'image': {
-          return { type: 'image_url', image_url: { url: t.image.startsWith('http') ? t.image : `data:image/jpeg;base64,${t.image}` } } as OpenAI.ChatCompletionContentPartImage
-        }
-        }
-      }),
-    } as OpenAI.ChatCompletionUserMessageParam
+        parts.push({ type: 'image_url', image_url: { url } })
+      }
+    }
+    return { role: 'user', content: parts }
   }
-  case 'tool': {
-    const msg = source as ToolCallResultMessage
-    return msg.content.map(tcr => {
-      return {
-        role: 'tool',
-        tool_call_id: tcr.tool_call_id,
-        content: tcr.content,
-      } as OpenAI.ChatCompletionToolMessageParam
-    })
+  case 'tool': return (source as ToolCallResultMessage).content.map(result => {
+    if (!result.tool_call_id) throw new Error('OpenAI 工具结果缺少 tool_call_id')
+    return { role: 'tool', tool_call_id: result.tool_call_id, content: result.content ?? '' } as OpenAI.ChatCompletionToolMessageParam
+  })
+  case 'system':
+  case 'developer': return {
+    role: source.role,
+    content: source.content.filter((part): part is TextContent => part.type === 'text').map(part => part.text).join('\n'),
   }
-  default: {
-    throw new Error('Unknown type')
-  }
+  default: throw new Error(`OpenAI 消息转换不支持 role=${source.role}`)
   }
 })
 
-function getReasoningContent(reasoningPart: ReasoningPart) {
-  return reasoningPart.reasoning_content || reasoningPart.reasoning || reasoningPart.thinking_content || reasoningPart.thinking || reasoningPart.think
+function reasoningText(part: ReasoningPart) {
+  return part.reasoning_content || part.reasoning || part.thinking_content || part.thinking || part.think
 }
 
-// 将OpenAI格式转为IMessage
 registerIntoChaiteConverter<OpenAICompatibleMessageParam>('openai', msg => {
   switch (msg.role) {
   case 'assistant': {
-    const content = msg.content ? Array.isArray(msg.content) ? msg.content : [{
-      type: 'text',
-      text: msg.content,
-    } as OpenAI.ChatCompletionContentPartText] : null
-
-    const contents: MessageContent[] | undefined = content?.map(t => {
-      return { type: 'text', text: t.type === 'text' ? t.text : t.refusal } as TextContent
-    })
-    const reasoningContent = getReasoningContent(msg)
-    if (reasoningContent) {
-      contents?.push({
-        type: 'reasoning',
-        text: reasoningContent,
-      } as ReasoningContent)
+    const content: MessageContent[] = []
+    if (typeof msg.content === 'string' && msg.content) content.push({ type: 'text', text: msg.content } as TextContent)
+    else if (Array.isArray(msg.content)) {
+      for (const part of msg.content) {
+        const text = part.type === 'text' ? part.text : part.refusal
+        if (text) content.push({ type: 'text', text } as TextContent)
+      }
     }
-    return {
-      role: 'assistant',
-      content: contents,
-      toolCalls: msg.tool_calls?.map(t => {
-        const { name, arguments: arg } = (t as OpenAI.Chat.ChatCompletionMessageFunctionToolCall).function
-        return {
-          id: t.id,
-          type: 'function',
-          function: {
-            name: name,
-            arguments: JSON.parse(arg),
-          },
-        } as ToolCall
-      }),
-    } as AssistantMessage
+    if (!content.length && msg.refusal) content.push({ type: 'text', text: msg.refusal } as TextContent)
+    const reasoning = reasoningText(msg)
+    if (reasoning) content.push({ type: 'reasoning', text: reasoning } as ReasoningContent)
+    if (typeof msg.reasoning_content === 'string') content.push({ type: 'provider_context', provider: 'openai', data: { reasoning_content: msg.reasoning_content } } as ProviderContextContent)
+    const toolCalls: ToolCall[] = []
+    for (const call of msg.tool_calls || []) {
+      if (call.type !== 'function') throw new Error('当前 OpenAI 适配器仅支持 function 工具调用')
+      toolCalls.push({ id: call.id, type: 'function', function: { name: call.function.name, arguments: parseToolArguments(call.function.arguments, call.function.name) as ToolCall['function']['arguments'] } })
+    }
+    return { role: 'assistant', content, toolCalls: toolCalls.length ? toolCalls : undefined } as AssistantMessage
   }
   case 'user': {
-    if (typeof msg.content === 'string') {
-      return {
-        role: 'user',
-        content: [{ type: 'text', text: msg.content }],
-      } as UserMessage
+    const content: UserMessage['content'] = []
+    if (typeof msg.content === 'string') content.push({ type: 'text', text: msg.content })
+    else for (const part of msg.content || []) {
+      if (part.type === 'image_url') content.push({ type: 'image', image: part.image_url.url })
+      else if (part.type === 'text') content.push({ type: 'text', text: part.text })
+      else if (part.type === 'input_audio') content.push({ type: 'audio', data: part.input_audio.data, format: part.input_audio.format } as AudioContent)
     }
-    return {
-      role: 'user',
-      content: msg.content?.map(t => {
-        switch (t.type) {
-        case 'image_url': {
-          return {
-            type: 'image',
-            image: t.image_url.url,
-          } as ImageContent
-        }
-        case 'text': {
-          return {
-            type: 'text',
-            text: t.text,
-          } as TextContent
-        }
-        case 'input_audio': {
-          return {
-            type: 'audio',
-            data: t.input_audio.data,
-          } as AudioContent
-        }
-        }
-      }),
-    } as UserMessage
+    return { role: 'user', content } as UserMessage
   }
-  case 'system': {
-    return {
-      role: 'system',
-      content: typeof msg.content === 'string' ? [{ type: 'text', text: msg.content } as TextContent] : msg.content?.map(t => {
-        return {
-          type: 'text',
-          text: t.text,
-        }
-      }),
-    } as SystemMessage
-  }
-  case 'tool': {
-    return {
-      role: 'tool',
-      content: typeof msg.content === 'string' ? [{
-        type: 'tool',
-        tool_call_id: msg.tool_call_id,
-        content: msg.content,
-      } as ToolCallResult] : msg.content.map(t => {
-        return {
-          tool_call_id: msg.tool_call_id,
-          content: t.text,
-        } as ToolCallResult
-      }),
-    } as ToolCallResultMessage
-  }
-  case 'developer': {
-    return {
-      role: 'developer',
-      content: typeof msg.content === 'string' ? [{ type: 'text', text: msg.content } as TextContent] : msg.content?.map(t => {
-        return {
-          type: 'text',
-          text: t.text,
-        }
-      }),
-    } as DeveloperMessage
-  }
-  default: {
-    // other roles don't need to call this converter
-    throw new Error('not implemented yet')
-  }
+  case 'system':
+  case 'developer': return {
+    role: msg.role,
+    content: typeof msg.content === 'string' ? [{ type: 'text', text: msg.content }] : msg.content?.map(part => ({ type: 'text', text: part.text })) || [],
+  } as SystemMessage | DeveloperMessage
+  case 'tool': return {
+    role: 'tool',
+    content: [{ type: 'tool', tool_call_id: msg.tool_call_id, content: typeof msg.content === 'string' ? msg.content : msg.content.map(part => part.text).join('') }],
+  } as ToolCallResultMessage
+  default: throw new Error('OpenAI 不支持此消息类型')
   }
 })
 
-// 将Tool转换为OpenAI格式
-registerFromChaiteToolConverter<OpenAI.ChatCompletionTool>('openai', tool => {
-  return {
-    type: 'function',
-    function: {
-      name: tool.function.name,
-      description: tool.function.description,
-      parameters: tool.function.parameters as unknown as OpenAI.FunctionParameters,
-    } as FunctionDefinition,
-  } as OpenAI.ChatCompletionTool
-})
-
-export {}
+registerFromChaiteToolConverter<OpenAI.ChatCompletionTool>('openai', tool => ({
+  type: 'function', function: { name: tool.function.name, description: tool.function.description, parameters: tool.function.parameters as unknown as OpenAI.FunctionParameters },
+}))

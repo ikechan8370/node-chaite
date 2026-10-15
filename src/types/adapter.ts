@@ -33,6 +33,10 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
     this.reasoningBudgetTokens = option.reasoningBudgetTokens
     this.claudeThinkingMode = option.claudeThinkingMode
     this.claudeEffort = option.claudeEffort
+    this.openaiReasoningEffort = option.openaiReasoningEffort
+    this.openaiThinkingBudgetTokens = option.openaiThinkingBudgetTokens
+    this.openaiMaxTokenField = option.openaiMaxTokenField
+    this.geminiThinkingLevel = option.geminiThinkingLevel
     this.toolChoice = option.toolChoice
     this.preProcessorIds = option.preProcessorIds
     this.postProcessorIds = option.postProcessorIds
@@ -98,6 +102,11 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
   /** Override auto-detection for renamed Claude models on API gateways. */
   claudeThinkingMode?: 'auto' | 'adaptive' | 'enabled' | 'disabled' | 'between_tools'
   claudeEffort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+  openaiReasoningEffort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+  /** Nonstandard compatible-server extension; never sent to api.openai.com. */
+  openaiThinkingBudgetTokens?: number
+  openaiMaxTokenField?: 'max_tokens' | 'max_completion_tokens'
+  geminiThinkingLevel?: 'minimal' | 'low' | 'medium' | 'high'
 
   toolChoice?: ToolChoice
 
@@ -170,6 +179,10 @@ export class SendMessageOption implements Serializable, DeSerializable<SendMessa
       reasoningBudgetTokens: this.reasoningBudgetTokens,
       claudeThinkingMode: this.claudeThinkingMode,
       claudeEffort: this.claudeEffort,
+      openaiReasoningEffort: this.openaiReasoningEffort,
+      openaiThinkingBudgetTokens: this.openaiThinkingBudgetTokens,
+      openaiMaxTokenField: this.openaiMaxTokenField,
+      geminiThinkingLevel: this.geminiThinkingLevel,
       toolChoice: this.toolChoice,
       preProcessorIds: this.preProcessorIds,
       postProcessorIds: this.postProcessorIds,

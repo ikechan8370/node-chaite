@@ -11,13 +11,13 @@ import {
   GenerateContentParameters,
   GoogleGenAI,
 } from '@google/genai'
-import { getFromChaiteConverter, getFromChaiteToolConverter, getIntoChaiteConverter } from '../../../utils/converter'
+import { getIntoChaiteConverter } from '../../../utils/converter'
 import './converter'
 import { asyncLocalStorage, getKey } from '../../../utils'
 import { SendMessageOption } from '../../../types'
 import * as crypto from 'node:crypto'
 import { VERSION } from '../../../index'
-import { buildGeminiTooling } from './tooling'
+import { buildGeminiRequest, geminiApiVersion } from './request'
 
 const DEFAULT_TOOL_CALL_LIMIT: ToolCallLimitConfig = {
   maxConsecutiveCalls: 8,
@@ -42,79 +42,24 @@ export class GeminiClient extends AbstractClient {
 
   async _sendMessage(histories: IMessage[], apiKey: string, options: SendMessageOption): Promise<HistoryMessage & { usage: ModelUsage }> {
     const debug = this.context.chaite.getGlobalConfig()?.getDebug()
-    const messages: Content[] = []
-    const model = options.model || 'gemini-2.0-flash-001'
-    const converter = getFromChaiteConverter('gemini')
-    const toolConverter = getFromChaiteToolConverter('gemini')
-    for (const history of histories) {
-      if (this.isEffectivelyEmptyMessage(history)) {
-        continue
-      }
-      const geminiContent = converter(history)
-      if (Array.isArray(geminiContent.parts) && geminiContent.parts.length === 0) {
-        continue
-      }
-      messages.push(geminiContent)
-    }
-    const functionDeclarations = this.tools.map(toolConverter)
-    const { tools, toolConfig, suppressedBuiltinTools, hasEffectiveBuiltinTools } = buildGeminiTooling(
-      functionDeclarations,
-      options.geminiBuiltinTools || [],
-      options.toolChoice,
-      model,
-    )
+    const { request: req, suppressedBuiltinTools, hasEffectiveBuiltinTools } = await buildGeminiRequest(histories, this.tools, options)
+    const model = req.model
     if (suppressedBuiltinTools) {
-      this.logger.warn(`[GeminiClient] Gemini built-in tools were not combined with function tools for model "${model}"; tool combination requires Gemini 3. Existing function tools remain enabled.`)
+      this.logger.warn(`[GeminiClient] Gemini built-in tools were not combined with function tools for model "${model}"; tool combination requires Gemini 3/4. Existing function tools remain enabled.`)
     }
-    const normalizedBaseUrl = this.baseUrl.replace(/\/+$/, '')
-    const hasExplicitApiVersion = /\/v1(?:alpha|beta)?$/i.test(normalizedBaseUrl)
-    const isGoogleApi = /:\/\/(?:generativelanguage|[a-z0-9-]+-aiplatform)\.googleapis\.com(?:\/|$)/i.test(normalizedBaseUrl)
-    let apiVersion: string | undefined
-    if (hasEffectiveBuiltinTools) {
-      if (hasExplicitApiVersion) {
-        apiVersion = ''
-      } else if (!isGoogleApi) {
-        apiVersion = 'v1'
-      }
-    }
+    const apiVersion = geminiApiVersion(this.baseUrl, hasEffectiveBuiltinTools)
     const ai = new GoogleGenAI({
       apiKey,
       httpOptions: {
-        baseUrl: this.baseUrl,
+        baseUrl: this.baseUrl || undefined,
         headers: {
           'x-request-from': 'node-chaite/' + VERSION,
         },
         // GoogleGenAI defaults to v1beta. GCLI2API exposes its native Gemini
-        // endpoint under /v1; opt into that only for custom endpoints when a
-        // Gemini built-in tool is explicitly enabled, preserving the default
-        // request path when the new feature is disabled.
+        // endpoint under /v1. Explicit version suffixes must never be duplicated.
         ...(apiVersion !== undefined ? { apiVersion } : {}),
       },
     })
-
-    // method parameter is not supported in Gemini API.
-    options.safetySettings?.forEach(ss => {
-      if (ss.method) {
-        ss.method = undefined
-      }
-    })
-    const req = {
-      model,
-      contents: messages,
-      config: {
-        temperature: options.temperature,
-        maxOutputTokens: options.maxToken,
-        thinkingConfig: options.enableReasoning ? {
-          includeThoughts: true,
-          thinkingBudget: options.enableReasoning ? options.reasoningBudgetTokens : 0,
-        } : undefined,
-        tools,
-        ...(toolConfig ? { toolConfig } : {}),
-        responseModalities: options.responseModalities,
-        safetySettings: options.safetySettings,
-        systemInstruction: options.systemOverride ?? undefined,
-      },
-    } as GenerateContentParameters
 
     if (debug) {
       this.logger.debug(`gemini request: ${JSON.stringify(req)}`)
@@ -153,7 +98,8 @@ export class GeminiClient extends AbstractClient {
       const ai = new GoogleGenAI({
         apiKey,
         httpOptions: {
-          baseUrl: this.baseUrl,
+          baseUrl: this.baseUrl || undefined,
+          ...(geminiApiVersion(this.baseUrl) !== undefined ? { apiVersion: geminiApiVersion(this.baseUrl) } : {}),
           headers: {
             'x-request-from': 'node-chaite/' + VERSION,
           },
