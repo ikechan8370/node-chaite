@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/ikechan8370/node-chaite/compare/v1.15.1...v1.15.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* align OpenAI and Gemini request and tool-call formats ([7605e3e](https://github.com/ikechan8370/node-chaite/commit/7605e3e0ff827bbada854be884b526426eb3d0a8))
+
 ## [1.15.1](https://github.com/ikechan8370/node-chaite/compare/v1.15.0...v1.15.1) (2026-10-15)
 
 
