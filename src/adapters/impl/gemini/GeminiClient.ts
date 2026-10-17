@@ -26,12 +26,19 @@ const DEFAULT_TOOL_CALL_LIMIT: ToolCallLimitConfig = {
 
 export type GeminiClientOptions = BaseClientOptions & {
   toolCallLimit?: ToolCallLimitConfig
+  /** Optional. The API version to use. 
+   * If unset, the default API version will be used. 
+   */
+  apiVersion?: string
 }
 
 export class GeminiClient extends AbstractClient {
+  private readonly apiVersion?: string
+
   constructor(options: GeminiClientOptions | Partial<GeminiClientOptions>, context?: ChaiteContext) {
     super(options, context)
     this.name = 'gemini'
+    this.apiVersion = (options as Partial<GeminiClientOptions>)?.apiVersion
     const providedLimit = (options as Partial<GeminiClientOptions>)?.toolCallLimit
     const effectiveLimit = {
       ...DEFAULT_TOOL_CALL_LIMIT,
@@ -50,6 +57,7 @@ export class GeminiClient extends AbstractClient {
     const apiVersion = geminiApiVersion(this.baseUrl, hasEffectiveBuiltinTools)
     const ai = new GoogleGenAI({
       apiKey,
+      apiVersion: this.apiVersion,
       httpOptions: {
         baseUrl: this.baseUrl || undefined,
         headers: {
@@ -97,6 +105,7 @@ export class GeminiClient extends AbstractClient {
       const model = options.model || 'text-embedding-004'
       const ai = new GoogleGenAI({
         apiKey,
+        apiVersion: this.apiVersion,
         httpOptions: {
           baseUrl: this.baseUrl || undefined,
           ...(geminiApiVersion(this.baseUrl) !== undefined ? { apiVersion: geminiApiVersion(this.baseUrl) } : {}),
